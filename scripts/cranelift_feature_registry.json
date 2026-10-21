@@ -48085,7 +48085,33 @@
           },
           {
             "path": "scripts/phase26_r2_scoped_copy.sh",
-            "line": 95,
+            "line": 94,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "if GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$PWD/build/gust-native-backend\" GUST_NATIVE_KEEP_OBJECTS=\"$PWD/$recursive_dir/keep\" ./gust --backend cranelift -o \"$recursive_dir/never-execute\" \"$recursive_source\" >\"$recursive_dir/compile.stdout\" 2>\"$recursive_dir/compile.stderr\"; then"
+          },
+          {
+            "path": "scripts/phase26_r2_scoped_copy.sh",
+            "line": 120,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "if GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$PWD/build/gust-native-backend\" GUST_NATIVE_KEEP_OBJECTS=\"$PWD/$case_dir/keep\" ./gust --backend cranelift -o \"$case_dir/never-execute\" \"$source\" >\"$case_dir/compile.stdout\" 2>\"$case_dir/compile.stderr\"; then"
+          },
+          {
+            "path": "scripts/phase26_r2_scoped_copy.sh",
+            "line": 150,
             "recipe": "none",
             "compiler_token": "./gust",
             "selection": "explicit_cranelift",
@@ -48105,7 +48131,7 @@
           {
             "path": ".github/workflows/pr-fast.yml",
             "previous_digest": "2c7827dd51250a7c8062e1415e497e8f310f314af6d500f1c83a25a2e6601163",
-            "current_digest": "63165edccb83dbf39558b4367202f9fa992d319081c19d8be4c980ee3b566c4c",
+            "current_digest": "563a92abcde9ae85f8d260099c8865f0d2dee317f6c47fa1849f0bf87e8f34bf",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 8,
@@ -48120,7 +48146,7 @@
           {
             "path": "GUST_LANE_STATE.md",
             "previous_digest": "cd0c6902a05d202a00ee0e9ab5393fea6b13ae4e1745335baf7e391123753f9f",
-            "current_digest": "fac76a640c3da87fc490495191693d7efef428f32a84e40013c62ed4ae5c4619",
+            "current_digest": "9673d6d9a844f770232a1fa7c33353a1ea5be8162961f16fd8b0c96bfdcdb5f3",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 3,
@@ -48150,7 +48176,7 @@
           {
             "path": "compiler/experiments/cranelift/src/full_program.rs",
             "previous_digest": "d684dee2b45c3fc19b8f2821f41c9fa2ace9f5c3ce690abc5fddf99d901dbf7f",
-            "current_digest": "e154539f33f09defc6bdefc20c866a28558938fd5d016090431f3ed749931b66",
+            "current_digest": "39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 1,
@@ -48165,7 +48191,7 @@
           {
             "path": "compiler/experiments/cranelift/src/main.rs",
             "previous_digest": "2767682811fef214ded5fa76e1d3babf6393a152c1bf95e1f301a57092741715",
-            "current_digest": "2ceba92c1799eb1083189261da6146c476d0cdda5c41eff6cbe4d176709259b8",
+            "current_digest": "c2924e9ad9d7e4fafae176ee2c4f5713134b0f2cc47fa72b62e667acbdceff6a",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 97,
@@ -48180,7 +48206,7 @@
           {
             "path": "compiler/mir_native_backend_full_program_source.gst",
             "previous_digest": "7d412f4c4b0e880932763d8e4ab8a6dadac8811028541ae3128d70c46f48cb54",
-            "current_digest": "179d06e63479358d2d55926ea69d09c1f94ef855441407d79e1898dab318b951",
+            "current_digest": "09dd7ba0eff20eafdfdcb0b5fbe4142e03692fc8694a46b8a6e6176956676f17",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 0,
@@ -48258,7 +48284,7 @@
             "path": "scripts/phase26_r2_scoped_copy_registration.py",
             "current_row": {
               "path": "scripts/phase26_r2_scoped_copy_registration.py",
-              "digest": "af98d544e644ef8ce4c05f702f4a022d8eadbbb603760d3322dd181396149f59",
+              "digest": "95322b7fc91239dac78862bd1322eb8a1ce296ea3d00be9c64c651dce518a00c",
               "match_counts": {
                 "explicit_backend_spelling": 0,
                 "mir_to_c_name": 1,
@@ -48303,13 +48329,13 @@
           "unknown_site_count": 0
         },
         "current_inventory_summary": {
-          "source_file_count": 2371,
-          "site_count": 1508,
-          "semantic_site_count": 796,
-          "semantic_manifest_digest": "864e20f417ee71f9f2846bebc48c7b39499adaacf77e93d40da0897f30276b10",
+          "source_file_count": 2372,
+          "site_count": 1543,
+          "semantic_site_count": 817,
+          "semantic_manifest_digest": "72f2711f357dc5fec7f013524eb6e3f11d06b29ec1f0713502972af720ba9b8f",
           "classification_counts": {
-            "semantic_or_intrinsic_recognition": 796,
-            "diagnostic": 13,
+            "semantic_or_intrinsic_recognition": 817,
+            "diagnostic": 27,
             "serialization": 1,
             "mangling_or_generated_name": 9,
             "comment": 2,
@@ -48317,36 +48343,40 @@
             "non_decision_comparison": 8
           },
           "partition_manifest_digests": {
-            "diagnostic": "7c00f1efc313c55c87f5f4aff798b7b929fb6443541fd0761b26c32e620bf828",
+            "diagnostic": "697bda26a5b9dc7457f8e89475f881531626da2d9d267961d86c8fd6ffad4d34",
             "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
-            "mangling_or_generated_name": "65b12573759791e0e50f8cde960f351812d12f260db03ea71e399447658bd6e3",
+            "mangling_or_generated_name": "28db616a74a014830120ab386ec107cc33c50042eceb00864566b8d97a999c2a",
             "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
             "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
             "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
           },
-          "complete_manifest_digest": "4f17fb8f73db5ddbc2e6074ed109aa34ac4628980a891f817bb3c55f856e80a2",
+          "complete_manifest_digest": "95afda2f585a778fbb9fffa3b0515f3394eee16b8e1cfd40056d0b42cfb2f205",
           "unknown_site_count": 0
         },
         "changed_source_hashes": [
           {
             "path": "compiler/experiments/cranelift/src/approved_package.rs",
-            "digest": "bc4aab0e4f58c7b92c62d149d2190370b1fb922a524648ca9f25a1857e35e500"
+            "digest": "ee19e46e880b956b428ac5d2116d2d1e05f37fe3143c488b6a98f5b061ff5d0b"
           },
           {
             "path": "compiler/experiments/cranelift/src/full_program.rs",
-            "digest": "e154539f33f09defc6bdefc20c866a28558938fd5d016090431f3ed749931b66"
+            "digest": "39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc"
           },
           {
             "path": "compiler/experiments/cranelift/src/main.rs",
-            "digest": "2ceba92c1799eb1083189261da6146c476d0cdda5c41eff6cbe4d176709259b8"
+            "digest": "c2924e9ad9d7e4fafae176ee2c4f5713134b0f2cc47fa72b62e667acbdceff6a"
           },
           {
             "path": "compiler/experiments/cranelift/src/scoped_byte_copy.rs",
-            "digest": "085ef3bab8ef699f1abee36f28edc8a1551e58243a31cf50217cc0ee9675d851"
+            "digest": "a6a32e90914099c4576cd485865568538e32aa7ee8eb3a3e0a5f2103be81f943"
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/collection_provenance.rs",
+            "digest": "aa01cc7c2c798480dd0fa8fd98dd315b39ce2e376fd77510f8c4c25140063f34"
           },
           {
             "path": "compiler/mir_native_backend_full_program_source.gst",
-            "digest": "179d06e63479358d2d55926ea69d09c1f94ef855441407d79e1898dab318b951"
+            "digest": "09dd7ba0eff20eafdfdcb0b5fbe4142e03692fc8694a46b8a6e6176956676f17"
           },
           {
             "path": "compiler/mir_native_backend_generic_source.gst",

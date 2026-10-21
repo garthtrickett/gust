@@ -7,20 +7,60 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES = {
+    "four_arg": (
+        "tests/cranelift/phase26_r2_scoped_four_arg.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_four_arg_producer.canonical",
+    ),
+    "local_five_arg": (
+        "tests/cranelift/phase26_r2_scoped_local_five_arg.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_local_five_arg_producer.canonical",
+    ),
     "caller_five_arg": (
         "tests/cranelift/phase26_r2_scoped_caller_five_arg.gst",
         "compiler/experiments/cranelift/src/testdata/"
-        "scoped_byte_copy_caller_five_arg_producer.canonical",
+        "scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical",
     ),
     "zero_length": (
         "tests/cranelift/phase26_r2_scoped_zero_length.gst",
         "compiler/experiments/cranelift/src/testdata/"
-        "scoped_byte_copy_zero_length_producer.canonical",
+        "scoped_byte_copy_intrinsic_zero_length_producer.canonical",
     ),
     "renamed_types": (
         "tests/cranelift/phase26_r2_scoped_renamed_types.gst",
         "compiler/experiments/cranelift/src/testdata/"
-        "scoped_byte_copy_renamed_owner_result_producer.canonical",
+        "scoped_byte_copy_intrinsic_renamed_types_producer.canonical",
+    ),
+    "caller_distinct_arenas": (
+        "tests/cranelift/phase26_r2_scoped_caller_distinct_arenas.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_distinct_arenas_producer.canonical",
+    ),
+    "two_callers": (
+        "tests/cranelift/phase26_r2_scoped_two_callers.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_two_callers_producer.canonical",
+    ),
+    "distinct_formals_same_arena": (
+        "tests/cranelift/phase26_r2_scoped_distinct_formals_same_arena.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_distinct_formals_same_arena_producer.canonical",
+    ),
+    "recursive_caller": (
+        "tests/cranelift/phase26_r2_scoped_recursive_caller.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_recursive_caller_producer.canonical",
+    ),
+    "forged_len": (
+        "tests/cranelift/phase26_r2_scoped_caller_forged_len_never_execute.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_forged_len_producer.canonical",
+    ),
+    "copied_alias": (
+        "tests/cranelift/phase26_r2_scoped_caller_copied_alias_never_execute.gst",
+        "compiler/experiments/cranelift/src/testdata/"
+        "scoped_byte_copy_intrinsic_copied_alias_producer.canonical",
     ),
 }
 

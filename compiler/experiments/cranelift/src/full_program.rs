@@ -104,11 +104,24 @@ pub struct Node {
     pub integer: i32,
     pub second_integer: i32,
     pub isolated_call_plan: Option<Box<IsolatedCallPlan>>,
+    pub collection_intrinsic: Option<CollectionIntrinsicPlan>,
     pub source_line: usize,
     pub source_column: usize,
     pub source_start: usize,
     pub source_end: usize,
     pub children: Vec<usize>,
+}
+
+// This is an executable, versioned MIR operation. The producer's fields are
+// untrusted until the parser, layout check, and closed scoped proof agree on
+// the actual operands and reaching storage state.
+#[derive(Debug, Clone)]
+pub struct CollectionIntrinsicPlan {
+    pub opcode: String,
+    pub receiver_type: String,
+    pub element_type: String,
+    pub layout_id: String,
+    pub brand: String,
 }
 
 #[derive(Debug, Clone)]
@@ -218,6 +231,184 @@ pub(crate) struct ResolvedNativeVectorLayout {
     pub(crate) len_offset: u32,
     pub(crate) capacity_offset: u32,
     pub(crate) arena_offset: u32,
+}
+
+// A collection intrinsic's row is executable MIR, not a declaration that its
+// storage is sound. Resolve the exact layout and operand types without using
+// the historical collection-name dispatcher. The closed ownership/history
+// proof must authorize every returned operation before emission.
+#[derive(Debug, Clone)]
+pub(crate) struct ResolvedCollectionIntrinsic {
+    opcode: String,
+    value_type: String,
+    element_type: String,
+    data_offset: u32,
+    len_offset: u32,
+    capacity_offset: u32,
+    arena_offset: u32,
+    element_size: u32,
+}
+
+pub(crate) fn resolve_collection_intrinsic(program: &Program, index: usize)
+    -> Result<ResolvedCollectionIntrinsic, Box<dyn Error>> {
+    let node = program.nodes.get(index).ok_or_else(|| invalid(
+        "collection intrinsic index is out of bounds"))?;
+    let plan = node.collection_intrinsic.as_ref().ok_or_else(|| invalid(
+        "collection intrinsic lacks its versioned operation"))?;
+    if node.kind != "CollectionIntrinsic" { return Err(invalid(
+        "collection operation kind and versioned record disagree")); }
+    // R2's executable operation cohort copies Byte spans. Reject an unrelated
+    // element before recursive type-layout resolution; neither candidate
+    // metadata nor a long by-value type chain may spend unbounded work first.
+    if plan.element_type != "Byte" {
+        return Err(invalid("collection intrinsic has unsupported element type"));
+    }
+    let value_type = if plan.receiver_type.starts_with("Reference(") {
+        pointer_inner_type(&plan.receiver_type).ok_or_else(|| invalid(
+            "collection borrowed receiver has no value type"))?
+    } else { plan.receiver_type.as_str() };
+    if plan.receiver_type.starts_with("RawPointer(") ||
+        !value_type.starts_with("Struct(\"") ||
+        value_type.starts_with("Reference(") {
+        return Err(invalid("collection intrinsic has no typed value receiver"));
+    }
+    let erased_name = struct_type_name(value_type).ok_or_else(|| invalid(
+        "collection intrinsic receiver has no struct identity"))?;
+    let layout = program.layouts.iter().find(|layout| layout.name == plan.layout_id)
+        .ok_or_else(|| invalid("collection intrinsic layout identity is absent"))?;
+    if program.layouts.iter().filter(|other|
+        other.erased_name == erased_name && other.brand == plan.brand).count() != 1 {
+        return Err(invalid("collection intrinsic layout and brand are ambiguous"));
+    }
+    if layout.erased_name != erased_name || layout.brand != plan.brand ||
+        layout.repr_c || layout.packed || !layout.abi.is_empty() ||
+        layout.fields.len() != 4 {
+        return Err(invalid("collection intrinsic layout or brand disagrees"));
+    }
+    let field = |name: &str| layout.fields.iter().find(|field| field.name == name)
+        .ok_or_else(|| invalid("collection intrinsic lacks exact storage fields"));
+    if field("data")?.ty != format!("RawPointer({})", plan.element_type) ||
+        field("len")?.ty != "Int" || field("capacity")?.ty != "Int" ||
+        field("arena")?.ty != "RawPointer(Arena)" {
+        return Err(invalid("collection intrinsic storage field types disagree"));
+    }
+    let mut layouts = LayoutEngine::new(program, 8);
+    let actual = layouts.layout(value_type)?;
+    let placement = |name: &str| actual.fields.get(name).map(|field| field.offset)
+        .ok_or_else(|| invalid("collection intrinsic field has no placement"));
+    let data_offset = placement("data")?;
+    let len_offset = placement("len")?;
+    let capacity_offset = placement("capacity")?;
+    let arena_offset = placement("arena")?;
+    if HashSet::from([data_offset, len_offset, capacity_offset, arena_offset]).len() != 4 ||
+        actual.align != 8 {
+        return Err(invalid("collection intrinsic fields overlap or have wrong alignment"));
+    }
+    let element_size = layouts.layout(&plan.element_type)?.size;
+    if element_size == 0 || element_size > i32::MAX as u32 / 8 {
+        return Err(invalid("collection intrinsic element stride cannot be bounded"));
+    }
+    match plan.opcode.as_str() {
+        "Create" if plan.receiver_type == value_type &&
+            node.ty == plan.receiver_type && node.children.len() == 1 &&
+            program.nodes[node.children[0]].ty.starts_with("Reference(Arena,") => {},
+        "Read" if node.ty == plan.element_type && node.children.len() == 2 &&
+            program.nodes[node.children[0]].ty == plan.receiver_type &&
+            program.nodes[node.children[1]].ty == "Int" => {},
+        "Clear" if node.ty == "Void" && node.children.len() == 1 &&
+            program.nodes[node.children[0]].ty == plan.receiver_type => {},
+        "Append" if node.ty == "Void" && node.children.len() == 2 &&
+            program.nodes[node.children[0]].ty == plan.receiver_type &&
+            program.nodes[node.children[1]].ty == plan.element_type => {},
+        _ => return Err(invalid("collection intrinsic opcode or actual operands disagree")),
+    }
+    Ok(ResolvedCollectionIntrinsic {
+        opcode: plan.opcode.clone(), value_type: value_type.to_string(),
+        element_type: plan.element_type.clone(), data_offset, len_offset,
+        capacity_offset, arena_offset, element_size,
+    })
+}
+
+fn validate_collection_intrinsic_shapes(program: &Program)
+    -> Result<HashMap<usize, ResolvedCollectionIntrinsic>, Box<dyn Error>> {
+    // Each resolver constructs the ordinary layout map and checks all matching
+    // branded declarations. Bound that total work before entering the loop;
+    // the caller-history budget runs later and cannot cover this stage.
+    let operation_count = program.nodes.iter()
+        .filter(|node| node.kind == "CollectionIntrinsic").count();
+    let layout_scan = program.layouts.len()
+        .checked_add(program.enumerations.len())
+        .and_then(|count| count.checked_add(1))
+        .ok_or_else(|| invalid("collection layout work budget overflows"))?;
+    if operation_count.checked_mul(layout_scan).is_none_or(|work| work > 1_000_000) {
+        return Err(invalid("collection layout work budget exceeded"));
+    }
+    let mut resolved = HashMap::new();
+    let mut reachable = HashSet::new();
+    // new_call_reachability has already bounded every defined body. This
+    // second walk ensures that a syntactically valid orphan intrinsic cannot
+    // evade the closed schedule merely because no function executes it.
+    for function in program.functions.iter().filter(|function| !function.is_extern) {
+        if let Some(root) = function.body_node {
+            let mut pending = vec![root];
+            while let Some(index) = pending.pop() {
+                if reachable.insert(index) {
+                    pending.extend(program.nodes[index].children.iter().copied());
+                }
+            }
+        }
+    }
+    for (index, node) in program.nodes.iter().enumerate() {
+        if node.kind == "CollectionIntrinsic" {
+            if !reachable.contains(&index) {
+                return Err(invalid("collection intrinsic is outside every defined body"));
+            }
+            resolved.insert(index, resolve_collection_intrinsic(program, index)?);
+        } else if node.collection_intrinsic.is_some() {
+            return Err(invalid("non-intrinsic node has collection operation metadata"));
+        }
+    }
+    Ok(resolved)
+}
+
+#[cfg(test)]
+mod collection_intrinsic_work_budget_tests {
+    #[test]
+    fn layout_resolution_rejects_multiplied_work_before_orphan_walk() {
+        let canonical = include_str!(
+            "testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical");
+        let mut program = super::parse(canonical)
+            .expect("actual collection operation baseline must parse");
+        super::validate_collection_intrinsic_shapes(&program)
+            .expect("baseline operation/layout work must fit");
+        let operation = program.nodes.iter().find(|node|
+            node.kind == "CollectionIntrinsic").expect("executable operation").clone();
+        let unrelated_layout = program.layouts.iter().find(|layout|
+            layout.erased_name == "APIRequest").expect("unrelated layout").clone();
+        for _ in 0..1_000 {
+            program.nodes.push(operation.clone());
+            program.layouts.push(unrelated_layout.clone());
+        }
+        let error = super::validate_collection_intrinsic_shapes(&program)
+            .unwrap_err().to_string();
+        assert!(error.contains("collection layout work budget exceeded"), "{error}");
+    }
+
+    #[test]
+    fn nonbyte_element_refuses_before_recursive_layout_resolution() {
+        let canonical = include_str!(
+            "testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical");
+        let mut program = super::parse(canonical)
+            .expect("actual collection operation baseline must parse");
+        let index = program.nodes.iter().position(|node|
+            node.collection_intrinsic.as_ref().is_some_and(|plan|
+                plan.opcode == "Read")).expect("actual executable Read");
+        program.nodes[index].collection_intrinsic.as_mut().unwrap().element_type =
+            "Struct(\"UnknownRecursiveElement\", None)".to_string();
+        let error = super::resolve_collection_intrinsic(&program, index)
+            .unwrap_err().to_string();
+        assert!(error.contains("unsupported element type"), "{error}");
+    }
 }
 
 pub(crate) fn resolve_native_vector_layout(program: &Program, receiver_type: &str)
@@ -341,6 +532,21 @@ fn validate_ffi_policies(
                 return Err(invalid("internal function carries external FFI policy"));
             }
             continue;
+        }
+        if function.extern_symbol == FALLIBLE_OWNED_OUT_CONSTRUCTOR &&
+            !function.ffi_contract.as_ref().is_some_and(|contract|
+                contract.result_policy == "fallible_owned_out") {
+            return Err(invalid("reserved fallible region constructor lacks its exact policy"));
+        }
+        if function.extern_symbol == FALLIBLE_OWNED_OUT_RELEASE &&
+            !function.ffi_contract.as_ref().is_some_and(|contract|
+                contract.result_policy == "value" && contract.destructor.is_empty() &&
+                contract.parameter_policies.as_slice() == ["release_owned"] &&
+                function.parameters.len() == 1 &&
+                function.parameters[0].1 == "RawPointer(Byte)" &&
+                function.result_type == "Void" &&
+                target == "x86_64-unknown-linux-gnu" && object_format == "Elf") {
+            return Err(invalid("reserved fallible region release lacks its exact policy"));
         }
         let Some(contract) = &function.ffi_contract else {
             // The checked-in bootstrap emits this original row. Legacy rows
@@ -1263,24 +1469,52 @@ fn checked_new_call_callee(program: &Program, call: &Node, function: &Function) 
         call.text == format!("{}.{}", receiver.text, callee.text)
 }
 
+// The seven exported region functions are in the approved runtime package,
+// but package membership alone does not authorize an unbound or differently
+// tagged call to the constructor/Free ABI. Check the actual resolved Call
+// path before either signed coverage or native lowering can use that symbol.
+fn validate_reserved_fallible_region_calls(program: &Program) -> Result<(), Box<dyn Error>> {
+    for call in program.nodes.iter().filter(|node| node.kind == "Call") {
+        let selected = program.functions.iter().find(|function|
+            function.qualified_name == call.second_text);
+        let symbol = selected.map_or_else(|| runtime_symbol(call),
+            |function| function.extern_symbol.clone());
+        if !matches!(symbol.as_str(),
+            FALLIBLE_OWNED_OUT_CONSTRUCTOR | FALLIBLE_OWNED_OUT_RELEASE) {
+            continue;
+        }
+        let function = selected.ok_or_else(|| invalid(
+            "reserved fallible region runtime Call lacks its declaration"))?;
+        if !checked_new_call_callee(program, call, function) ||
+            call.ty != function.result_type ||
+            call.children.len() != function.parameters.len() + 1 ||
+            (symbol == FALLIBLE_OWNED_OUT_CONSTRUCTOR && call.second_integer != 9) ||
+            (symbol == FALLIBLE_OWNED_OUT_RELEASE && call.second_integer != 0) {
+            return Err(invalid("reserved fallible region runtime Call has an unapproved ABI route"));
+        }
+    }
+    Ok(())
+}
+
 fn validate_scoped_byte_copy_plans(program: &Program)
     -> Result<HashMap<usize, crate::scoped_byte_copy::ScopedProof>, Box<dyn Error>> {
     crate::scoped_byte_copy::validate(program)
 }
 
 // A canonical node is a DAG node, even when a source expression looked like a
-// tree. New byte-span/region calls require one occurrence, including the unsafe
-// context of that occurrence. Bound the traversal before any older recursive
-// validator can expand a shared subtree or a path deep enough to exhaust the
-// worker stack. This restriction applies only to the new tagged call cohort.
+// tree. New byte-span/region calls and collection intrinsics require one
+// occurrence. Bound the traversal before any older recursive validator can
+// expand a shared subtree or a path deep enough to exhaust the worker stack.
+// This restriction applies only to the new tagged cohort.
 fn new_call_reachability(program: &Program) -> Result<HashMap<usize, (u8, u8)>, Box<dyn Error>> {
     const MAX_NODES: usize = 65_536;
     const MAX_EDGES: usize = 262_144;
     const MAX_DEPTH: usize = 1_024;
     if !program.functions.iter().any(|function|
         function.scoped_byte_copy.is_some()) &&
-        !program.nodes.iter().any(|node| node.kind == "Call" &&
-            matches!(node.second_integer, 10 | 11)) {
+        !program.nodes.iter().any(|node|
+            node.kind == "CollectionIntrinsic" || node.kind == "Call" &&
+            matches!(node.second_integer, 9 | 10 | 11)) {
         return Ok(HashMap::new());
     }
     // A constructor validator below also scans other functions in the same
@@ -1306,7 +1540,7 @@ fn new_call_reachability(program: &Program) -> Result<HashMap<usize, (u8, u8)>, 
             }
             let node = &program.nodes[index];
             let in_unsafe = in_unsafe || node.kind == "UnsafeScope";
-            if node.kind == "Call" && matches!(node.second_integer, 10 | 11) {
+            if node.kind == "Call" && matches!(node.second_integer, 9 | 10 | 11) {
                 calls.insert(index, (1, u8::from(in_unsafe)));
             }
             edges = edges.checked_add(node.children.len())
@@ -1640,9 +1874,30 @@ fn retained_cleanup_call(program: &Program, index: usize, owner: &str, destructo
         program.nodes[node.children[1]].text == owner
 }
 
+// The new fallible owner must actually dispatch to its registered internal
+// destructor. A matching second_text and owner spelling alone can describe an
+// inline method that the lowerer would select before ordinary Call dispatch.
+fn fallible_cleanup_callee(program: &Program, index: usize, destructor: &str) -> bool {
+    let call = &program.nodes[index];
+    if call.kind != "Call" || call.children.is_empty() ||
+        call.second_integer != 0 || call.second_text != destructor ||
+        is_inline_call(program, call) {
+        return false;
+    }
+    let Some(function) = program.functions.iter().find(|function|
+        !function.is_extern && function.qualified_name == destructor) else {
+        return false;
+    };
+    let callee = &program.nodes[call.children[0]];
+    call.ty == function.result_type && call.text == function.source_name &&
+        callee.kind == "LocalRead" && callee.ty == "Void" &&
+        callee.text == call.text && callee.children.is_empty()
+}
+
 fn fallible_exact_owner_cleanup(program: &Program, index: usize, owner: &str,
     owner_type: &str, destructor: &str) -> bool {
-    if !retained_cleanup_call(program, index, owner, destructor) { return false; }
+    if !retained_cleanup_call(program, index, owner, destructor) ||
+        !fallible_cleanup_callee(program, index, destructor) { return false; }
     let storage = &program.nodes[program.nodes[index].children[1]];
     storage.ty == owner_type && storage.second_text == owner_type &&
         storage.children.is_empty()
@@ -1922,6 +2177,7 @@ fn validate_retained_lease_plans(program: &Program) -> Result<(), Box<dyn Error>
 fn validate_fallible_owned_out_plans(program: &Program,
     scoped_proofs: &HashMap<usize, crate::scoped_byte_copy::ScopedProof>)
     -> Result<(), Box<dyn Error>> {
+    let reachability = new_call_reachability(program)?;
     let functions: HashMap<_, _> = program.functions.iter()
         .map(|function| (function.qualified_name.as_str(), function)).collect();
     for (call_index, call) in program.nodes.iter().enumerate() {
@@ -1940,6 +2196,9 @@ fn validate_fallible_owned_out_plans(program: &Program,
             call.ty != function.result_type || call.children.len() != 3 ||
             call.children[1..].iter().any(|child| program.nodes[*child].ty != "Int") {
             return Err(invalid("fallible owned out Call lacks exact constructor and arguments"));
+        }
+        if reachability.get(&call_index) != Some(&(1, 1)) {
+            return Err(invalid("fallible owned out Call is not uniquely owned by an unsafe scope"));
         }
         let parents: Vec<_> = program.nodes.iter().filter(|node|
             node.children.contains(&call_index)).collect();
@@ -2047,7 +2306,9 @@ fn validate_fallible_owned_out_plans(program: &Program,
                     let direct_release = block.children.get(guard_position + 1)
                         .and_then(|child| program.nodes.get(*child))
                         .filter(|deferred| deferred.kind == "ScheduleDefer" &&
-                            deferred.children.len() == 1)
+                            deferred.children.len() == 1 &&
+                            fallible_cleanup_callee(program, deferred.children[0],
+                                &contract.destructor))
                         .and_then(|deferred| program.nodes.get(deferred.children[0]))
                         .filter(|release| release.kind == "Call" &&
                             release.second_text == contract.destructor &&
@@ -2748,6 +3009,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         "AddressOf",
         "Dereference",
         "IndexRead",
+        "CollectionIntrinsic",
         "ExplicitCast",
         "BinaryOperation",
         "FieldOrMethodSelect",
@@ -2842,6 +3104,35 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
+        let collection_intrinsic = if kind == "CollectionIntrinsic" {
+            if values.len() != child_end + 6 ||
+                values.get(child_end) != Some(&"collection_intrinsic.v1") ||
+                !values[3].is_empty() || !values[4].is_empty() ||
+                parse_i32(values[5], "collection integer")? != 0 || second_integer != 0 {
+                return Err(invalid("collection intrinsic has an unknown version or payload"));
+            }
+            let opcode = decode_hex(values[child_end + 1], "collection opcode")?;
+            let receiver_type = decode_hex(values[child_end + 2], "collection receiver type")?;
+            let element_type = decode_hex(values[child_end + 3], "collection element type")?;
+            let layout_id = decode_hex(values[child_end + 4], "collection layout identity")?;
+            let brand = decode_hex(values[child_end + 5], "collection brand")?;
+            validate_type(&receiver_type, "collection receiver type")?;
+            validate_type(&element_type, "collection element type")?;
+            let arity = match opcode.as_str() {
+                "Create" | "Clear" => 1,
+                "Read" | "Append" => 2,
+                _ => return Err(invalid("collection intrinsic has an unknown opcode")),
+            };
+            if child_count != arity || layout_id.is_empty() ||
+                (opcode == "Create" && ty != receiver_type) ||
+                (opcode == "Read" && ty != element_type) ||
+                (matches!(opcode.as_str(), "Clear" | "Append") && ty != "Void") {
+                return Err(invalid("collection intrinsic type or operand arity disagrees"));
+            }
+            Some(CollectionIntrinsicPlan {
+                opcode, receiver_type, element_type, layout_id, brand,
+            })
+        } else { None };
         let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11) {
             let expected_tag = match second_integer {
                 3 => "isolated_call.v1",
@@ -2903,7 +3194,8 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             } else { None };
             Some(Box::new(IsolatedCallPlan { target_triple, cleanup, positions, retained }))
         } else {
-            if values.len() != child_end || kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
+            if (kind != "CollectionIntrinsic" && values.len() != child_end) ||
+                kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
                 return Err(invalid("full-program Call has an unknown optional policy or node extension"));
             }
             None
@@ -2916,6 +3208,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             integer: parse_i32(values[5], "node integer")?,
             second_integer,
             isolated_call_plan,
+            collection_intrinsic,
             source_line,
             source_column,
             source_start,
@@ -3051,9 +3344,11 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         nodes,
         entry_function,
     };
-    // The new tag10/11 cohort must reject shared or overdeep canonical bodies
+    // The new tag9/10/11 cohort must reject shared or overdeep canonical bodies
     // before older validators recursively inspect those same nodes.
     new_call_reachability(&program)?;
+    let collection_shapes = validate_collection_intrinsic_shapes(&program)?;
+    validate_reserved_fallible_region_calls(&program)?;
     validate_isolated_call_plans(&program)?;
     validate_direct_call_plans(&program)?;
     validate_byte_span_call_plans(&program)?;
@@ -3063,6 +3358,8 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
     validate_native_error_call_plans(&program)?;
     validate_policy_vector_status_plans(&program)?;
     let scoped_proofs = validate_scoped_byte_copy_plans(&program)?;
+    crate::collection_provenance::validate(&program, &scoped_proofs,
+        &collection_shapes.keys().copied().collect())?;
     validate_fallible_owned_out_plans(&program, &scoped_proofs)?;
     Ok(program)
 }
@@ -4361,6 +4658,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             "ResourceStorage" => self.lower_resource_storage(builder, node),
             "ConditionalCleanup" => self.lower_conditional_cleanup(builder, node),
             "Call" => self.lower_call(builder, node, expected_type),
+            "CollectionIntrinsic" => self.lower_collection_intrinsic(builder, node_index),
             "TypedQueryValue" => Err(invalid(
                 "typed query unexpectedly reached the compiler executable cohort",
             )),
@@ -5661,6 +5959,147 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         builder
             .ins()
             .store(MemFlags::trusted(), next_len, len_field.address, 0);
+        Ok(Evaluated::Void)
+    }
+
+    fn lower_collection_intrinsic(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node_index: usize,
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        // This function is reached only for a Program whose closed scoped
+        // proof covered this exact node. Re-resolve the executable layout
+        // from that same immutable Program before using any byte offset.
+        let operation = resolve_collection_intrinsic(self.program, node_index)?;
+        let node = self.program.nodes[node_index].clone();
+        let trap = TrapCode::unwrap_user(26);
+        if operation.opcode == "Create" {
+            let arena_index = node.children[0];
+            let arena_type = self.program.nodes[arena_index].ty.clone();
+            let arena_value = self.lower_expression(builder, arena_index, None)?;
+            let arena = self.arena_address(builder, arena_value, &arena_type)?;
+            let nonnull = builder.ins().icmp_imm(IntCC::NotEqual, arena, 0);
+            builder.ins().trapz(nonnull, trap);
+            let destination = self.place_for_type(builder, &operation.value_type)?;
+            let arena_field = add_offset(builder, destination.address, operation.arena_offset);
+            builder.ins().store(MemFlags::trusted(), arena, arena_field, 0);
+            return Ok(Evaluated::Aggregate(destination));
+        }
+
+        let (receiver, actual_type) =
+            self.lower_receiver_place(builder, node.children[0], false)?;
+        if actual_type != operation.value_type {
+            return Err(invalid("collection intrinsic lowered a different receiver type"));
+        }
+        let data_field = add_offset(builder, receiver.address, operation.data_offset);
+        let len_field = add_offset(builder, receiver.address, operation.len_offset);
+        let capacity_field = add_offset(builder, receiver.address, operation.capacity_offset);
+        let arena_field = add_offset(builder, receiver.address, operation.arena_offset);
+        let len = builder.ins().load(types::I32, MemFlags::trusted(), len_field, 0);
+        let capacity = builder.ins().load(types::I32, MemFlags::trusted(), capacity_field, 0);
+        let len_nonnegative = builder.ins().icmp_imm(IntCC::SignedGreaterThanOrEqual, len, 0);
+        let cap_ge_len = builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, capacity, len);
+        // A full but unchanged capacity is valid. Doubling is checked only on
+        // the growth edge, in I64, before its value is narrowed back to Int.
+        let maximum = i32::MAX as u32 / operation.element_size;
+        let cap_bounded = builder.ins().icmp_imm(
+            IntCC::SignedLessThanOrEqual, capacity, i64::from(maximum));
+        let valid = builder.ins().band(len_nonnegative, cap_ge_len);
+        let valid = builder.ins().band(valid, cap_bounded);
+        builder.ins().trapz(valid, trap);
+
+        if operation.opcode == "Clear" {
+            let zero = builder.ins().iconst(types::I32, 0);
+            builder.ins().store(MemFlags::trusted(), zero, len_field, 0);
+            return Ok(Evaluated::Void);
+        }
+        if operation.opcode == "Read" {
+            let index_node = &self.program.nodes[node.children[1]];
+            let index_eval = self.lower_expression(builder, node.children[1], None)?;
+            let index = self.scalar(builder, index_eval, &index_node.ty)?;
+            let nonnegative = builder.ins().icmp_imm(IntCC::SignedGreaterThanOrEqual, index, 0);
+            let within = builder.ins().icmp(IntCC::SignedLessThan, index, len);
+            let valid = builder.ins().band(nonnegative, within);
+            builder.ins().trapz(valid, trap);
+            let data = builder.ins().load(self.pointer_type(), MemFlags::trusted(), data_field, 0);
+            let nonnull = builder.ins().icmp_imm(IntCC::NotEqual, data, 0);
+            builder.ins().trapz(nonnull, trap);
+            let index64 = builder.ins().uextend(types::I64, index);
+            let offset = builder.ins().imul_imm(index64, i64::from(operation.element_size));
+            let source = Place { address: builder.ins().iadd(data, offset) };
+            if is_scalar_type(&operation.element_type) {
+                return Ok(Evaluated::Scalar(load_scalar(builder, source.address,
+                    &operation.element_type, self.pointer_type())?));
+            }
+            let result = self.place_for_type(builder, &operation.element_type)?;
+            self.copy_place(builder, result, source, operation.element_size)?;
+            return Ok(Evaluated::Aggregate(result));
+        }
+        if operation.opcode != "Append" {
+            return Err(invalid("collection intrinsic opcode was lost before lowering"));
+        }
+        let grow = builder.create_block();
+        let ready = builder.create_block();
+        let must_grow = builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, len, capacity);
+        builder.ins().brif(must_grow, grow, &[], ready, &[]);
+        builder.switch_to_block(grow);
+        let arena = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena_field, 0);
+        let arena_nonnull = builder.ins().icmp_imm(IntCC::NotEqual, arena, 0);
+        builder.ins().trapz(arena_nonnull, trap);
+        let capacity_zero = builder.ins().icmp_imm(IntCC::Equal, capacity, 0);
+        let eight = builder.ins().iconst(types::I64, 8);
+        let capacity64 = builder.ins().uextend(types::I64, capacity);
+        let doubled = builder.ins().imul_imm(capacity64, 2);
+        let new_capacity64 = builder.ins().select(capacity_zero, eight, doubled);
+        let growth_bounded = builder.ins().icmp_imm(
+            IntCC::UnsignedLessThanOrEqual, new_capacity64, i64::from(maximum));
+        builder.ins().trapz(growth_bounded, trap);
+        let new_capacity = builder.ins().ireduce(types::I32, new_capacity64);
+        let bytes = builder.ins().imul_imm(new_capacity64,
+            i64::from(operation.element_size));
+        let allocate = self.runtime.get("os_ArenaAlloc")
+            .ok_or_else(|| invalid("collection intrinsic allocator import is absent"))?.clone();
+        let allocation_ref = self.module.declare_func_in_func(allocate.id, builder.func);
+        let allocation = builder.ins().call(allocation_ref, &[arena, bytes]);
+        let allocation_result = builder.inst_results(allocation)[0];
+        // os_ArenaAlloc returns a u32 offset in the i32 ABI bit pattern and
+        // aborts on failure. High-bit offsets are valid within a live 4 GiB
+        // arena; interpret the result unsigned rather than as an error code.
+        let offset = builder.ins().uextend(types::I64, allocation_result);
+        let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
+        let new_data = builder.ins().iadd(base, offset);
+        let old_data = builder.ins().load(self.pointer_type(), MemFlags::trusted(), data_field, 0);
+        let has_values = builder.ins().icmp_imm(IntCC::NotEqual, len, 0);
+        let copy = builder.create_block();
+        let grown = builder.create_block();
+        builder.ins().brif(has_values, copy, &[], grown, &[]);
+        builder.switch_to_block(copy);
+        let old_nonnull = builder.ins().icmp_imm(IntCC::NotEqual, old_data, 0);
+        builder.ins().trapz(old_nonnull, trap);
+        let len64 = builder.ins().uextend(types::I64, len);
+        let used64 = builder.ins().imul_imm(len64,
+            i64::from(operation.element_size));
+        let used32 = builder.ins().ireduce(types::I32, used64);
+        self.copy_dynamic(builder, new_data, old_data, used32)?;
+        builder.ins().jump(grown, &[]);
+        builder.switch_to_block(grown);
+        builder.ins().store(MemFlags::trusted(), new_data, data_field, 0);
+        builder.ins().store(MemFlags::trusted(), new_capacity, capacity_field, 0);
+        builder.ins().jump(ready, &[]);
+        builder.switch_to_block(ready);
+        let data = builder.ins().load(self.pointer_type(), MemFlags::trusted(), data_field, 0);
+        let nonnull = builder.ins().icmp_imm(IntCC::NotEqual, data, 0);
+        builder.ins().trapz(nonnull, trap);
+        let index64 = builder.ins().uextend(types::I64, len);
+        let offset = builder.ins().imul_imm(index64, i64::from(operation.element_size));
+        let destination = Place { address: builder.ins().iadd(data, offset) };
+        let value_node = &self.program.nodes[node.children[1]];
+        let value_eval = self.lower_expression(builder, node.children[1],
+            Some(&operation.element_type))?;
+        self.store_evaluated_as(builder, destination, value_eval,
+            &value_node.ty, &operation.element_type)?;
+        let next_len = builder.ins().iadd_imm(len, 1);
+        builder.ins().store(MemFlags::trusted(), next_len, len_field, 0);
         Ok(Evaluated::Void)
     }
 
@@ -7060,7 +7499,7 @@ mod owned_ffi_policy_tests {
 
 #[cfg(test)]
 mod fallible_automatic_cleanup_tests {
-    use super::{fallible_automatic_cleanup, Node, Program};
+    use super::{fallible_automatic_cleanup, Function, Node, Program};
 
     const OWNER_TYPE: &str = "Struct(\"CallRegion\", None)";
 
@@ -7069,7 +7508,8 @@ mod fallible_automatic_cleanup_tests {
         Node {
             kind: kind.into(), ty: ty.into(), text: text.into(),
             second_text: second_text.into(), integer: 0, second_integer: 0,
-            isolated_call_plan: None, source_line: 0, source_column: 0,
+            isolated_call_plan: None, collection_intrinsic: None,
+            source_line: 0, source_column: 0,
             source_start: 0, source_end: 0, children,
         }
     }
@@ -7078,7 +7518,13 @@ mod fallible_automatic_cleanup_tests {
         Program {
             target_triple: String::new(), object_format: String::new(),
             modules: Vec::new(), layouts: Vec::new(), enumerations: Vec::new(),
-            functions: Vec::new(), entry_function: 0,
+            functions: vec![Function {
+                module_index: 0, source_name: "release_region".into(),
+                qualified_name: "release_region".into(), is_extern: false,
+                extern_symbol: String::new(), result_type: "Void".into(),
+                body_node: None, parameters: Vec::new(), ffi_contract: None,
+                scoped_byte_copy: None,
+            }], entry_function: 0,
             nodes: vec![
                 node("LocalRead", "Void", "release_region", "", vec![]),
                 node("ResourceStorage", OWNER_TYPE, "region", OWNER_TYPE, vec![]),
@@ -7117,6 +7563,229 @@ mod fallible_automatic_cleanup_tests {
         assert_eq!(accepted(&program, vec![8, 6, 4]), None);
         program.nodes[4].children[0] = 7;
         assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[4].children[0] = 3;
+        program.nodes[0].text = "Free".into();
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[0].text = "release_region".into();
+        program.nodes[2].text = "len".into();
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+    }
+
+    fn actual_flat_source() -> &'static str {
+        include_str!("testdata/fallible_owned_out_flat_producer.canonical")
+    }
+
+    fn mutate_function(source: &str, symbol: &str,
+        change: impl FnOnce(&mut Vec<String>)) -> String {
+        let mut rows: Vec<String> = source.lines().map(str::to_owned).collect();
+        let matching: Vec<_> = rows.iter().enumerate().filter_map(|(index, row)| {
+            let fields: Vec<String> = row.strip_prefix("function: ")?
+                .split('|').map(str::to_owned).collect();
+            (super::decode_hex(&fields[5], "function symbol").ok().as_deref() == Some(symbol))
+                .then_some((index, fields))
+        }).collect();
+        assert_eq!(matching.len(), 1, "one declared runtime symbol");
+        let (index, mut fields) = matching.into_iter().next().unwrap();
+        change(&mut fields);
+        rows[index] = format!("function: {}", fields.join("|"));
+        rows.join("\n") + "\n"
+    }
+
+    fn hex(value: &str) -> String {
+        value.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    #[test]
+    fn reserved_region_symbols_reject_absent_and_other_policies() {
+        let original = actual_flat_source();
+        super::parse(original).expect("actual flat fallible producer must parse");
+        for symbol in ["os_FfiCallRegionTryCreate", "os_FfiCallRegionFree"] {
+            let absent = mutate_function(original, symbol, |fields| {
+                let parameter_count: usize = fields[8].parse().unwrap();
+                fields.truncate(9 + 2 * parameter_count);
+            });
+            let error = super::parse(&absent).expect_err("reserved runtime symbol lost policy");
+            let expected = if symbol == "os_FfiCallRegionTryCreate" {
+                "reserved fallible region constructor lacks its exact policy"
+            } else {
+                // The constructor's existing destructor-authority check runs
+                // before this later declaration is visited.
+                "owned FFI destructor lacks its qualified native release"
+            };
+            assert!(error.to_string().contains(expected),
+                "different rejection authority: {error}");
+        }
+        let standalone_release = Function {
+            module_index: 0, source_name: "free".into(),
+            qualified_name: "free".into(), is_extern: true,
+            extern_symbol: super::FALLIBLE_OWNED_OUT_RELEASE.into(),
+            result_type: "Void".into(), body_node: None,
+            parameters: vec![("raw".into(), "RawPointer(Byte)".into())],
+            ffi_contract: None, scoped_byte_copy: None,
+        };
+        let error = super::validate_ffi_policies(
+            &[standalone_release], &[], &std::collections::HashMap::new(), &[],
+            "x86_64-unknown-linux-gnu", "Elf",
+        ).expect_err("standalone reserved Free has no policy");
+        assert!(error.to_string().contains("reserved fallible region release lacks its exact policy"),
+            "different standalone release authority: {error}");
+        let constructor = mutate_function(original, "os_FfiCallRegionTryCreate",
+            |fields| fields[14] = hex("value"));
+        let error = super::parse(&constructor).expect_err("constructor used value policy");
+        assert!(error.to_string().contains("reserved fallible region constructor"),
+            "different rejection authority: {error}");
+        let release = mutate_function(original, "os_FfiCallRegionFree",
+            |fields| fields[14] = hex("borrow_read_call"));
+        let error = super::parse(&release).expect_err("release used borrowed policy");
+        assert!(error.to_string().contains("owned FFI destructor lacks its qualified native release"),
+            "different rejection authority: {error}");
+    }
+
+    #[test]
+    fn reserved_constructor_rejects_untagged_and_unbound_calls() {
+        let original = actual_flat_source();
+        let baseline = super::parse(original).expect("actual flat fallible producer must parse");
+        let calls: Vec<_> = baseline.nodes.iter().enumerate().filter(|(_, node)|
+            node.kind == "Call" && node.second_integer == 9 &&
+            node.second_text == "os_FfiCallRegionTryCreate").collect();
+        assert_eq!(calls.len(), 2, "source has two independently guarded acquisitions");
+        let call_index = calls[0].0;
+        let mut rows: Vec<String> = original.lines().map(str::to_owned).collect();
+        let prefix = format!("node: {call_index}|");
+        let matching: Vec<_> = rows.iter().enumerate().filter(|(_, row)|
+            row.starts_with(&prefix)).collect();
+        assert_eq!(matching.len(), 1);
+        let row_index = matching[0].0;
+        let mut fields: Vec<String> = rows[row_index]["node: ".len()..]
+            .split('|').map(str::to_owned).collect();
+        let arity: usize = fields[11].parse().unwrap();
+        fields[6] = "0".into();
+        fields.truncate(12 + arity);
+        rows[row_index] = format!("node: {}", fields.join("|"));
+        let error = super::parse(&(rows.join("\n") + "\n"))
+            .expect_err("constructor Call lost its hidden-out plan");
+        assert!(error.to_string().contains("reserved fallible region runtime Call"),
+            "different rejection authority: {error}");
+
+        let unbound = mutate_function(original, "os_FfiCallRegionTryCreate",
+            |fields| fields[3] = hex("other_constructor"));
+        let error = super::parse(&unbound)
+            .expect_err("constructor runtime symbol was called without its declaration");
+        assert!(error.to_string().contains("reserved fallible region runtime Call"),
+            "different rejection authority: {error}");
+    }
+
+    #[test]
+    fn actual_tag9_only_source_requires_unique_unsafe_reachability() {
+        let original = actual_flat_source();
+        let baseline = super::parse(original).expect("actual flat fallible producer must parse");
+        assert!(!baseline.nodes.iter().any(|node|
+            node.kind == "Call" && matches!(node.second_integer, 10 | 11)));
+        let call_index = baseline.nodes.iter().enumerate().find_map(|(index, node)|
+            (node.kind == "Call" && node.second_integer == 9).then_some(index)).unwrap();
+        let (scope_index, block_index) = baseline.nodes.iter().enumerate().find_map(|(index, node)| {
+            if node.kind != "UnsafeScope" || node.children.len() != 1 { return None; }
+            let child = node.children[0];
+            let block = &baseline.nodes[child];
+            (block.kind == "Block" && block.children.iter().any(|statement| {
+                baseline.nodes[*statement].kind == "LocalDeclare" &&
+                    baseline.nodes[*statement].children.as_slice() == [call_index]
+            })).then_some((index, child))
+        }).expect("one acquisition scope in source");
+
+        let mutate_node = |index: usize, change: &dyn Fn(&mut Vec<String>)| {
+            let mut rows: Vec<String> = original.lines().map(str::to_owned).collect();
+            let prefix = format!("node: {index}|");
+            let matching: Vec<_> = rows.iter().enumerate().filter(|(_, row)|
+                row.starts_with(&prefix)).collect();
+            assert_eq!(matching.len(), 1);
+            let row_index = matching[0].0;
+            let mut fields: Vec<String> = rows[row_index]["node: ".len()..]
+                .split('|').map(str::to_owned).collect();
+            change(&mut fields);
+            rows[row_index] = format!("node: {}", fields.join("|"));
+            rows.join("\n") + "\n"
+        };
+        let outside = mutate_node(scope_index, &|fields| fields[1] = hex("Block"));
+        let error = super::parse(&outside).expect_err("tag9 constructor lost unsafe scope");
+        assert!(error.to_string().contains("not uniquely owned by an unsafe scope"),
+            "different rejection authority: {error}");
+        let duplicate = mutate_node(block_index, &|fields| {
+            let count: usize = fields[11].parse().unwrap();
+            fields[11] = (count + 1).to_string();
+            fields.push(call_index.to_string());
+        });
+        let error = super::parse(&duplicate).expect_err("tag9 constructor has two paths");
+        assert!(error.to_string().contains("shared canonical body"),
+            "different rejection authority: {error}");
+    }
+
+    #[test]
+    fn flat_owner_cleanup_rejects_inline_callee_substitution() {
+        let original = actual_flat_source();
+        let baseline = super::parse(original).expect("actual flat fallible producer must parse");
+        let insert_receiver = |callee_index: usize, inline: bool| {
+            let mut rows: Vec<String> = original.lines().map(str::to_owned).collect();
+            let node_count_at = rows.iter().position(|row| row.starts_with("node_count: "))
+                .expect("canonical node census missing");
+            let node_count = baseline.nodes.len();
+            assert_eq!(rows[node_count_at], format!("node_count: {node_count}"));
+            let first_node = rows.iter().position(|row| row.starts_with("node: "))
+                .expect("canonical node rows missing");
+            let old_nodes: Vec<String> = rows[first_node..first_node + node_count].to_vec();
+            let mut new_nodes = Vec::with_capacity(node_count + 1);
+            for (old_index, row) in old_nodes.iter().enumerate() {
+                if old_index == callee_index {
+                    new_nodes.push(format!("node: {}|{}|{}|{}||0|0|0|0|0|0|0",
+                        callee_index, hex("LocalRead"), hex("Void"), hex("os")));
+                }
+                let mut fields: Vec<String> = row["node: ".len()..]
+                    .split('|').map(str::to_owned).collect();
+                assert_eq!(fields[0], old_index.to_string());
+                fields[0] = (old_index + usize::from(old_index >= callee_index)).to_string();
+                let child_count: usize = fields[11].parse().unwrap();
+                for child in &mut fields[12..12 + child_count] {
+                    let index: usize = child.parse().unwrap();
+                    *child = (index + usize::from(index >= callee_index)).to_string();
+                }
+                if old_index == callee_index && inline {
+                    assert_eq!(child_count, 0);
+                    fields[1] = hex("FieldOrMethodSelect");
+                    fields[3] = hex("Free");
+                    fields[11] = "1".into();
+                    fields.push(callee_index.to_string());
+                }
+                new_nodes.push(format!("node: {}", fields.join("|")));
+            }
+            rows.splice(first_node..first_node + node_count, new_nodes);
+            rows[node_count_at] = format!("node_count: {}", node_count + 1);
+            for row in &mut rows {
+                if !row.starts_with("function: ") { continue; }
+                let mut fields: Vec<String> = row["function: ".len()..]
+                    .split('|').map(str::to_owned).collect();
+                let body: isize = fields[7].parse().unwrap();
+                if body >= callee_index as isize {
+                    fields[7] = (body + 1).to_string();
+                    *row = format!("function: {}", fields.join("|"));
+                }
+            }
+            rows.join("\n") + "\n"
+        };
+        for storage_kind in ["ResourceStorage", "LocalRead"] {
+            let calls: Vec<_> = baseline.nodes.iter().enumerate().filter(|(_, call)|
+                call.kind == "Call" && call.second_text == "release_region" &&
+                call.children.len() == 2 &&
+                baseline.nodes[call.children[1]].kind == storage_kind).collect();
+            assert_eq!(calls.len(), 1, "one release form per flat owner");
+            let callee_index = calls[0].1.children[0];
+            super::parse(&insert_receiver(callee_index, false))
+                .expect("renumber-only flat owner remains accepted");
+            let error = super::parse(&insert_receiver(callee_index, true))
+                .expect_err("flat owner cleanup callee dispatched inline");
+            assert!(error.to_string().contains("fallible owned out") ||
+                error.to_string().contains("scoped fallible"),
+                "different rejection authority: {error}");
+        }
     }
 }
 
@@ -7130,7 +7799,8 @@ mod byte_span_call_tests {
         Node {
             kind: kind.into(), ty: ty.into(), text: String::new(),
             second_text: second_text.into(), integer: 0, second_integer: 0,
-            isolated_call_plan: None, source_line: 0, source_column: 0,
+            isolated_call_plan: None, collection_intrinsic: None,
+            source_line: 0, source_column: 0,
             source_start: 0, source_end: 0, children,
         }
     }
@@ -7277,6 +7947,31 @@ mod byte_span_call_tests {
             .contains("shared"));
         malformed_extension.functions[1].scoped_byte_copy = None;
         assert!(new_call_reachability(&malformed_extension).unwrap().is_empty());
+
+        // A fallible constructor alone is a new cohort. It must trigger the
+        // bounded whole-body walk before the older recursive cleanup scans.
+        let mut constructor_only = program();
+        constructor_only.nodes[5].second_integer = 9;
+        assert_eq!(new_call_reachability(&constructor_only).unwrap().get(&5),
+            Some(&(1, 1)));
+        constructor_only.nodes[7].children.push(6);
+        assert!(new_call_reachability(&constructor_only).unwrap_err().to_string()
+            .contains("shared"));
+        constructor_only.nodes[7].children.pop();
+        let mut child = 7;
+        for _ in 0..1_025 {
+            let next = constructor_only.nodes.len();
+            constructor_only.nodes.push(node("Block", "Void", "", vec![child]));
+            child = next;
+        }
+        constructor_only.functions[1].body_node = Some(child);
+        assert!(new_call_reachability(&constructor_only).unwrap_err().to_string()
+            .contains("deep"));
+        let mut outside_unsafe = program();
+        outside_unsafe.nodes[5].second_integer = 9;
+        outside_unsafe.nodes[6].kind = "Block".into();
+        assert_eq!(new_call_reachability(&outside_unsafe).unwrap().get(&5),
+            Some(&(1, 0)));
     }
 
     #[test]
@@ -7316,7 +8011,7 @@ mod byte_span_call_tests {
 
     #[test]
     fn actual_scoped_parser_rejects_deep_unrelated_body_before_recursive_validators() {
-        let original = include_str!("testdata/scoped_byte_copy_caller_five_arg_producer.canonical");
+        let original = include_str!("testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical");
         let baseline = super::parse(original)
             .expect("actual source-produced scoped baseline must pass");
         let entry = baseline.entry_function;
@@ -7364,7 +8059,8 @@ mod region_operation_call_tests {
         Node {
             kind: kind.into(), ty: ty.into(), text: text.into(),
             second_text: second.into(), integer: 0, second_integer: 0,
-            isolated_call_plan: None, source_line: 0, source_column: 0,
+            isolated_call_plan: None, collection_intrinsic: None,
+            source_line: 0, source_column: 0,
             source_start: 0, source_end: 0, children,
         }
     }

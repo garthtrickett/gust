@@ -1318,73 +1318,27 @@ mod tests {
         }
 
         fn prepare_scoped_byte_adapter(&self) {
-            let adapter = b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity) { if (count < 0 || capacity < 0) return -1; if (count > capacity) return -3; for (int i = 0; i < count; i++) output[i] = input[i]; return count; }\n";
-            let options = b"-O0 -fno-builtin\n";
-            fs::write(self.package.join("src.txt"), adapter).unwrap();
-            fs::write(self.package.join("options.txt"), options).unwrap();
-            let compiler = std::process::Command::new("/usr/bin/cc")
-                .env_clear().env("PATH", "/usr/bin:/bin").env("LANG", "C")
-                .arg("-c").arg("-x").arg("c").arg("-O0")
-                .arg("-fno-builtin").arg(self.package.join("src.txt"))
-                .arg("-o").arg(self.package.join("adapter.o"))
-                .output().unwrap();
-            assert!(compiler.status.success(), "test adapter compile: {}",
-                String::from_utf8_lossy(&compiler.stderr));
-            let original = String::from_utf8(
-                fs::read(self.package.join("manifest.txt")).unwrap()).unwrap();
-            let mut signed = original.replace(FORMAT, BYTE_SPAN_FORMAT);
-            let pointer = hex(b"RawPointer(Byte)");
-            signed = signed.replace(
-                "symbol: gust_test|496e74|value|1|496e74@value",
-                &format!("symbol: approved_byte_adapter|496e74|value|4|{pointer}@borrow_read_call,496e74@value,{pointer}@borrow_write_call,496e74@value|0@1@read,2@3@write"));
-            for (kind, name) in [("source", "src.txt"),
-                                 ("build_options", "options.txt"),
-                                 ("object", "adapter.o")] {
-                let old = original.lines().find(|line|
-                    line.starts_with(&format!("artifact: {kind}|{name}|"))).unwrap();
-                let bytes = fs::read(self.package.join(name)).unwrap();
-                let digest: [u8; 32] = Sha256::digest(&bytes).into();
-                signed = signed.replacen(old,
-                    &format!("artifact: {kind}|{name}|{}", hex(&digest)), 1);
-            }
-            self.sign(signed.as_bytes());
+            self.prepare_scoped_byte_adapter_source(
+                b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity) { if (count < 0 || capacity < 0) return -1; if (count > capacity) return -3; for (int i = 0; i < count; i++) output[i] = input[i]; return count; }\n",
+                false,
+            );
         }
 
         fn prepare_scoped_byte_adapter_with_level(&self) {
-            let adapter = b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity, int level) { if (level != 1 || count < 0 || capacity < 0) return -1; if (count > capacity) return -3; for (int i = 0; i < count; i++) output[i] = input[i]; return count; }\n";
-            let options = b"-O0 -fno-builtin\n";
-            fs::write(self.package.join("src.txt"), adapter).unwrap();
-            fs::write(self.package.join("options.txt"), options).unwrap();
-            let compiler = std::process::Command::new("/usr/bin/cc")
-                .env_clear().env("PATH", "/usr/bin:/bin").env("LANG", "C")
-                .arg("-c").arg("-x").arg("c").arg("-O0")
-                .arg("-fno-builtin").arg(self.package.join("src.txt"))
-                .arg("-o").arg(self.package.join("adapter.o"))
-                .output().unwrap();
-            assert!(compiler.status.success(), "test adapter compile: {}",
-                String::from_utf8_lossy(&compiler.stderr));
-            let original = String::from_utf8(
-                fs::read(self.package.join("manifest.txt")).unwrap()).unwrap();
-            let mut signed = original.replace(FORMAT, BYTE_SPAN_FORMAT);
-            let pointer = hex(b"RawPointer(Byte)");
-            signed = signed.replace(
-                "symbol: gust_test|496e74|value|1|496e74@value",
-                &format!("symbol: approved_byte_adapter|496e74|value|5|{pointer}@borrow_read_call,496e74@value,{pointer}@borrow_write_call,496e74@value,496e74@value|0@1@read,2@3@write"));
-            for (kind, name) in [("source", "src.txt"),
-                                 ("build_options", "options.txt"),
-                                 ("object", "adapter.o")] {
-                let old = original.lines().find(|line|
-                    line.starts_with(&format!("artifact: {kind}|{name}|"))).unwrap();
-                let bytes = fs::read(self.package.join(name)).unwrap();
-                let digest: [u8; 32] = Sha256::digest(&bytes).into();
-                signed = signed.replacen(old,
-                    &format!("artifact: {kind}|{name}|{}", hex(&digest)), 1);
-            }
-            self.sign(signed.as_bytes());
+            self.prepare_scoped_byte_adapter_source(
+                b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity, int level) { if (level != 1 || count < 0 || capacity < 0) return -1; if (count > capacity) return -3; for (int i = 0; i < count; i++) output[i] = input[i]; return count; }\n",
+                true,
+            );
         }
 
         fn prepare_scoped_byte_adapter_error(&self) {
-            let adapter = b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity) { (void)input; (void)count; (void)output; (void)capacity; return -3; }\n";
+            self.prepare_scoped_byte_adapter_source(
+                b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity) { (void)input; (void)count; (void)output; (void)capacity; return -3; }\n",
+                false,
+            );
+        }
+
+        fn prepare_scoped_byte_adapter_source(&self, adapter: &[u8], with_level: bool) {
             let options = b"-O0 -fno-builtin\n";
             fs::write(self.package.join("src.txt"), adapter).unwrap();
             fs::write(self.package.join("options.txt"), options).unwrap();
@@ -1400,9 +1354,14 @@ mod tests {
                 fs::read(self.package.join("manifest.txt")).unwrap()).unwrap();
             let mut signed = original.replace(FORMAT, BYTE_SPAN_FORMAT);
             let pointer = hex(b"RawPointer(Byte)");
-            signed = signed.replace(
-                "symbol: gust_test|496e74|value|1|496e74@value",
-                &format!("symbol: approved_byte_adapter|496e74|value|4|{pointer}@borrow_read_call,496e74@value,{pointer}@borrow_write_call,496e74@value|0@1@read,2@3@write"));
+            let mut parameters = format!(
+                "{pointer}@borrow_read_call,496e74@value,{pointer}@borrow_write_call,496e74@value");
+            if with_level { parameters.push_str(",496e74@value"); }
+            let arity = if with_level { 5 } else { 4 };
+            let old_symbol = "symbol: gust_test|496e74|value|1|496e74@value";
+            assert_eq!(original.matches(old_symbol).count(), 1);
+            signed = signed.replacen(old_symbol,
+                &format!("symbol: approved_byte_adapter|496e74|value|{arity}|{parameters}|0@1@read,2@3@write"), 1);
             for (kind, name) in [("source", "src.txt"),
                                  ("build_options", "options.txt"),
                                  ("object", "adapter.o")] {
@@ -1656,6 +1615,7 @@ mod tests {
             integer: 0,
             second_integer: 0,
             isolated_call_plan: None,
+            collection_intrinsic: None,
             source_line: 1,
             source_column: 1,
             source_start: 0,
@@ -1690,6 +1650,7 @@ mod tests {
             integer: 0,
             second_integer: 0,
             isolated_call_plan: None,
+            collection_intrinsic: None,
             source_line: 1,
             source_column: 1,
             source_start: 0,
@@ -1824,6 +1785,7 @@ mod tests {
                 }], retained: None,
             })),
             source_line: 0, source_column: 0, source_start: 0, source_end: 0,
+            collection_intrinsic: None,
             children: Vec::new(),
         });
         assert!(verify_program(&manifest, &program, &TEST_REGISTRY).is_ok());
@@ -1866,7 +1828,7 @@ mod tests {
         assert!(verify_signature_at(signed.as_bytes(), &signature,
             &manifest, &snapshot, snapshot.issued_unix_seconds).is_ok());
 
-        let canonical = include_str!("testdata/scoped_byte_copy_no_defer_producer.canonical");
+        let canonical = include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical");
         let mut program = crate::full_program::parse(canonical).unwrap();
         assert!(verify_program(&manifest, &program, &SCOPED_BYTE_REGISTRY).is_ok());
         let call = program.nodes.iter_mut().find(|node|
@@ -1883,7 +1845,7 @@ mod tests {
         // checks admission and private staging, not link or execution.
         let fixture = Fixture::new();
         fixture.prepare_scoped_byte_adapter();
-        let canonical = include_str!("testdata/scoped_byte_copy_no_defer_producer.canonical");
+        let canonical = include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical");
         let program = crate::full_program::parse(canonical).unwrap();
         let output = fixture.root.join("scoped-output");
         let package = VerifiedPackage::admit(&fixture.package,
@@ -1901,43 +1863,44 @@ mod tests {
             &SCOPED_BYTE_REGISTRY, &program, &fixture.snapshot(), &output).is_err());
     }
 
-    #[test]
-    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
-    fn actual_typed_scoped_call_links_and_runs_with_signed_test_adapter() {
-        struct RuntimeSibling(PathBuf);
-        impl Drop for RuntimeSibling {
-            fn drop(&mut self) {
-                let _ = fs::remove_file(&self.0);
-            }
+    struct RuntimeSibling(PathBuf);
+
+    impl RuntimeSibling {
+        fn stage() -> Self {
+            let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
+                .expect("focused runner must bind the compiler-owned runtime archive"));
+            let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
+                .expect("focused runner must pin the compiler-owned runtime archive");
+            assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
+            let sibling = std::env::current_exe().unwrap().parent().unwrap()
+                .join("gust-runtime-package.a");
+            assert!(!sibling.exists(), "isolated test target must own runtime sibling");
+            fs::copy(&archive, &sibling).unwrap();
+            assert_eq!(hex(&Sha256::digest(fs::read(&sibling).unwrap())), expected_digest);
+            Self(sibling)
         }
+    }
 
-        let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
-            .expect("focused runner must bind the compiler-owned runtime archive"));
-        let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
-            .expect("focused runner must pin the compiler-owned runtime archive");
-        assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
-        let sibling = std::env::current_exe().unwrap().parent().unwrap()
-            .join("gust-runtime-package.a");
-        assert!(!sibling.exists(), "isolated test target must own runtime sibling");
-        fs::copy(&archive, &sibling).unwrap();
-        let _runtime_sibling = RuntimeSibling(sibling.clone());
-        assert_eq!(hex(&Sha256::digest(fs::read(&sibling).unwrap())), expected_digest);
+    impl Drop for RuntimeSibling {
+        fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
+    }
 
-        let fixture = Fixture::new();
-        fixture.prepare_scoped_byte_adapter();
-        let program = crate::full_program::parse(include_str!(
-            "testdata/scoped_byte_copy_no_defer_producer.canonical")).unwrap();
+    fn run_scoped_linked_case(fixture: &Fixture, canonical: &str,
+        object_name: &str, output_name: &str, expected_exit: i32,
+        expectation: &str) {
+        let runtime = RuntimeSibling::stage();
+        let program = crate::full_program::parse(canonical).unwrap();
         verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
-            Some(&sibling), &sibling, &[]).unwrap();
-        let object = fixture.root.join("scoped.o");
+            Some(&runtime.0), &runtime.0, &[]).unwrap();
+        let object = fixture.root.join(object_name);
         crate::full_program::lower_program(&program, &object).unwrap();
-        let output = fixture.root.join("scoped-linked");
+        let output = fixture.root.join(output_name);
         let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
             &program, &fixture.snapshot(), &output).unwrap();
         let staged = package.link_inputs().to_vec();
         let manifest_digest = hex(&package.manifest_digest());
         let mut request = link_request(package, object, output.clone());
-        request.runtime_package = Some(sibling);
+        request.runtime_package = Some(runtime.0.clone());
         let report = crate::run_compiler_mir_link_request(request).unwrap();
         assert!(report.published);
         assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
@@ -1946,268 +1909,78 @@ mod tests {
         assert!(staged.iter().all(|path| !path.exists()));
         let status = std::process::Command::new(&output)
             .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
-        assert_eq!(status.code(), Some(2), "the source main returns two copied bytes");
+        assert_eq!(status.code(), Some(expected_exit), "{expectation}");
         let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
             .expect("focused runner must own the generated executable path"));
         assert!(!retained.exists(), "focused runner output is already occupied");
         fs::copy(&output, &retained).unwrap();
         assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn actual_typed_scoped_call_links_and_runs_with_signed_test_adapter() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical"),
+            "scoped.o", "scoped-linked", 2,
+            "the source main returns copied-byte count 2");
     }
 
     #[test]
     #[ignore = "requires a separately pinned compiler-owned runtime archive"]
     fn source_produced_renamed_owner_and_result_link_with_signed_test_adapter() {
-        struct RuntimeSibling(PathBuf);
-        impl Drop for RuntimeSibling {
-            fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
-        }
-
-        let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
-            .expect("focused runner must bind the compiler-owned runtime archive"));
-        let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
-            .expect("focused runner must pin the compiler-owned runtime archive");
-        assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
-        let sibling = std::env::current_exe().unwrap().parent().unwrap()
-            .join("gust-runtime-package.a");
-        assert!(!sibling.exists(), "isolated test target must own runtime sibling");
-        fs::copy(&archive, &sibling).unwrap();
-        let _runtime_sibling = RuntimeSibling(sibling.clone());
-
         let fixture = Fixture::new();
         fixture.prepare_scoped_byte_adapter();
-        let program = crate::full_program::parse(include_str!(
-            "testdata/scoped_byte_copy_renamed_owner_result_producer.canonical")).unwrap();
-        verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
-            Some(&sibling), &sibling, &[]).unwrap();
-        let object = fixture.root.join("renamed-scoped.o");
-        crate::full_program::lower_program(&program, &object).unwrap();
-        let output = fixture.root.join("renamed-scoped-linked");
-        let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
-            &program, &fixture.snapshot(), &output).unwrap();
-        let staged = package.link_inputs().to_vec();
-        let manifest_digest = hex(&package.manifest_digest());
-        let mut request = link_request(package, object, output.clone());
-        request.runtime_package = Some(sibling);
-        let report = crate::run_compiler_mir_link_request(request).unwrap();
-        assert!(report.published);
-        assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
-        assert_eq!(report.approved_package_manifest_sha256.as_deref(),
-            Some(manifest_digest.as_str()));
-        assert!(staged.iter().all(|path| !path.exists()));
-        let status = std::process::Command::new(&output)
-            .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
-        assert_eq!(status.code(), Some(2),
-            "renamed opaque owner and result must preserve two-byte native result");
-        let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
-            .expect("focused runner must own the generated executable path"));
-        assert!(!retained.exists(), "focused runner output is already occupied");
-        fs::copy(&output, &retained).unwrap();
-        assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_renamed_types_producer.canonical"),
+            "renamed-scoped.o", "renamed-scoped-linked", 2,
+            "renamed opaque owner and result must preserve native count 2");
     }
 
     #[test]
     #[ignore = "requires a separately pinned compiler-owned runtime archive"]
     fn actual_zero_length_scoped_call_links_and_runs_with_signed_test_adapter() {
-        struct RuntimeSibling(PathBuf);
-        impl Drop for RuntimeSibling {
-            fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
-        }
-
-        let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
-            .expect("focused runner must bind the compiler-owned runtime archive"));
-        let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
-            .expect("focused runner must pin the compiler-owned runtime archive");
-        assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
-        let sibling = std::env::current_exe().unwrap().parent().unwrap()
-            .join("gust-runtime-package.a");
-        assert!(!sibling.exists(), "isolated test target must own runtime sibling");
-        fs::copy(&archive, &sibling).unwrap();
-        let _runtime_sibling = RuntimeSibling(sibling.clone());
-        assert_eq!(hex(&Sha256::digest(fs::read(&sibling).unwrap())), expected_digest);
-
         let fixture = Fixture::new();
         fixture.prepare_scoped_byte_adapter();
-        let program = crate::full_program::parse(include_str!(
-            "testdata/scoped_byte_copy_zero_length_producer.canonical")).unwrap();
-        verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
-            Some(&sibling), &sibling, &[]).unwrap();
-        let object = fixture.root.join("zero-scoped.o");
-        crate::full_program::lower_program(&program, &object).unwrap();
-        let output = fixture.root.join("zero-scoped-linked");
-        let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
-            &program, &fixture.snapshot(), &output).unwrap();
-        let staged = package.link_inputs().to_vec();
-        let manifest_digest = hex(&package.manifest_digest());
-        let mut request = link_request(package, object, output.clone());
-        request.runtime_package = Some(sibling);
-        let report = crate::run_compiler_mir_link_request(request).unwrap();
-        assert!(report.published);
-        assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
-        assert_eq!(report.approved_package_manifest_sha256.as_deref(),
-            Some(manifest_digest.as_str()));
-        assert!(staged.iter().all(|path| !path.exists()));
-        let status = std::process::Command::new(&output)
-            .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
-        assert_eq!(status.code(), Some(0),
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_zero_length_producer.canonical"),
+            "zero-scoped.o", "zero-scoped-linked", 0,
             "zero input and zero output capacity must return zero");
-        let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
-            .expect("focused runner must own the generated executable path"));
-        assert!(!retained.exists(), "focused runner output is already occupied");
-        fs::copy(&output, &retained).unwrap();
-        assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
     }
 
     #[test]
     #[ignore = "requires a separately pinned compiler-owned runtime archive"]
     fn actual_five_argument_scoped_call_links_and_runs_with_signed_test_adapter() {
-        struct RuntimeSibling(PathBuf);
-        impl Drop for RuntimeSibling {
-            fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
-        }
-
-        let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
-            .expect("focused runner must bind the compiler-owned runtime archive"));
-        let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
-            .expect("focused runner must pin the compiler-owned runtime archive");
-        assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
-        let sibling = std::env::current_exe().unwrap().parent().unwrap()
-            .join("gust-runtime-package.a");
-        assert!(!sibling.exists(), "isolated test target must own runtime sibling");
-        fs::copy(&archive, &sibling).unwrap();
-        let _runtime_sibling = RuntimeSibling(sibling.clone());
-
         let fixture = Fixture::new();
         fixture.prepare_scoped_byte_adapter_with_level();
-        let program = crate::full_program::parse(include_str!(
-            "testdata/scoped_byte_copy_local_five_arg_producer.canonical")).unwrap();
-        verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
-            Some(&sibling), &sibling, &[]).unwrap();
-        let object = fixture.root.join("five-arg-scoped.o");
-        crate::full_program::lower_program(&program, &object).unwrap();
-        let output = fixture.root.join("five-arg-scoped-linked");
-        let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
-            &program, &fixture.snapshot(), &output).unwrap();
-        let staged = package.link_inputs().to_vec();
-        let manifest_digest = hex(&package.manifest_digest());
-        let mut request = link_request(package, object, output.clone());
-        request.runtime_package = Some(sibling);
-        let report = crate::run_compiler_mir_link_request(request).unwrap();
-        assert!(report.published);
-        assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
-        assert_eq!(report.approved_package_manifest_sha256.as_deref(),
-            Some(manifest_digest.as_str()));
-        assert!(staged.iter().all(|path| !path.exists()));
-        let status = std::process::Command::new(&output)
-            .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
-        assert_eq!(status.code(), Some(2),
-            "five-argument adapter with level one must copy two bytes");
-        let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
-            .expect("focused runner must own the generated executable path"));
-        assert!(!retained.exists(), "focused runner output is already occupied");
-        fs::copy(&output, &retained).unwrap();
-        assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_local_five_arg_producer.canonical"),
+            "five-arg-scoped.o", "five-arg-scoped-linked", 2,
+            "five-argument adapter with level one must return copied-byte count 2");
     }
 
     #[test]
     #[ignore = "requires a separately pinned compiler-owned runtime archive"]
     fn actual_caller_borrowed_five_argument_scoped_call_links_and_runs() {
-        struct RuntimeSibling(PathBuf);
-        impl Drop for RuntimeSibling {
-            fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
-        }
-
-        let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
-            .expect("focused runner must bind the compiler-owned runtime archive"));
-        let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
-            .expect("focused runner must pin the compiler-owned runtime archive");
-        assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
-        let sibling = std::env::current_exe().unwrap().parent().unwrap()
-            .join("gust-runtime-package.a");
-        assert!(!sibling.exists(), "isolated test target must own runtime sibling");
-        fs::copy(&archive, &sibling).unwrap();
-        let _runtime_sibling = RuntimeSibling(sibling.clone());
-
         let fixture = Fixture::new();
         fixture.prepare_scoped_byte_adapter_with_level();
-        let program = crate::full_program::parse(include_str!(
-            "testdata/scoped_byte_copy_caller_five_arg_producer.canonical")).unwrap();
-        verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
-            Some(&sibling), &sibling, &[]).unwrap();
-        let object = fixture.root.join("caller-borrowed-scoped.o");
-        crate::full_program::lower_program(&program, &object).unwrap();
-        let output = fixture.root.join("caller-borrowed-scoped-linked");
-        let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
-            &program, &fixture.snapshot(), &output).unwrap();
-        let staged = package.link_inputs().to_vec();
-        let manifest_digest = hex(&package.manifest_digest());
-        let mut request = link_request(package, object, output.clone());
-        request.runtime_package = Some(sibling);
-        let report = crate::run_compiler_mir_link_request(request).unwrap();
-        assert!(report.published);
-        assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
-        assert_eq!(report.approved_package_manifest_sha256.as_deref(),
-            Some(manifest_digest.as_str()));
-        assert!(staged.iter().all(|path| !path.exists()));
-        let status = std::process::Command::new(&output)
-            .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
-        assert_eq!(status.code(), Some(2),
-            "caller-borrowed input and fifth scalar must copy two bytes");
-        let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
-            .expect("focused runner must own the generated executable path"));
-        assert!(!retained.exists(), "focused runner output is already occupied");
-        fs::copy(&output, &retained).unwrap();
-        assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical"),
+            "caller-borrowed-scoped.o", "caller-borrowed-scoped-linked", 2,
+            "caller-borrowed input and fifth scalar must return copied-byte count 2");
     }
 
     #[test]
     #[ignore = "requires a separately pinned compiler-owned runtime archive"]
     fn actual_signed_adapter_error_returns_before_output_publication() {
-        struct RuntimeSibling(PathBuf);
-        impl Drop for RuntimeSibling {
-            fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
-        }
-
-        let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
-            .expect("focused runner must bind the compiler-owned runtime archive"));
-        let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
-            .expect("focused runner must pin the compiler-owned runtime archive");
-        assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
-        let sibling = std::env::current_exe().unwrap().parent().unwrap()
-            .join("gust-runtime-package.a");
-        assert!(!sibling.exists(), "isolated test target must own runtime sibling");
-        fs::copy(&archive, &sibling).unwrap();
-        let _runtime_sibling = RuntimeSibling(sibling.clone());
-
         let fixture = Fixture::new();
         fixture.prepare_scoped_byte_adapter_error();
-        let program = crate::full_program::parse(include_str!(
-            "testdata/scoped_byte_copy_no_defer_producer.canonical")).unwrap();
-        verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
-            Some(&sibling), &sibling, &[]).unwrap();
-        let object = fixture.root.join("error-scoped.o");
-        crate::full_program::lower_program(&program, &object).unwrap();
-        let output = fixture.root.join("error-scoped-linked");
-        let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
-            &program, &fixture.snapshot(), &output).unwrap();
-        let staged = package.link_inputs().to_vec();
-        let manifest_digest = hex(&package.manifest_digest());
-        let mut request = link_request(package, object, output.clone());
-        request.runtime_package = Some(sibling);
-        let report = crate::run_compiler_mir_link_request(request).unwrap();
-        assert!(report.published);
-        assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
-        assert_eq!(report.approved_package_manifest_sha256.as_deref(),
-            Some(manifest_digest.as_str()));
-        assert!(staged.iter().all(|path| !path.exists()));
-        let status = std::process::Command::new(&output)
-            .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
-        assert_eq!(status.code(), Some(253),
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical"),
+            "error-scoped.o", "error-scoped-linked", 253,
             "signed adapter error -3 must exit before output publication");
-        let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
-            .expect("focused runner must own the generated executable path"));
-        assert!(!retained.exists(), "focused runner output is already occupied");
-        fs::copy(&output, &retained).unwrap();
-        assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
     }
 
     #[test]

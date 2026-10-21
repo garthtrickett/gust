@@ -29,7 +29,8 @@ type MirNativeFullProgramFunction[ctx] struct {
     scoped_byte_copy_plan: str,
     return_type: str,
     body: Index[ast.BlockStatement[ctx], ctx],
-    body_node_index: int
+    body_node_index: int,
+    node_start_index: int
 }
 
 // Structured canonical MIR node. Source syntax has already been resolved and
@@ -38,6 +39,14 @@ type MirNativeFullProgramFunction[ctx] struct {
 // text/integer payloads are kind-specific operands, and `children` contains
 // post-order canonical node indices. No raw arena index or backend-created
 // layout/ABI decision is serialized.
+type MirNativeCollectionIntrinsic[ctx] struct {
+    opcode: str,
+    receiver_type: str,
+    element_type: str,
+    layout_id: str,
+    brand: str
+}
+
 type MirNativeFullProgramNode[ctx] struct {
     kind: str,
     type_identity: str,
@@ -49,7 +58,8 @@ type MirNativeFullProgramNode[ctx] struct {
     source_column: int,
     source_start_offset: int,
     source_end_offset: int,
-    children: Index[std.Vector[int, ctx], ctx]
+    children: Index[std.Vector[int, ctx], ctx],
+    collection: MirNativeCollectionIntrinsic[ctx]
 }
 
 type MirNativeFullProgramLayout[ctx] struct {
@@ -178,6 +188,56 @@ func mir_native_full_program_type_identity(value_type: ast.Type[ctx], env: &type
     mut resolved := typechecker.env_resolve_type(env, value_type, ctx);
     mut erased := codegen.codegen_erase_type(resolved, env, ctx);
     return std.Clone(ctx, ast.serialize_type(erased, ctx));
+}
+
+// Record only a typechecked built-in collection operation. This producer fact
+// chooses which source expressions receive a new executable MIR opcode; the
+// worker independently checks the emitted operation, layout and call graph.
+func mir_native_full_program_collection_candidate(
+    value_type: ast.Type[ctx], opcode: str,
+    env: &typechecker.TypeEnvironment[ctx], ctx: &Arena
+) MirNativeCollectionIntrinsic[ctx] {
+    mut candidate: MirNativeCollectionIntrinsic[ctx];
+    candidate.opcode = "";
+    candidate.receiver_type = "";
+    candidate.element_type = "";
+    candidate.layout_id = "";
+    candidate.brand = "";
+    mut resolved := typechecker.env_resolve_type(env, value_type, ctx);
+    mut value := resolved;
+    unsafe {
+        if value.tag == 11 { // One borrowed Reference retains its own type.
+            value = ctx[value.Reference.inner];
+        }
+        if value.tag != 8 ||
+           typechecker.env_get_struct_container_kind(
+               env as *typechecker.TypeEnvironment[ctx],
+               value.Struct.struct_name
+           ) != typechecker.typechecker_container_kind_vector() {
+            return candidate;
+        }
+        guard registered := (*env).struct_registry.Get(value.Struct.struct_name) else {
+            return candidate;
+        };
+        mut element := typechecker.typechecker_get_template_elem_type(
+            value.Struct.struct_name, "data",
+            env as *typechecker.TypeEnvironment[ctx], ctx
+        );
+        element = typechecker.env_resolve_type(env, element, ctx);
+        if element.tag == 3 { return candidate; }
+        candidate.opcode = std.Clone(ctx, opcode);
+        candidate.receiver_type = mir_native_full_program_type_identity(
+            resolved, env, ctx
+        );
+        candidate.element_type = mir_native_full_program_type_identity(
+            element, env, ctx
+        );
+        candidate.layout_id = std.Clone(ctx, value.Struct.struct_name);
+        if registered.brand != empty[Index[str, ctx]] {
+            candidate.brand = std.Clone(ctx, ctx[registered.brand]);
+        }
+    }
+    return candidate;
 }
 
 func mir_native_full_program_type_is_initial_scalar(value_type: ast.Type[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
@@ -1473,6 +1533,11 @@ func mir_native_full_program_make_node(kind: str, type_identity: str, text_opera
     node.source_start_offset = source_start_offset;
     node.source_end_offset = source_end_offset;
     node.children = mir_native_full_program_empty_int_vector(ctx);
+    node.collection.opcode = "";
+    node.collection.receiver_type = "";
+    node.collection.element_type = "";
+    node.collection.layout_id = "";
+    node.collection.brand = "";
     return node;
 }
 
@@ -1491,6 +1556,138 @@ func mir_native_full_program_push_node(nodes_index: Index[std.Vector[MirNativeFu
     nodes.Push(node);
     ctx.Set(nodes_index, nodes);
     return index;
+}
+
+func mir_native_full_program_activate_collection_node(
+    node_index: int,
+    nodes: *std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        mut node := (*nodes)[node_index];
+        if len(node.collection.opcode) == 0 { return 1; }
+        mut old_children: std.Vector[int, ctx] := ctx[node.children];
+        mut intrinsic_children: std.Vector[int, ctx] := std.VectorNew(ctx);
+        if std.str_eq(node.collection.opcode, "Read") == 1 {
+            if std.str_eq(node.kind, "IndexRead") == 0 ||
+               len(old_children) != 2 { return 0; }
+            intrinsic_children.Push(old_children[0]);
+            intrinsic_children.Push(old_children[1]);
+        } else if std.str_eq(node.collection.opcode, "Create") == 1 {
+            if std.str_eq(node.kind, "Call") == 0 ||
+               len(old_children) != 2 { return 0; }
+            intrinsic_children.Push(old_children[1]);
+        } else if std.str_eq(node.collection.opcode, "Clear") == 1 ||
+                  std.str_eq(node.collection.opcode, "Append") == 1 {
+            mut expected_children := 1;
+            if std.str_eq(node.collection.opcode, "Append") == 1 {
+                expected_children = 2;
+            }
+            if std.str_eq(node.kind, "Call") == 0 ||
+               len(old_children) != expected_children {
+                return 0;
+            }
+            mut callee := (*nodes)[old_children[0]];
+            mut receiver_children: std.Vector[int, ctx] := ctx[callee.children];
+            if std.str_eq(callee.kind, "FieldOrMethodSelect") == 0 ||
+               len(receiver_children) != 1 { return 0; }
+            intrinsic_children.Push(receiver_children[0]);
+            if std.str_eq(node.collection.opcode, "Append") == 1 {
+                intrinsic_children.Push(old_children[1]);
+            }
+        } else { return 0; }
+        node.kind = "CollectionIntrinsic";
+        node.text_operand = "";
+        node.second_text_operand = "";
+        node.integer_operand = 0;
+        node.second_integer_operand = 0;
+        node.children = mir_native_full_program_empty_int_vector(ctx);
+        ctx.Set(node.children, intrinsic_children);
+        (*nodes).Set(node_index, node);
+    }
+    return 1;
+}
+
+// Only functions with a real scoped source candidate and their direct caller
+// closure receive new executable collection nodes. This source selection is
+// not worker authority: the worker checks the complete call graph and every
+// intrinsic operand/extent itself before lowering any of them.
+func mir_native_full_program_activate_collection_intrinsics(
+    functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx],
+    nodes_index: Index[std.Vector[MirNativeFullProgramNode[ctx], ctx], ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[nodes_index];
+        mut selected: std.Vector[int, ctx] := std.VectorNew(ctx);
+        mut any_selected := 0;
+        mut index := 0;
+        while index < len(functions) {
+            mut chosen := 0;
+            if len(functions[index].scoped_byte_copy_plan) > 0 {
+                chosen = 1;
+                any_selected = 1;
+            }
+            selected.Push(chosen);
+            index = index + 1;
+        }
+        // Ordinary compiler and user programs without this opt-in cohort keep
+        // their historical linear source route. No call graph scan is needed.
+        if any_selected == 0 { return 1; }
+        mut inspected_edges := 0;
+        mut pass := 0;
+        while pass < len(functions) {
+            mut changed := 0;
+            index = 0;
+            while index < len(functions) {
+                mut function := functions[index];
+                if selected[index] == 0 && function.body_node_index >= 0 &&
+                   function.node_start_index >= 0 {
+                    mut node_index := function.node_start_index;
+                    while node_index <= function.body_node_index {
+                        mut node := nodes[node_index];
+                        if std.str_eq(node.kind, "Call") == 1 {
+                            mut target := 0;
+                            while target < len(functions) {
+                                if inspected_edges >= 1000000 { return 0; }
+                                inspected_edges = inspected_edges + 1;
+                                if selected[target] == 1 &&
+                                   std.str_eq(node.second_text_operand,
+                                              functions[target].qualified_name) == 1 {
+                                    selected.Set(index, 1);
+                                    changed = 1;
+                                    break;
+                                }
+                                target = target + 1;
+                            }
+                        }
+                        if selected[index] == 1 { break; }
+                        node_index = node_index + 1;
+                    }
+                }
+                index = index + 1;
+            }
+            if changed == 0 { break; }
+            pass = pass + 1;
+        }
+        index = 0;
+        while index < len(functions) {
+            mut function := functions[index];
+            if selected[index] == 1 && function.body_node_index >= 0 &&
+               function.node_start_index >= 0 {
+                mut node_index := function.node_start_index;
+                while node_index <= function.body_node_index {
+                    if mir_native_full_program_activate_collection_node(
+                        node_index, &nodes, ctx
+                    ) == 0 { return 0; }
+                    node_index = node_index + 1;
+                }
+            }
+            index = index + 1;
+        }
+        ctx.Set(nodes_index, nodes);
+    }
+    return 1;
 }
 
 func mir_native_full_program_expression_type_identity(expression_index: Index[ast.Expression[ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
@@ -1579,6 +1776,16 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
             node = mir_native_full_program_node_with_child(node, child, ctx);
         } else if expression.tag == 8 {
             node.kind = "IndexRead";
+            mut indexed_type := codegen.codegen_get_expression_type(
+                expression.IndexAccess.allocator, env, ctx
+            );
+            node.collection = mir_native_full_program_collection_candidate(
+                indexed_type, "Read", env, ctx
+            );
+            if std.str_eq(node.collection.element_type,
+                          node.type_identity) == 0 {
+                node.collection.opcode = "";
+            }
             mut allocator := mir_native_full_program_flatten_expression(
                 expression.IndexAccess.allocator, nodes_index, env, ctx
             );
@@ -2016,6 +2223,33 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                     node, argument, ctx
                 );
                 argument_index = argument_index + 1;
+            }
+            if node.second_integer_operand == 0 {
+                mut call_function := ctx[expression.Call.function];
+                if typechecker.typechecker_is_contextual_generic_constructor_name(
+                    raw_callee
+                ) == 1 && len(arguments) == 1 {
+                    mut result_type := codegen.codegen_get_expression_type(
+                        expression_index, env, ctx
+                    );
+                    node.collection = mir_native_full_program_collection_candidate(
+                        result_type, "Create", env, ctx
+                    );
+                } else if call_function.tag == 11 { // Selector
+                    mut operation := "";
+                    if std.str_eq(call_function.Selector.right, "Push") == 1 &&
+                       len(arguments) == 1 { operation = "Append"; }
+                    if std.str_eq(call_function.Selector.right, "Clear") == 1 &&
+                       len(arguments) == 0 { operation = "Clear"; }
+                    if len(operation) > 0 {
+                        mut receiver_type := codegen.codegen_get_expression_type(
+                            call_function.Selector.left, env, ctx
+                        );
+                        node.collection = mir_native_full_program_collection_candidate(
+                            receiver_type, operation, env, ctx
+                        );
+                    }
+                }
             }
         } else if expression.tag == 13 {
             node.kind = "ZeroInitialize";
@@ -2610,6 +2844,27 @@ func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[c
     return functions[index].isolated_call_plan;
 }
 
+// The executable collection operation has its own versioned row extension.
+// These source facts are candidates; the worker validates their operands,
+// layout, brand, and reaching storage history before lowering.
+func mir_native_full_program_node_collection_plan(node: MirNativeFullProgramNode[ctx], ctx: &Arena) str {
+    if std.str_eq(node.kind, "CollectionIntrinsic") == 0 { return ""; }
+    if len(node.collection.opcode) == 0 || len(node.collection.layout_id) == 0 {
+        return "";
+    }
+    mut plan := "|collection_intrinsic.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.opcode, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.receiver_type, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.element_type, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.layout_id, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.brand, ctx));
+    return std.Clone(ctx, plan);
+}
+
 func mir_native_full_program_append_mutex_constructor_helpers(
     model: MirNativeFullProgramModel[ctx],
     functions_index: Index[std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx],
@@ -2760,6 +3015,7 @@ func mir_native_full_program_append_mutex_constructor_helpers(
                 helper.return_type = std.Clone(ctx, mutex_type);
                 helper.body = empty[Index[ast.BlockStatement[ctx], ctx]];
                 helper.body_node_index = body_index;
+                helper.node_start_index = body_index;
                 functions.Push(helper);
             }
         }
@@ -3268,6 +3524,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     function.return_type = std.Clone(ctx, "");
                     function.body = statement.FunctionDecl.body;
                     function.body_node_index = 0 - 1;
+                    function.node_start_index = 0 - 1;
 
                     if mir_native_full_program_function_index(
                         functions,
@@ -3545,6 +3802,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     }
                     mut updated := functions[function_index];
                     updated.body_node_index = body_node;
+                    updated.node_start_index = node_start;
                     mut lowered_nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[model.nodes];
                     updated.scoped_byte_copy_plan = mir_native_full_program_scoped_byte_copy_candidate(
                         updated, functions, lowered_nodes, node_start, body_node, ctx
@@ -3559,6 +3817,15 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
         module_index = module_index + 1;
     }
     unsafe { (*env).current_prefix = ""; }
+    if mir_native_full_program_activate_collection_intrinsics(
+        functions, model.nodes, ctx
+    ) == 0 {
+        return mir_native_full_program_invalid(
+            model,
+            "Native backend canonical MIR verification failed: typed collection intrinsic source shape changed before emission",
+            ctx
+        );
+    }
     ctx.Set(model.functions, functions);
     model.function_count = len(functions);
 
@@ -4048,6 +4315,7 @@ func mir_native_full_program_serialize_node_row(node_index: int, node: MirNative
         child_index = child_index + 1;
     }
     row = std.Concat(row, mir_native_full_program_node_isolated_plan(node, functions, ctx));
+    row = std.Concat(row, mir_native_full_program_node_collection_plan(node, ctx));
     row = std.Concat(row, "\n");
     return std.Clone(ctx, row);
 }
@@ -4208,6 +4476,10 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
             return std.Clone(ctx, "");
         }
         total_size = total_size + len(isolated_plan);
+        mut collection_plan := mir_native_full_program_node_collection_plan(node, ctx);
+        if std.str_eq(node.kind, "CollectionIntrinsic") == 1 &&
+           len(collection_plan) == 0 { return std.Clone(ctx, ""); }
+        total_size = total_size + len(collection_plan);
         node_index = node_index + 1;
     }
     total_size = total_size + len("entry_function_index: ") +
@@ -4481,6 +4753,10 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
             cursor = mir_native_full_program_write_text(
                 destination, cursor,
                 mir_native_full_program_node_isolated_plan(node, functions, ctx)
+            );
+            cursor = mir_native_full_program_write_text(
+                destination, cursor,
+                mir_native_full_program_node_collection_plan(node, ctx)
             );
             cursor = mir_native_full_program_write_text(destination, cursor, "\n");
             node_index = node_index + 1;
@@ -4801,6 +5077,7 @@ func mir_native_full_program_add_formal_runtime_signatures(
                                 function.return_type = std.Clone(ctx, formal_return);
                                 function.body = empty[Index[ast.BlockStatement[ctx], ctx]];
                                 function.body_node_index = 0 - 1;
+                                function.node_start_index = 0 - 1;
                                 functions.Push(function);
                             }
                         }

@@ -26,6 +26,7 @@ SOURCE_PATHS = (
     "compiler/experiments/cranelift/src/full_program.rs",
     "compiler/experiments/cranelift/src/main.rs",
     "compiler/experiments/cranelift/src/scoped_byte_copy.rs",
+    "compiler/experiments/cranelift/src/collection_provenance.rs",
     "compiler/mir_native_backend_full_program_source.gst",
     "compiler/mir_native_backend_generic_source.gst",
     "compiler/typechecker.gst",
@@ -142,7 +143,7 @@ def normalize_invocations(registry: dict, rows: list[dict]) -> list[dict]:
     current = [row for row in rows if row["path"] == INVOCATION_PATH]
     require(value.get("contract_version") == VERSION + "_phase22" and
             value.get("partial_extra_or_substituted_invocation") == "rejected" and
-            len(current) == len(value.get("added_rows", [])) == 2 and
+            len(current) == len(value.get("added_rows", [])) == 4 and
             current == value.get("added_rows"),
             "R2 compiler invocation changed, disappeared, or multiplied")
     return [row for row in rows if row["path"] != INVOCATION_PATH]
@@ -188,11 +189,11 @@ def normalize_spelling(registry: dict, summary: dict) -> dict:
             value.get("current_inventory_summary") == summary and
             value.get("changed_source_hashes") == [
                 {"path": path, "digest": digest(path)} for path in SOURCE_PATHS] and
-            summary["source_file_count"] == previous["source_file_count"] + 1 and
-            summary["site_count"] == previous["site_count"] + 79 and
-            summary["semantic_site_count"] == previous["semantic_site_count"] + 76 and
+            summary["source_file_count"] == previous["source_file_count"] + 2 and
+            summary["site_count"] == previous["site_count"] + 114 and
+            summary["semantic_site_count"] == previous["semantic_site_count"] + 97 and
             summary["classification_counts"]["diagnostic"] ==
-                previous["classification_counts"]["diagnostic"] + 3 and
+                previous["classification_counts"]["diagnostic"] + 17 and
             all(summary["classification_counts"][name] == count
                 for name, count in previous["classification_counts"].items()
                 if name not in {"semantic_or_intrinsic_recognition", "diagnostic"}) and
@@ -298,18 +299,17 @@ def inversions() -> None:
 
     rejected("missing R2 compiler invocation", "R2 compiler invocation",
              lambda: normalize_invocations(registry, []))
-    rejected("missing one R2 compiler invocation", "R2 compiler invocation",
-             lambda: normalize_invocations(registry, invocation[:1]))
+    for index in range(len(invocation)):
+        shortened = invocation[:index] + invocation[index + 1:]
+        rejected(f"missing R2 compiler invocation {index}", "R2 compiler invocation",
+                 lambda shortened=shortened: normalize_invocations(registry, shortened))
     rejected("extra R2 compiler invocation", "R2 compiler invocation",
              lambda: normalize_invocations(registry, invocation + invocation))
-    different = copy.deepcopy(invocation)
-    different[0]["selection"] = "implicit_default"
-    rejected("changed backend selection", "R2 compiler invocation",
-             lambda: normalize_invocations(registry, different))
-    different_new = copy.deepcopy(invocation)
-    different_new[1]["selection"] = "implicit_default"
-    rejected("changed new backend selection", "R2 compiler invocation",
-             lambda: normalize_invocations(registry, different_new))
+    for index in range(len(invocation)):
+        different = copy.deepcopy(invocation)
+        different[index]["selection"] = "implicit_default"
+        rejected(f"changed backend selection {index}", "R2 compiler invocation",
+                 lambda different=different: normalize_invocations(registry, different))
     changed_digest = copy.deepcopy(surfaces)
     changed_digest[0]["digest"] = "0" * 64
     rejected("changed R2 text digest", "R2 text surface",
@@ -342,7 +342,7 @@ def inversions() -> None:
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    print(f"{GUARD}: thirteen additive registration inversions ok")
+    print(f"{GUARD}: eighteen additive registration inversions ok")
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ mod scope_exit_cleanup;
 mod specialized_resource;
 mod full_program;
 mod scoped_byte_copy;
+mod collection_provenance;
 mod approved_package;
 
 use std::collections::{HashMap, HashSet, VecDeque};

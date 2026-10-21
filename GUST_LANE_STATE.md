@@ -274,3 +274,119 @@ registration and pinned text inventory, fixed-commit review, PR checks, and
 merge are still pending. The production signing roots remain empty. Public
 tagged-result representation and the separate generic Vector safety floor
 remain OPEN; all six Phase 26 rows and general mode 63 remain OPEN.
+
+### R2 validator and signed-test checkpoint (2026-10-21)
+
+The same Cranelift successor remains active at `bdc8f61c` plus uncommitted
+R2 corrections; there is still no R2 PR or production signing root. Formal
+review of the first complete candidate found three bounded worker omissions:
+reserved TryCreate/Free calls could take another canonical policy route,
+fallible cleanup could select an inline callee, and a tag-9-only constructor
+could miss the new reachability budget. The worker now rejects those routes.
+The focused parser result at
+`/home/gust/phase26-recovery/boot970ebe4e/r2-bounded-validator-v3/result.json`
+(SHA-256 `5c62f89c589daec80b01c1f4b723dab407ae4848b94d202b4a1dc9f5bf18f7ae`)
+records eight passing tests, including actual source-produced flat constructor
+controls, exact earlier-authority classification for Free, and graph bounds.
+Its source census matched before, after, and the tested checkout; OOM events
+were unchanged. This is focused worker validation, not a refreshed full R2
+owning guard or native bootstrap.
+
+The six signed test cases now share test-only adapter build/signing and runtime
+staging/link assertions. All six passed on the pinned runtime archive, and the
+four owning-guard executables are byte-identical to their earlier qualified
+versions. Evidence is
+`/home/gust/phase26-recovery/boot970ebe4e/r2-shared-test-helper-v1/result.json`
+(SHA-256 `5a4ec6d753c8559cef0336749e65714fbbc6053c988dd8996cb3bbbb83bb1a2b`).
+The new flat canonical test fixture must be enrolled in the prospective R2
+source/tool and registration census before publication; historical predecessor
+records are unchanged.
+
+Two decisions remain held: whether to authorize an independently checked,
+versioned collection intrinsic meaning for the scoped worker, and whether the
+CI owner may provision GDB for the proposed test-only byte observer. The
+private observer has measured completed ReadOutput bytes 3 and 4 followed by
+one completed Free on an exact signed executable; this alone does not prove
+the final Vector backing or public safe API. No collection semantic edit or
+tool installation follows from elapsed time. The public tagged-result choice
+and generic Vector invariant repair also remain OPEN. All six Phase 26 rows,
+general mode 63, production approval, publication, and phase closure remain
+OPEN while independent authorized checks continue.
+
+### R2 bounded terminal state: WAITING_FOR_OPERATOR_AUTHORITY (2026-10-21)
+
+The same Cranelift task and `codex/phase26-1r2-scoped-copy` worktree are
+preserved at `bdc8f61c` plus the bounded review corrections above. The owning
+guard now names all five fallible cleanup tests. The new source-produced flat
+canonical fixture is in Git's intended tracked set. The R2 successor inventory
+records six additional semantic spelling sites; removing that sole successor
+record leaves the merged-main registry unchanged. Nine read-only registration,
+predecessor, syntax, and diff checks passed with identical source hashes before
+and after. The immutable receipt is
+`/home/gust/phase26-recovery/boot970ebe4e/r2-bounded-postreview-static-v1/result.json`
+(SHA-256 `a2e019038e3fda62cff5868e0f6cb92da206cb67fef158ab2feac3f9c6a75481`).
+This is static enrollment evidence, not a new full owning guard or bootstrap.
+
+On the exact earlier signed executable, a private fixture-specific observation
+found the output allocation's backing bytes `3,4` before its one completed
+region Free and still `3,4` at normal wrapper return. The reversed `3,5`
+expectation was rejected. Its independent audit is
+`/home/gust/phase26-recovery/boot970ebe4e/r2-finish-byte-backing-observer-v2-independent-audit-v1.json`
+(SHA-256 `8af9a2af327b459045fd10c894e75677f7fbe8e4de7d2aa24603881f4f6723b2`).
+This is one known fixture and ABI, not generic collection or public safe API
+qualification; the CI observer dependency remains unapproved.
+
+The remaining R2 semantic work waits on the operator's shared-zone decision
+for the proposed versioned `collection_intrinsic.v1` contract. The test-only CI
+byte observer waits on the separate GDB provisioning decision. On approval,
+resume this same patch with the authorized generic operation proof and the
+approved byte oracle, then refresh exact tool/source binding, focused tests,
+full owning guard, native fixed point, registration pins, and fixed-head review
+before publication. No elapsed time supplies either approval. Public tagged
+result representation and the generic Vector safety repair remain separate
+OPEN decisions. There is no R2 PR, production signing authority, Phase 26
+capability closure, or phase completion claim.
+
+### R2 resumed under bounded shared-zone authority (2026-10-21)
+
+The operator explicitly authorized the reviewed `collection_intrinsic.v1`
+proposal (private v3 SHA-256
+`f8c3abece4ac88b502060894610e4a1ad6b2608aec6c8da67e71d7893d0a7775`)
+and, separately, test-only GDB provisioning for the R2 byte and cleanup
+observer. This resumes the same Cranelift task and invalidates the waiting
+state above. The four collection operations require independent worker checks
+for type, brand, layout, bounds, freshness, and cleanup; legacy operations and
+the seven runtime hooks retain their meaning. GDB is not a product dependency.
+The next step is the exact operation requirement and witness map, followed by
+coherent producer, parser, proof, lowering, focused validation, and refreshed
+owning gates. No public tagged-result or generic Vector safety-floor decision
+was supplied, and no safe-wrapper or Phase 26 closure is claimed.
+
+### R2 executable collection checkpoint (2026-10-21)
+
+The same `codex/phase26-1r2-scoped-copy` patch remains active and unmerged.
+The typed producer now emits versioned executable Create, Read, Clear, and
+Append operations. The worker checks their layout, brand, value versions,
+caller Arena histories, and scoped owner cleanup before lowering. The actual
+caller Return schedule now requires the scoped Call to be evaluated before a
+deferred Arena Free. Source-produced `input.len` forgery and copied-alias
+programs reached canonical MIR and were rejected by the current worker at
+their caller provenance checks; neither generated program was executed.
+
+Focused evidence is the immutable
+`/home/gust/phase26-recovery/boot970ebe4e/r2-intrinsic-scoped-and-caller-controls-v8/result.json`
+(16 scoped, 13 provenance, and 2 budget tests passed), the exact current
+worker artifact in `r2-intrinsic-current-worker-v1`, and the current normal
+CLI result in `r2-intrinsic-current-cli-v1/output/result.json`. Six signed
+native test fixtures passed in `r2-intrinsic-signed-native-matrix-v1`.
+On that matrix's exact borrowed-caller ELF, the test-only GDB observer in
+`r2-intrinsic-current-byte-observer-v1` saw copied backing bytes `3,4`
+before one completed region Free and after the wrapper returned count two;
+the `3,5` oracle was rejected. This qualifies that fixture and test profile,
+not arbitrary collection safety, public API, or production package trust.
+
+The additive registry, bootstrap-sensitive frontend fixed point, refreshed
+tool binding and full owning guard still require current-source validation.
+The public tagged-result contract and separate generic Vector safety repair
+remain OPEN. All six Phase 26 rows, general mode 63, and phase closure remain
+OPEN; there is no R2 PR or production signing root.
