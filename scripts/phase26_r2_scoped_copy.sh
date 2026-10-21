@@ -147,7 +147,8 @@ resource_source_case() {
     local label="$1" source="$2" expected="$3"
     local case_dir="$scratch/resource-$label" status
     mkdir -p "$case_dir"
-    if ./gust --backend cranelift -o "$case_dir/program" "$source" \
+    if GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend" \
+       ./gust --backend cranelift -o "$case_dir/program" "$source" \
         >"$case_dir/compile.stdout" 2>"$case_dir/compile.stderr"; then
         status=0
     else

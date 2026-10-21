@@ -354,6 +354,17 @@ def inversions() -> None:
         different[index]["selection"] = "implicit_default"
         rejected(f"changed backend selection {index}", "R2 compiler invocation",
                  lambda different=different: normalize_invocations(registry, different))
+    resource_rows = [index for index, row in enumerate(invocation)
+                     if '"$case_dir/program"' in row["command"]]
+    require(len(resource_rows) == 1, "R2 resource compiler invocation is ambiguous")
+    missing_driver = copy.deepcopy(invocation)
+    resource_command = missing_driver[resource_rows[0]]["command"]
+    driver_binding = 'GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend" '
+    require(resource_command.count(driver_binding) == 1,
+            "R2 resource compiler driver binding did not move")
+    missing_driver[resource_rows[0]]["command"] = resource_command.replace(driver_binding, "")
+    rejected("missing explicit R2 resource driver binding", "R2 compiler invocation",
+             lambda: normalize_invocations(registry, missing_driver))
     changed_digest = copy.deepcopy(surfaces)
     changed_digest[0]["digest"] = "0" * 64
     rejected("changed R2 text digest", "R2 text surface",
@@ -447,7 +458,7 @@ def inversions() -> None:
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    print(f"{GUARD}: thirty-one additive registration inversions ok")
+    print(f"{GUARD}: thirty-two additive registration inversions ok")
 
 
 if __name__ == "__main__":

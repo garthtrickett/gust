@@ -48120,7 +48120,7 @@
             "expected_artifact": "selected_backend_contract",
             "expected_transition": "preserve_explicit_selection",
             "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
-            "command": "if ./gust --backend cranelift -o \"$case_dir/program\" \"$source\" >\"$case_dir/compile.stdout\" 2>\"$case_dir/compile.stderr\"; then"
+            "command": "if GUST_NATIVE_BACKEND_DRIVER=\"$PWD/build/gust-native-backend\" ./gust --backend cranelift -o \"$case_dir/program\" \"$source\" >\"$case_dir/compile.stdout\" 2>\"$case_dir/compile.stderr\"; then"
           }
         ]
       },
@@ -48362,7 +48362,7 @@
             "path": "scripts/phase26_r2_scoped_copy_registration.py",
             "current_row": {
               "path": "scripts/phase26_r2_scoped_copy_registration.py",
-              "digest": "c04c56ed86104bb4aa4fe80b5894e0a895d08a27e0b1adf9e26cb7bd0e9b68f2",
+              "digest": "96fe244c610583fcee188a0c95beeac628e86aa03bb85c4f09db17982e12c509",
               "match_counts": {
                 "explicit_backend_spelling": 0,
                 "mir_to_c_name": 1,
