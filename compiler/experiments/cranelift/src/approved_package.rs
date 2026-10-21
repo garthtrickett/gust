@@ -2019,4 +2019,6 @@ mod tests {
         };
         assert!(fixture.admit(&unknown).is_err());
     }
+
+    include!("approved_zlib_tests.rs");
 }

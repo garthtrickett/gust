@@ -53,6 +53,11 @@ def digest(path: str) -> str:
     return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
 
 
+def r3_prior_source_digest(registry: dict, path: str) -> str:
+    from phase26_r3_zlib_adapter_registration import prior_digest
+    return prior_digest(registry, path, digest(path))
+
+
 def validate_ci_tool_order(workflow: str) -> None:
     """Run R2 against the build artifact before an older guard rebuilds it."""
     marker = "\n  phase26-ffi-position:\n"
@@ -103,11 +108,12 @@ def base_bytes(path: str) -> bytes:
 
 def prior_source_digest(registry: dict, path: str) -> str:
     """Project only a pinned R2 source back to the tested merged-main bytes."""
-    current = digest(path)
+    current = r3_prior_source_digest(registry, path)
     if path not in SOURCE_PATHS:
         return current
     pins = identity(registry)["spelling_inventory_successor"]["changed_source_hashes"]
-    require(pins == [{"path": name, "digest": digest(name)} for name in SOURCE_PATHS],
+    require(pins == [{"path": name, "digest": r3_prior_source_digest(registry, name)}
+                     for name in SOURCE_PATHS],
             "R2 source pin drifted before predecessor projection")
     return hashlib.sha256(base_bytes(path)).hexdigest()
 
@@ -203,9 +209,9 @@ def normalize_production_audit(registry: dict, live: dict) -> dict:
         "previous_makefile_digest": hashlib.sha256(base_bytes("Makefile")).hexdigest(),
         "current_makefile_digest": digest("Makefile"),
         "previous_justfile_digest": hashlib.sha256(base_bytes("justfile")).hexdigest(),
-        "current_justfile_digest": digest("justfile"),
-        "current_projection_script_digest": digest(
-            "scripts/phase23_production_release_audit.py"),
+        "current_justfile_digest": r3_prior_source_digest(registry, "justfile"),
+        "current_projection_script_digest": r3_prior_source_digest(
+            registry, "scripts/phase23_production_release_audit.py"),
         "unchanged_supported_paths": list(UNCHANGED_PRODUCTION_SURFACES),
         "unchanged_other_fields": True,
         "partial_extra_or_substituted_audit": "rejected",
@@ -261,7 +267,8 @@ def normalize_spelling(registry: dict, summary: dict) -> dict:
             value.get("previous_inventory_summary") == previous and
             value.get("current_inventory_summary") == summary and
             value.get("changed_source_hashes") == [
-                {"path": path, "digest": digest(path)} for path in SOURCE_PATHS] and
+                {"path": path, "digest": r3_prior_source_digest(registry, path)}
+                for path in SOURCE_PATHS] and
             summary["source_file_count"] == previous["source_file_count"] + 2 and
             summary["site_count"] == previous["site_count"] + 114 and
             summary["semantic_site_count"] == previous["semantic_site_count"] + 97 and
@@ -306,6 +313,12 @@ def normalize_relay(registry: dict, live_digest: str) -> str:
 
 def validate() -> None:
     registry = json.loads(REGISTRY.read_text())
+    from phase26_r3_zlib_adapter_registration import (
+        normalize_production_audit as r3_production,
+        normalize_spelling as r3_spelling,
+        prior_source_digest as r3_source,
+        project_ci_workflow as r3_workflow,
+    )
     value = identity(registry)
     require(set(value) == {
         "contract_version", "predecessor_main_sha", "status", "owner", "owning_level2_guard",
@@ -319,7 +332,7 @@ def validate() -> None:
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     from phase24_filename_behavior_characterization import source_sites as filename_sites
     from phase22_opening import classify, logical_commands, COMPILER_TOKEN, selection, is_non_invocation
-    normalize_spelling(registry, manifest_summary(source_sites()))
+    normalize_spelling(registry, r3_spelling(registry, manifest_summary(source_sites())))
     normalize_filename(registry, filename_sites())
     path = ROOT / INVOCATION_PATH
     found = []
@@ -330,9 +343,10 @@ def validate() -> None:
                                       match.group("token"), selection(command)))
     normalize_invocations(registry, found)
     from phase23_production_release_audit import scan as production_audit_scan
-    normalize_production_audit(registry, production_audit_scan())
-    normalize_relay(registry, digest(CR15_PATH))
-    validate_ci_tool_order((ROOT / ".github/workflows/pr-fast.yml").read_text())
+    normalize_production_audit(registry, r3_production(registry, production_audit_scan()))
+    normalize_relay(registry, r3_source(registry, CR15_PATH))
+    validate_ci_tool_order(r3_workflow(
+        registry, (ROOT / ".github/workflows/pr-fast.yml").read_text()))
     require("python3 scripts/phase26_r2_scoped_copy_registration.py" in
             (ROOT / "justfile").read_text() and
             "bash scripts/phase26_r2_scoped_copy.sh" in
@@ -360,7 +374,8 @@ def inversions() -> None:
     filename = value["filename_site_successor"]["current_sites"]
     relay = value["cr15_relay_digest_successor"]["current_digest"]
     from phase23_production_release_audit import scan as production_audit_scan
-    production = production_audit_scan()
+    from phase26_r3_zlib_adapter_registration import normalize_production_audit as r3_production
+    production = r3_production(registry, production_audit_scan())
     normalize_invocations(registry, invocation)
     normalize_production_audit(registry, production)
     normalize_text(registry, surfaces)
@@ -516,7 +531,12 @@ def inversions() -> None:
             return (hashlib.sha256(missing_step).hexdigest() if path == "justfile"
                     else old_digest(path))
         globals()["digest"] = altered_digest
-        rejected("missing R2 owning step", "R2 production audit",
+        # The newer exact-file pin sees a current-tree removal before the R2
+        # production projection; retain the rejection and name its real owner.
+        expected = ("R3 changed file digest" if registry.get(
+            "phase26_activation_audit", {}).get("zlib_adapter_r3_successor")
+            else "R2 production audit")
+        rejected("missing R2 owning step", expected,
                  lambda: normalize_production_audit(registry, production))
     finally:
         globals()["digest"] = old_digest
@@ -524,7 +544,9 @@ def inversions() -> None:
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
+    from phase26_r3_zlib_adapter_registration import project_ci_workflow
+    workflow = project_ci_workflow(
+        registry, (ROOT / ".github/workflows/pr-fast.yml").read_text())
     before = ("      - name: Phase 26 scoped signed byte-copy runtime\n"
               "        run: just guard-cranelift-phase26-scoped-byte-copy\n\n"
               "      - name: Phase 26 FFI position policy\n"
