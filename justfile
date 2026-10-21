@@ -24537,3 +24537,12 @@ guard-cranelift-phase26-approved-package:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-approved-package | grep -F $'guard-cranelift-phase26-approved-package\t2\t' >/dev/null
     python3 scripts/phase26_r1_runtime_projection.py
     cargo test --locked --manifest-path compiler/experiments/cranelift/Cargo.toml -- --nocapture
+
+# Phase 26 FFI-R2: signed byte spans and one scoped copy activation.
+guard-cranelift-phase26-scoped-byte-copy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-scoped-byte-copy | grep -F $'guard-cranelift-phase26-scoped-byte-copy\t2\t' >/dev/null
+    python3 scripts/phase26_r2_scoped_copy_registration.py
+    python3 scripts/phase26_r2_scoped_copy_registration.py inversions
+    bash scripts/phase26_r2_scoped_copy.sh

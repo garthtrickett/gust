@@ -26,6 +26,7 @@ type MirNativeFullProgramFunction[ctx] struct {
     ffi_return_policy: str,
     ffi_destructor_identity: str,
     isolated_call_plan: str,
+    scoped_byte_copy_plan: str,
     return_type: str,
     body: Index[ast.BlockStatement[ctx], ctx],
     body_node_index: int
@@ -89,6 +90,7 @@ type MirNativeFullProgramSourceResult[ctx] struct {
     represented: int,
     invalid: int,
     deferred: int,
+    scoped_candidate_count: int,
     reason_code: str,
     diagnostic: str,
     bundle: mir.MirProgramBundle[ctx]
@@ -235,6 +237,50 @@ func mir_native_full_program_callback_plan(sig: typechecker.FunctionSignature[ct
 
 // The return-position policy is decided by the verified extern signature.
 // The primitive layout table, rather than the backend host, owns Int's ABI.
+func mir_native_full_program_fallible_owned_out_plan(
+    sig: typechecker.FunctionSignature[ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) str {
+    unsafe {
+    mut symbol := sig.extern_symbol_name;
+    if len(symbol) == 0 { return ""; }
+    mut owner := typechecker.env_ffi_fallible_owned_out_owner(
+        env as *typechecker.TypeEnvironment[ctx], sig.return_type, ctx
+    );
+    if sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       std.str_eq(sig.ffi_return_policy, "fallible_owned_out") == 0 ||
+       std.str_eq(symbol, "os_FfiCallRegionTryCreate") == 0 ||
+       len(owner) == 0 || len(sig.params) != 2 ||
+       sig.params[0].tag != 0 || sig.params[1].tag != 0 ||
+       std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) != 2 || std.str_eq(policies[0], "value") == 0 ||
+       std.str_eq(policies[1], "value") == 0 { return ""; }
+    mut destructor := typechecker.env_struct_declared_destructor_name(
+        env as *typechecker.TypeEnvironment[ctx], owner, ctx
+    );
+    if len(destructor) == 0 { return ""; }
+    destructor = typechecker.env_resolve_namespaced_ident(
+        env as *typechecker.TypeEnvironment[ctx], destructor, ctx
+    );
+    mut plan := "|fallible_owned_out.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(os.NativeTargetTriple(ctx), ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(destructor, ctx));
+    plan = std.Concat(plan, "|1|2|"); // one private out position after two source Ints
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("out", ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(owner, ctx));
+    plan = std.Concat(plan, "|8|8|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(
+        "status0_nonnull_owner_or_negative_null.v1", ctx
+    ));
+    return std.Clone(ctx, plan);
+    }
+}
+
 func mir_native_full_program_native_error_plan(sig: typechecker.FunctionSignature[ctx], ctx: &Arena) str {
     mut table := primitive_layout.mir_primitive_layout_table_for_target(os.NativeTargetTriple(ctx), ctx);
     mut query := layout.mir_layout_of(table, "type:gust:i32", table.target.target_id, ctx);
@@ -525,6 +571,157 @@ func mir_native_full_program_generic_direct_plan(sig: typechecker.FunctionSignat
     return std.Clone(ctx, std.Concat(plan, position_rows));
 }
 
+// A byte span is a candidate typed declaration fact, never package authority.
+// The signed package independently names the same pointer/count positions.
+// Only adjacent RawPointer(Byte), Int/value pairs have this first profile.
+func mir_native_full_program_generic_byte_span_plan(sig: typechecker.FunctionSignature[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    if sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] { return ""; }
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    if target.found == 0 ||
+       std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 ||
+       target.target.pointer_size != 8 || target.target.i32_alignment != 4 ||
+       sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       sig.requires_sandbox_arena != 0 || sig.return_type.tag != 0 ||
+       std.str_eq(sig.ffi_return_policy, "value") == 0 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) != len(sig.params) { return ""; }
+    mut rows := "";
+    mut selected := 0;
+    mut index := 0;
+    while index < len(policies) {
+        mut policy := policies[index];
+        if std.str_eq(policy, "borrow_read_call") == 1 ||
+           std.str_eq(policy, "borrow_write_call") == 1 {
+            if index + 1 >= len(policies) || selected >= 2 ||
+               std.str_eq(policies[index + 1], "value") == 0 { return ""; }
+            mut pointer := typechecker.env_resolve_type(env, sig.params[index], ctx);
+            mut count_type := typechecker.env_resolve_type(env, sig.params[index + 1], ctx);
+            unsafe {
+                if pointer.tag != 9 || count_type.tag != 0 { return ""; }
+                mut element := typechecker.env_resolve_type(env, ctx[pointer.RawPointer.inner], ctx);
+                if element.tag != 1 { return ""; }
+            }
+            mut direction := "read";
+            if std.str_eq(policy, "borrow_write_call") == 1 { direction = "write"; }
+            rows = std.Concat(rows, "|");
+            rows = std.Concat(rows, std.FormatInt(index));
+            rows = std.Concat(rows, "|");
+            rows = std.Concat(rows, mir_native_full_program_utf8_hex(direction, ctx));
+            rows = std.Concat(rows, "|");
+            rows = std.Concat(rows, mir_native_full_program_utf8_hex("Byte", ctx));
+            rows = std.Concat(rows, "|1|1|");
+            rows = std.Concat(rows, mir_native_full_program_utf8_hex("direct_raw_byte_span", ctx));
+            rows = std.Concat(rows, "|");
+            rows = std.Concat(rows, std.FormatInt(index + 1));
+            selected = selected + 1;
+            index = index + 2;
+        } else {
+            mut ordinary := typechecker.env_resolve_type(env, sig.params[index], ctx);
+            unsafe {
+                if std.str_eq(policy, "value") == 0 ||
+                   (ordinary.tag != 0 && ordinary.tag != 1 && ordinary.tag != 2) { return ""; }
+            }
+            index = index + 1;
+        }
+    }
+    if selected == 0 { return ""; }
+    mut plan := "|byte_span_call.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(target.target.target_triple, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("synchronous_call", ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, std.FormatInt(selected));
+    return std.Clone(ctx, std.Concat(plan, rows));
+}
+
+// The region-operation row is a declaration/ABI candidate, not a live-owner
+// certificate. The worker must bind every Call to its actual Guard activation.
+func mir_native_full_program_region_operation_plan(sig: typechecker.FunctionSignature[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    if sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
+       sig.requires_sandbox_arena != 0 ||
+       std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) == 0 || len(policies) != len(sig.params) ||
+       std.str_eq(policies[0], "region_access_call") == 0 { return ""; }
+    mut first := typechecker.env_resolve_type(env, sig.params[0], ctx);
+    unsafe {
+        if first.tag != 9 { return ""; }
+        mut inner := typechecker.env_resolve_type(env, ctx[first.RawPointer.inner], ctx);
+        if inner.tag != 1 { return ""; }
+    }
+    mut role := "";
+    mut byte_out := 0;
+    mut symbol := sig.extern_symbol_name;
+    if std.str_eq(symbol, "os_FfiCallRegionWriteInput") == 1 &&
+       len(policies) == 3 && std.str_eq(policies[1], "value") == 1 &&
+       std.str_eq(policies[2], "value") == 1 &&
+       sig.params[1].tag == 0 && sig.params[2].tag == 1 &&
+       sig.return_type.tag == 0 &&
+       std.str_eq(sig.ffi_return_policy, "value") == 1 {
+        role = "write_input";
+    } else if std.str_eq(symbol, "os_FfiCallRegionInputAddress") == 1 ||
+              std.str_eq(symbol, "os_FfiCallRegionOutputAddress") == 1 {
+        if len(policies) != 1 || sig.return_type.tag != 9 ||
+           std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 0 { return ""; }
+        unsafe {
+            mut result_inner := typechecker.env_resolve_type(
+                env, ctx[sig.return_type.RawPointer.inner], ctx
+            );
+            if result_inner.tag != 1 { return ""; }
+        }
+        if std.str_eq(symbol, "os_FfiCallRegionInputAddress") == 1 {
+            role = "input_address";
+        } else { role = "output_address"; }
+    } else if std.str_eq(symbol, "os_FfiCallRegionAcceptResult") == 1 &&
+              len(policies) == 2 && std.str_eq(policies[1], "value") == 1 &&
+              sig.params[1].tag == 0 && sig.return_type.tag == 0 &&
+              std.str_eq(sig.ffi_return_policy, "value") == 1 {
+        role = "accept_result";
+    } else if std.str_eq(symbol, "os_FfiCallRegionReadOutput") == 1 &&
+              len(policies) == 3 && std.str_eq(policies[1], "value") == 1 &&
+              std.str_eq(policies[2], "borrow_write_call") == 1 &&
+              sig.params[1].tag == 0 && sig.return_type.tag == 0 &&
+              std.str_eq(sig.ffi_return_policy, "value") == 1 {
+        mut output := typechecker.env_resolve_type(env, sig.params[2], ctx);
+        unsafe {
+            if output.tag != 9 { return ""; }
+            mut output_inner := typechecker.env_resolve_type(
+                env, ctx[output.RawPointer.inner], ctx
+            );
+            if output_inner.tag != 1 { return ""; }
+        }
+        role = "read_output";
+        byte_out = 1;
+    } else { return ""; }
+    mut plan := "|region_operation.v1|";
+    plan = std.Concat(plan,
+        mir_native_full_program_utf8_hex(os.NativeTargetTriple(ctx), ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(role, ctx));
+    if byte_out == 1 { plan = std.Concat(plan, "|2"); }
+    else { plan = std.Concat(plan, "|1"); }
+    plan = std.Concat(plan, "|0|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("region", ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("Byte", ctx));
+    plan = std.Concat(plan, "|8|8|");
+    plan = std.Concat(plan,
+        mir_native_full_program_utf8_hex("sealed_guard_owner.v1", ctx));
+    if byte_out == 1 {
+        plan = std.Concat(plan, "|2|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex("byte_out", ctx));
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex("Byte", ctx));
+        plan = std.Concat(plan, "|1|1|");
+        plan = std.Concat(plan,
+            mir_native_full_program_utf8_hex("checked_local_byte_out.v1", ctx));
+    }
+    return std.Clone(ctx, plan);
+}
+
 // Call 8 carries every formal position and the independent signed status
 // result. Its schedule is decided with the source policy, before native code
 // sees either the pointer origins or the transient arena.
@@ -795,6 +992,22 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                         generic_isolated = 1;
                         generic_direct = 1;
                     }
+                    mut checked_region_operation := 0;
+                    if len(parameters) > 0 &&
+                       std.str_eq(parameters[0].ffi_policy, "region_access_call") == 1 {
+                        mut key := mir_native_full_program_qualified_name(
+                            module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                        );
+                        guard signature := (*env).function_registry.Get(key) else {
+                            return "Native FFI region operation lacks a verified signature";
+                        };
+                        if len(mir_native_full_program_region_operation_plan(
+                                   signature, env, ctx
+                               )) == 0 {
+                            return "Native FFI region operation lacks its exact runtime ABI";
+                        }
+                        checked_region_operation = 1;
+                    }
                     if isolated_count > 0 && composed_status == 0 {
                         mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                         if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
@@ -816,7 +1029,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                             generic_isolated = 1;
                         }
                     }
-                    if direct_count > 0 && composed_status == 0 {
+                    if direct_count > 0 && composed_status == 0 &&
+                       checked_region_operation == 0 {
                         mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                         if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
                         mut legacy_direct := len(parameters) == 1 &&
@@ -831,7 +1045,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                             guard signature := (*env).function_registry.Get(key) else {
                                 return "Native FFI direct declaration lacks a verified signature";
                             };
-                            if len(mir_native_full_program_generic_direct_plan(signature, env, ctx)) == 0 {
+                            if len(mir_native_full_program_generic_direct_plan(signature, env, ctx)) == 0 &&
+                               len(mir_native_full_program_generic_byte_span_plan(signature, env, ctx)) == 0 {
                                 return "Native FFI direct declaration lacks a supported target C layout";
                             }
                             generic_direct = 1;
@@ -1101,8 +1316,17 @@ func mir_native_full_program_ffi_raw_return_diagnostic(programs: std.Vector[ast.
                     mut inner := ctx[result_type.RawPointer.inner];
                     mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                     if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
-                    if len(parameters) != 0 || inner.tag != 0 ||
-                       std.str_eq(host_symbol, "tiny_host_raw_untrusted_int") == 0 {
+                    mut region_getter :=
+                        std.str_eq(host_symbol, "os_FfiCallRegionInputAddress") == 1 ||
+                        std.str_eq(host_symbol, "os_FfiCallRegionOutputAddress") == 1;
+                    if region_getter {
+                        if len(mir_native_full_program_region_operation_plan(
+                                   signature, env, ctx
+                               )) == 0 {
+                            return "Native FFI region address getter lacks its checked Byte pointer contract";
+                        }
+                    } else if len(parameters) != 0 || inner.tag != 0 ||
+                              std.str_eq(host_symbol, "tiny_host_raw_untrusted_int") == 0 {
                         return "Native FFI raw return test host signature is not approved";
                     }
                 }
@@ -1490,6 +1714,19 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                         selected_isolated_signature, env, ctx
                     )) == 0 { return 0 - 1; }
                 } else if selected_isolated_signature.is_extern == 1 &&
+                          selected_isolated_signature.ffi_contract_verified == 1 &&
+                          std.str_eq(selected_isolated_signature.ffi_return_policy, "fallible_owned_out") == 1 {
+                    node.second_integer_operand = 9;
+                    if len(mir_native_full_program_fallible_owned_out_plan(
+                        selected_isolated_signature, env, ctx
+                    )) == 0 { return 0 - 1; }
+                } else if selected_isolated_signature.is_extern == 1 &&
+                          selected_isolated_signature.ffi_contract_verified == 1 &&
+                          len(mir_native_full_program_region_operation_plan(
+                              selected_isolated_signature, env, ctx
+                          )) > 0 {
+                    node.second_integer_operand = 11;
+                } else if selected_isolated_signature.is_extern == 1 &&
                    selected_isolated_signature.ffi_contract_verified == 1 &&
                    selected_isolated_signature.requires_sandbox_arena == 1 {
                     mut isolated_policies: std.Vector[str, ctx] :=
@@ -1540,10 +1777,16 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                          std.str_eq(direct_symbol, "tiny_host_write_repr_c_probe") == 1 ||
                          std.str_eq(direct_symbol, "tiny_host_write_packed_probe") == 1);
                     if direct_count > 0 && legacy_direct == false {
-                        node.second_integer_operand = 4;
-                        if len(mir_native_full_program_generic_direct_plan(
+                        if len(mir_native_full_program_generic_byte_span_plan(
                             selected_isolated_signature, env, ctx
-                        )) == 0 { return 0 - 1; }
+                        )) > 0 {
+                            node.second_integer_operand = 10;
+                        } else {
+                            node.second_integer_operand = 4;
+                            if len(mir_native_full_program_generic_direct_plan(
+                                selected_isolated_signature, env, ctx
+                            )) == 0 { return 0 - 1; }
+                        }
                     }
                     mut retained_count := 0;
                     mut retained_index := 0;
@@ -2356,7 +2599,8 @@ func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[c
     if std.str_eq(node.kind, "Call") == 0 ||
        (node.second_integer_operand != 3 && node.second_integer_operand != 4 &&
         node.second_integer_operand != 6 && node.second_integer_operand != 7 &&
-        node.second_integer_operand != 8) {
+        node.second_integer_operand != 8 && node.second_integer_operand != 9 &&
+        node.second_integer_operand != 10 && node.second_integer_operand != 11) {
         return "";
     }
     mut index := mir_native_full_program_function_index(
@@ -2502,6 +2746,7 @@ func mir_native_full_program_append_mutex_constructor_helpers(
                 helper.parameter_types =
                     mir_native_full_program_empty_string_vector(ctx);
                 helper.isolated_call_plan = "";
+                helper.scoped_byte_copy_plan = "";
                 mut helper_parameter_names: std.Vector[str, ctx] :=
                     std.VectorNew(ctx);
                 helper_parameter_names.Push(std.Clone(ctx, "ctx"));
@@ -2743,6 +2988,190 @@ func mir_native_full_program_block_guard_defer_mask(
     return mask;
 }
 
+func mir_native_full_program_block_has_linear_payload_move_guard(
+    block_index: Index[ast.BlockStatement[ctx], ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) int {
+    if block_index == empty[Index[ast.BlockStatement[ctx], ctx]] {
+        return 0;
+    }
+    unsafe {
+        mut block := ctx[block_index];
+        mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[block.statements];
+        mut i := 0;
+        while i < len(statements) {
+            mut statement := statements[i];
+            if statement.tag == 9 &&
+               statement.Guard.value != empty[Index[ast.Expression[ctx], ctx]] {
+                mut value := ctx[statement.Guard.value];
+                if value.tag == 4 { // Move
+                    mut wrapper := typechecker.env_resolve_type(
+                        env,
+                        codegen.codegen_get_expression_type(
+                            statement.Guard.value, env, ctx
+                        ),
+                        ctx
+                    );
+                    if wrapper.tag == 8 { // Struct
+                        mut layout_lookup := (*env).struct_registry.Get(
+                            wrapper.Struct.struct_name
+                        );
+                        if layout_lookup.Ok {
+                            mut ok_lookup := layout_lookup.Val.fields.Get("Ok");
+                            mut val_lookup := layout_lookup.Val.fields.Get("Val");
+                            if ok_lookup.Ok {
+                                if val_lookup.Ok {
+                                    if ok_lookup.Val.tag == 0 ||
+                                       ok_lookup.Val.tag == 2 {
+                                        mut payload := typechecker.env_resolve_type(
+                                            env, val_lookup.Val, ctx
+                                        );
+                                        if payload.tag == 8 &&
+                                           typechecker.env_struct_is_linear_resource(
+                                               env as *typechecker.TypeEnvironment[ctx],
+                                               payload.Struct.struct_name,
+                                               ctx
+                                           ) == 1 {
+                                            return 1;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if statement.tag == 6 &&
+               mir_native_full_program_block_has_linear_payload_move_guard(
+                   statement.While.body, env, ctx
+               ) == 1 { return 1; }
+            if statement.tag == 7 {
+                if mir_native_full_program_block_has_linear_payload_move_guard(
+                    statement.If.consequence, env, ctx
+                ) == 1 { return 1; }
+                if mir_native_full_program_block_has_linear_payload_move_guard(
+                    statement.If.alternative, env, ctx
+                ) == 1 { return 1; }
+            }
+            if statement.tag == 8 {
+                mut cases: std.Vector[ast.MatchCase[ctx], ctx] :=
+                    ctx[statement.Match.cases];
+                mut case_index := 0;
+                while case_index < len(cases) {
+                    if mir_native_full_program_block_has_linear_payload_move_guard(
+                        cases[case_index].body, env, ctx
+                    ) == 1 { return 1; }
+                    case_index = case_index + 1;
+                }
+            }
+            if statement.tag == 10 &&
+               mir_native_full_program_block_has_linear_payload_move_guard(
+                   statement.UnsafeBlock.body, env, ctx
+               ) == 1 { return 1; }
+            i = i + 1;
+        }
+    }
+    return 0;
+}
+
+func mir_native_full_program_has_linear_guard_defer_candidate(
+    programs: std.Vector[ast.Program[ctx], ctx],
+    module_prefixes: std.Vector[str, ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) int {
+    if len(programs) != 1 || len(module_prefixes) != 1 ||
+       std.str_eq(module_prefixes[0], "") == 0 {
+        return 0;
+    }
+    mut found := 0;
+    unsafe {
+        mut previous_prefix := std.Clone(ctx, (*env).current_prefix);
+        (*env).current_prefix = module_prefixes[0];
+        mut top_level: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[programs[0].statements];
+        mut i := 0;
+        while i < len(top_level) {
+            mut statement := top_level[i];
+            if statement.tag == 3 && statement.FunctionDecl.is_extern == 0 &&
+               mir_native_full_program_block_guard_defer_mask(
+                   statement.FunctionDecl.body, ctx
+               ) == 3 &&
+               mir_native_full_program_block_has_linear_payload_move_guard(
+                   statement.FunctionDecl.body, env, ctx
+               ) == 1 {
+                found = 1;
+            }
+            i = i + 1;
+        }
+        (*env).current_prefix = previous_prefix;
+    }
+    return found;
+}
+
+// A scoped region is a separate tentative source cohort. This check is only
+// route selection: the typed producer must emit the complete candidate and
+// the native worker must prove its nodes, owner, byte counts, and exits before
+// any executable is admitted. In particular, a safe wrapper needs no dummy
+// defer to satisfy the older Guard/defer selector.
+func mir_native_full_program_has_scoped_byte_copy_candidate(
+    programs: std.Vector[ast.Program[ctx], ctx],
+    module_prefixes: std.Vector[str, ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) int {
+    if len(programs) == 0 || len(programs) != len(module_prefixes) { return 0; }
+    mut constructor := 0;
+    mut input_write := 0;
+    mut output_read := 0;
+    mut guarded := 0;
+    unsafe {
+        mut previous_prefix := std.Clone(ctx, (*env).current_prefix);
+        mut module_index := 0;
+        while module_index < len(programs) {
+            (*env).current_prefix = module_prefixes[module_index];
+            mut top_level: std.Vector[ast.Statement[ctx], ctx] :=
+                ctx[programs[module_index].statements];
+            mut i := 0;
+            while i < len(top_level) {
+                mut statement := top_level[i];
+                if statement.tag == 3 {
+                    if statement.FunctionDecl.is_extern == 1 {
+                        mut symbol := statement.FunctionDecl.extern_symbol_name;
+                        if len(symbol) == 0 { symbol = statement.FunctionDecl.name; }
+                        if std.str_eq(symbol, "os_FfiCallRegionTryCreate") == 1 {
+                            constructor = 1;
+                        }
+                        if std.str_eq(symbol, "os_FfiCallRegionWriteInput") == 1 {
+                            input_write = 1;
+                        }
+                        if std.str_eq(symbol, "os_FfiCallRegionReadOutput") == 1 {
+                            output_read = 1;
+                        }
+                    } else if
+                       mir_native_full_program_block_guard_defer_mask(
+                           statement.FunctionDecl.body, ctx
+                       ) == 1 &&
+                       mir_native_full_program_block_has_linear_payload_move_guard(
+                           statement.FunctionDecl.body, env, ctx
+                       ) == 1 {
+                        guarded = 1;
+                    }
+                }
+                i = i + 1;
+            }
+            module_index = module_index + 1;
+        }
+        (*env).current_prefix = previous_prefix;
+    }
+    if constructor == 1 && input_write == 1 && output_read == 1 && guarded == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 func mir_native_full_program_contains_guard_and_defer(
     programs: std.Vector[ast.Program[ctx], ctx],
     ctx: &Arena
@@ -2835,6 +3264,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     function.ffi_return_policy = "";
                     function.ffi_destructor_identity = "";
                     function.isolated_call_plan = "";
+                    function.scoped_byte_copy_plan = "";
                     function.return_type = std.Clone(ctx, "");
                     function.body = statement.FunctionDecl.body;
                     function.body_node_index = 0 - 1;
@@ -2943,26 +3373,51 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                                 function.isolated_call_plan = mir_native_full_program_native_error_plan(
                                     ffi_signature, ctx
                                 );
+                            } else if std.str_eq(ffi_signature.ffi_return_policy, "fallible_owned_out") == 1 {
+                                function.isolated_call_plan = mir_native_full_program_fallible_owned_out_plan(
+                                    ffi_signature, env, ctx
+                                );
+                            } else if len(mir_native_full_program_region_operation_plan(
+                                           ffi_signature, env, ctx
+                                       )) > 0 {
+                                function.isolated_call_plan =
+                                    mir_native_full_program_region_operation_plan(
+                                        ffi_signature, env, ctx
+                                    );
                             } else if callback_found == 1 {
                                 callback_plan_count = callback_plan_count + 1;
                                 function.isolated_call_plan = mir_native_full_program_callback_plan(
                                     ffi_signature, ctx
                                 );
                             } else {
-                                function.isolated_call_plan = mir_native_full_program_generic_direct_plan(
+                                function.isolated_call_plan = mir_native_full_program_generic_byte_span_plan(
                                     ffi_signature, env, ctx
                                 );
+                                if len(function.isolated_call_plan) == 0 {
+                                    function.isolated_call_plan = mir_native_full_program_generic_direct_plan(
+                                        ffi_signature, env, ctx
+                                    );
+                                }
                             }
                         }
-                        if std.str_eq(function.ffi_return_policy, "owned_return") == 1 {
+                        if std.str_eq(function.ffi_return_policy, "owned_return") == 1 ||
+                           std.str_eq(function.ffi_return_policy, "fallible_owned_out") == 1 {
                             mut owner_type := ffi_signature.return_type;
-                            if owner_type.tag != 8 {
+                            mut owner_name := "";
+                            if std.str_eq(function.ffi_return_policy, "fallible_owned_out") == 1 {
+                                owner_name = typechecker.env_ffi_fallible_owned_out_owner(
+                                    env as *typechecker.TypeEnvironment[ctx], owner_type, ctx
+                                );
+                            } else if owner_type.tag == 8 {
+                                owner_name = owner_type.Struct.struct_name;
+                            }
+                            if len(owner_name) == 0 {
                                 return mir_native_full_program_invalid(model,
                                     "Native backend canonical MIR verification failed: owned result is not a struct", ctx);
                             }
                             mut destructor_name := typechecker.env_struct_declared_destructor_name(
                                 env as *typechecker.TypeEnvironment[ctx],
-                                owner_type.Struct.struct_name, ctx
+                                owner_name, ctx
                             );
                             if len(destructor_name) == 0 {
                                 return mir_native_full_program_invalid(model,
@@ -3073,6 +3528,8 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     mut is_protected_derived := typechecker.typechecker_is_protected_resource_derived(statement.FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx);
                     if is_protected_derived == 1 { (*env).protected_resource_preserve_concrete_types = 1; (*env).current_prefix = typechecker.typechecker_protected_resource_resolution_prefix(statement.FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx); }
                     (*env).current_function_identity_scope = std.Clone(ctx, qualified_name);
+                    mut nodes_before: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[model.nodes];
+                    mut node_start := len(nodes_before);
                     mut body_node := mir_native_full_program_flatten_block(
                         statement.FunctionDecl.body,
                         model.nodes,
@@ -3088,6 +3545,10 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     }
                     mut updated := functions[function_index];
                     updated.body_node_index = body_node;
+                    mut lowered_nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[model.nodes];
+                    updated.scoped_byte_copy_plan = mir_native_full_program_scoped_byte_copy_candidate(
+                        updated, functions, lowered_nodes, node_start, body_node, ctx
+                    );
                     functions.Set(function_index, updated);
                     (*env).current_function_identity_scope = "";
                     if is_protected_derived == 1 { (*env).protected_resource_preserve_concrete_types = 0; (*env).current_prefix = module_prefixes[module_index]; }
@@ -3147,6 +3608,256 @@ func mir_native_full_program_utf8_hex(value: str, ctx: &Arena) str {
 
 func mir_native_full_program_append_int(value: str, integer: int, ctx: &Arena) str {
     return std.Clone(ctx, std.Concat(value, std.FormatInt(integer)));
+}
+
+// This row records typed source candidates. It is deliberately not an
+// admission token: the native worker proves the exact canonical CFG, owner,
+// reaching values, and signed package call before it can use the candidate.
+func mir_native_full_program_scoped_anchor(
+    function: MirNativeFullProgramFunction[ctx],
+    nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    start: int, end: int, read_index: int, ctx: &Arena
+) str {
+    if read_index < start || read_index > end ||
+       std.str_eq(nodes[read_index].kind, "LocalRead") == 0 ||
+       len(nodes[read_index].text_operand) == 0 {
+        return "";
+    }
+    mut read := nodes[read_index];
+    mut found := 0 - 1;
+    mut index := start;
+    while index <= end {
+        mut node := nodes[index];
+        if std.str_eq(node.kind, "LocalDeclare") == 1 &&
+           std.str_eq(node.text_operand, read.text_operand) == 1 &&
+           std.str_eq(node.type_identity, read.type_identity) == 1 {
+            if found >= 0 { return ""; }
+            found = index;
+        }
+        index = index + 1;
+    }
+    if found >= 0 {
+        mut result := "|local";
+        result = mir_native_full_program_append_int(std.Concat(result, "|"), found, ctx);
+        result = std.Concat(result, "|");
+        return std.Clone(ctx,
+            std.Concat(result, mir_native_full_program_utf8_hex(read.type_identity, ctx))
+        );
+    }
+    mut names: std.Vector[str, ctx] := ctx[function.parameter_names];
+    mut types: std.Vector[str, ctx] := ctx[function.parameter_types];
+    index = 0;
+    while index < len(names) {
+        if std.str_eq(names[index], read.text_operand) == 1 &&
+           std.str_eq(types[index], read.type_identity) == 1 {
+            mut result := "|parameter";
+            result = mir_native_full_program_append_int(std.Concat(result, "|"), index, ctx);
+            result = std.Concat(result, "|");
+            return std.Clone(ctx,
+                std.Concat(result, mir_native_full_program_utf8_hex(read.type_identity, ctx))
+            );
+        }
+        index = index + 1;
+    }
+    return "";
+}
+
+func mir_native_full_program_scoped_contains(
+    outer: MirNativeFullProgramNode[ctx], inner: MirNativeFullProgramNode[ctx]
+) int {
+    if outer.source_start_offset <= inner.source_start_offset &&
+       inner.source_end_offset <= outer.source_end_offset &&
+       outer.source_start_offset < outer.source_end_offset {
+        return 1;
+    }
+    return 0;
+}
+
+func mir_native_full_program_scoped_byte_copy_candidate(
+    function: MirNativeFullProgramFunction[ctx],
+    functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx],
+    nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    start: int, end: int, ctx: &Arena
+) str {
+    if function.is_extern == 1 || start < 0 || end < start || end >= len(nodes) {
+        return "";
+    }
+    mut constructor := 0 - 1;
+    mut native_call := 0 - 1;
+    mut write_call := 0 - 1;
+    mut read_call := 0 - 1;
+    mut accept_call := 0 - 1;
+    mut index := start;
+    while index <= end {
+        mut node := nodes[index];
+        if std.str_eq(node.kind, "Call") == 1 {
+            if node.second_integer_operand == 9 {
+                if constructor >= 0 { return ""; }
+                constructor = index;
+            }
+            if node.second_integer_operand == 10 {
+                if native_call >= 0 { return ""; }
+                native_call = index;
+            }
+            if node.second_integer_operand == 11 {
+                mut symbol := "";
+                mut declared := mir_native_full_program_function_index(
+                    functions, node.second_text_operand, ctx);
+                if declared >= 0 && functions[declared].is_extern == 1 {
+                    symbol = functions[declared].extern_symbol_name;
+                }
+                if std.str_eq(symbol, "os_FfiCallRegionWriteInput") == 1 {
+                    if write_call >= 0 { return ""; }
+                    write_call = index;
+                }
+                if std.str_eq(symbol, "os_FfiCallRegionReadOutput") == 1 {
+                    if read_call >= 0 { return ""; }
+                    read_call = index;
+                }
+                if std.str_eq(symbol, "os_FfiCallRegionAcceptResult") == 1 {
+                    if accept_call >= 0 { return ""; }
+                    accept_call = index;
+                }
+            }
+        }
+        index = index + 1;
+    }
+    if constructor < 0 || native_call < 0 || write_call < 0 ||
+       read_call < 0 || accept_call < 0 {
+        return "";
+    }
+    mut constructor_args: std.Vector[int, ctx] := ctx[nodes[constructor].children];
+    if len(constructor_args) != 3 { return ""; }
+    mut result_declare := 0 - 1;
+    mut native_declare := 0 - 1;
+    mut guard_index := 0 - 1;
+    mut scope_index := 0 - 1;
+    mut input_loop := 0 - 1;
+    mut output_loop := 0 - 1;
+    index = start;
+    while index <= end {
+        mut node := nodes[index];
+        mut children: std.Vector[int, ctx] := ctx[node.children];
+        if std.str_eq(node.kind, "LocalDeclare") == 1 && len(children) == 1 {
+            if children[0] == constructor {
+                if result_declare >= 0 { return ""; }
+                result_declare = index;
+            }
+            if children[0] == native_call {
+                if native_declare >= 0 { return ""; }
+                native_declare = index;
+            }
+        }
+        if std.str_eq(node.kind, "UnsafeScope") == 1 &&
+           mir_native_full_program_scoped_contains(node, nodes[constructor]) == 1 &&
+           mir_native_full_program_scoped_contains(node, nodes[native_call]) == 1 {
+            if scope_index >= 0 { return ""; }
+            scope_index = index;
+        }
+        if std.str_eq(node.kind, "Loop") == 1 {
+            if mir_native_full_program_scoped_contains(node, nodes[write_call]) == 1 {
+                if input_loop >= 0 { return ""; }
+                input_loop = index;
+            }
+            if mir_native_full_program_scoped_contains(node, nodes[read_call]) == 1 {
+                if output_loop >= 0 { return ""; }
+                output_loop = index;
+            }
+        }
+        index = index + 1;
+    }
+    if result_declare < 0 || native_declare < 0 || scope_index < 0 ||
+       input_loop < 0 || output_loop < 0 { return ""; }
+    index = start;
+    while index <= end {
+        mut node := nodes[index];
+        if std.str_eq(node.kind, "GuardUnwrap") == 1 {
+            mut children: std.Vector[int, ctx] := ctx[node.children];
+            if len(children) == 2 &&
+               std.str_eq(nodes[children[0]].kind, "MoveValue") == 1 {
+                mut moved: std.Vector[int, ctx] := ctx[nodes[children[0]].children];
+                if len(moved) == 1 &&
+                   std.str_eq(nodes[moved[0]].kind, "LocalRead") == 1 &&
+                   std.str_eq(nodes[moved[0]].text_operand,
+                       nodes[result_declare].text_operand) == 1 {
+                    if guard_index >= 0 { return ""; }
+                    guard_index = index;
+                }
+            }
+        }
+        index = index + 1;
+    }
+    if guard_index < 0 || len(nodes[guard_index].text_operand) == 0 {
+        return "";
+    }
+    mut backing_read := 0 - 1;
+    mut output_read := 0 - 1;
+    index = start;
+    while index <= end {
+        mut node := nodes[index];
+        if std.str_eq(node.kind, "IndexRead") == 1 &&
+           mir_native_full_program_scoped_contains(nodes[input_loop], node) == 1 {
+            mut children: std.Vector[int, ctx] := ctx[node.children];
+            if len(children) != 2 || backing_read >= 0 { return ""; }
+            backing_read = children[0];
+        }
+        if std.str_eq(node.kind, "Call") == 1 &&
+           mir_native_full_program_scoped_contains(nodes[output_loop], node) == 1 {
+            mut children: std.Vector[int, ctx] := ctx[node.children];
+            if len(children) == 2 &&
+               std.str_eq(nodes[children[0]].kind, "FieldOrMethodSelect") == 1 {
+                mut receiver: std.Vector[int, ctx] := ctx[nodes[children[0]].children];
+                if len(receiver) == 1 {
+                    if output_read >= 0 { return ""; }
+                    output_read = receiver[0];
+                }
+            }
+        }
+        index = index + 1;
+    }
+    if backing_read < 0 || output_read < 0 { return ""; }
+    mut input_backing := mir_native_full_program_scoped_anchor(
+        function, nodes, start, end, backing_read, ctx);
+    mut input_count := mir_native_full_program_scoped_anchor(
+        function, nodes, start, end, constructor_args[1], ctx);
+    mut output_backing := mir_native_full_program_scoped_anchor(
+        function, nodes, start, end, output_read, ctx);
+    mut output_capacity := mir_native_full_program_scoped_anchor(
+        function, nodes, start, end, constructor_args[2], ctx);
+    if len(input_backing) == 0 || len(input_count) == 0 ||
+       len(output_backing) == 0 || len(output_capacity) == 0 {
+        return "";
+    }
+    mut prefill_loop := 0 - 1;
+    index = start;
+    while index <= end {
+        mut node := nodes[index];
+        if std.str_eq(node.kind, "Loop") == 1 &&
+           node.source_end_offset < nodes[constructor].source_start_offset {
+            if prefill_loop >= 0 { return ""; }
+            prefill_loop = index;
+        }
+        index = index + 1;
+    }
+    if prefill_loop < 0 { return ""; }
+    mut result := "|scoped_byte_copy.v1";
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), scope_index, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), constructor, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), result_declare, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), guard_index, ctx);
+    result = std.Concat(result, "|");
+    result = std.Concat(result, mir_native_full_program_utf8_hex(nodes[guard_index].text_operand, ctx));
+    result = std.Concat(result, input_backing);
+    result = std.Concat(result, input_count);
+    result = std.Concat(result, output_backing);
+    result = std.Concat(result, output_capacity);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), prefill_loop, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), input_loop, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), native_call, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), native_declare, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), accept_call, ctx);
+    result = mir_native_full_program_append_int(std.Concat(result, "|"), output_loop, ctx);
+    return std.Clone(ctx, result);
 }
 
 func mir_native_full_program_integer_width(value: int) int {
@@ -3282,6 +3993,9 @@ func mir_native_full_program_serialize_function_row(function_index: int, functio
             parameter_types[parameter_index], ctx
         ));
         parameter_index = parameter_index + 1;
+    }
+    if function.is_extern == 0 && len(function.scoped_byte_copy_plan) > 0 {
+        row = std.Concat(row, function.scoped_byte_copy_plan);
     }
     row = std.Concat(row, "\n");
     return std.Clone(ctx, row);
@@ -3454,6 +4168,9 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 parameter_index = parameter_index + 1;
             }
         }
+        if function.is_extern == 0 && len(function.scoped_byte_copy_plan) > 0 {
+            total_size = total_size + len(function.scoped_byte_copy_plan);
+        }
         function_index = function_index + 1;
     }
     total_size = total_size + len("node_count: ") +
@@ -3485,7 +4202,8 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
         if std.str_eq(node.kind, "Call") == 1 &&
            (node.second_integer_operand == 3 || node.second_integer_operand == 4 ||
             node.second_integer_operand == 5 || node.second_integer_operand == 7 ||
-            node.second_integer_operand == 8) &&
+            node.second_integer_operand == 8 || node.second_integer_operand == 9 ||
+            node.second_integer_operand == 10 || node.second_integer_operand == 11) &&
            len(isolated_plan) == 0 {
             return std.Clone(ctx, "");
         }
@@ -3703,6 +4421,11 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 cursor = mir_native_full_program_write_text(destination, cursor, "|");
                 cursor = mir_native_full_program_write_utf8_hex(
                     destination, cursor, function.ffi_destructor_identity
+                );
+            }
+            if function.is_extern == 0 && len(function.scoped_byte_copy_plan) > 0 {
+                cursor = mir_native_full_program_write_text(
+                    destination, cursor, function.scoped_byte_copy_plan
                 );
             }
             cursor = mir_native_full_program_write_text(destination, cursor, "\n");
@@ -4066,6 +4789,7 @@ func mir_native_full_program_add_formal_runtime_signatures(
                                 function.ffi_return_policy = "";
                                 function.ffi_destructor_identity = "";
                                 function.isolated_call_plan = "";
+                                function.scoped_byte_copy_plan = "";
                                 mut names: std.Vector[str, ctx] := std.VectorNew(ctx);
                                 position = 0;
                                 while position < actual_count {
@@ -4326,6 +5050,7 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
     result.represented = 0;
     result.invalid = 0;
     result.deferred = 0;
+    result.scoped_candidate_count = 0;
     result.reason_code = std.Clone(ctx, "");
     result.diagnostic = std.Clone(ctx, "");
     result.bundle = mir.mir_make_program_bundle("invalid", ctx);
@@ -4340,6 +5065,15 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
         ctx
     );
     result.represented = model.represented;
+    mut planned_functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[model.functions];
+    mut planned_index := 0;
+    while planned_index < len(planned_functions) {
+        if len(planned_functions[planned_index].scoped_byte_copy_plan) > 0 {
+            result.scoped_candidate_count = result.scoped_candidate_count + 1;
+        }
+        planned_index = planned_index + 1;
+    }
     if model.invalid == 1 {
         result.invalid = 1;
         result.diagnostic = std.Clone(ctx, model.diagnostic);

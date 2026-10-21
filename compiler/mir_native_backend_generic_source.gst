@@ -3218,11 +3218,50 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
             );
         }
         if metadata_source_result.deferred == 1 {
-            return mir_native_generic_deferred_result(
-                metadata_source_result.reason_code,
-                metadata_source_result.diagnostic,
-                ctx
-            );
+            // The metadata-only profile must keep its inert declaration and
+            // historical deferral meanings. A checked linear payload moved
+            // through Guard with defer may instead use the existing full
+            // executable profile, which validates its complete body and
+            // resource cleanup plan before claiming representation.
+            mut old_guard_defer := 0;
+            mut new_scoped_candidate := 0;
+            if std.str_eq(metadata_source_result.reason_code,
+                "deferred_p13_resource_runtime_semantics") == 1 {
+                old_guard_defer =
+                    full_program.mir_native_full_program_has_linear_guard_defer_candidate(
+                        programs, module_prefixes, env, ctx
+                    );
+                new_scoped_candidate =
+                    full_program.mir_native_full_program_has_scoped_byte_copy_candidate(
+                        programs, module_prefixes, env, ctx
+                    );
+            }
+            if old_guard_defer == 1 || new_scoped_candidate == 1 {
+                mut full_resource_result :=
+                    full_program.mir_native_full_program_source_lower(
+                        programs, module_paths, module_prefixes, env, ctx
+                    );
+                if full_resource_result.invalid == 1 {
+                    return mir_native_generic_empty_result(
+                        3, full_resource_result.diagnostic, ctx
+                    );
+                }
+                if full_resource_result.represented == 1 &&
+                   full_resource_result.deferred == 0 &&
+                   (old_guard_defer == 1 ||
+                    full_resource_result.scoped_candidate_count > 0) {
+                    metadata_source_result.represented = 1;
+                    metadata_source_result.deferred = 0;
+                    metadata_source_result.bundle = full_resource_result.bundle;
+                }
+            }
+            if metadata_source_result.deferred == 1 {
+                return mir_native_generic_deferred_result(
+                    metadata_source_result.reason_code,
+                    metadata_source_result.diagnostic,
+                    ctx
+                );
+            }
         }
         if metadata_source_result.represented == 1 {
             bundle = metadata_source_result.bundle;

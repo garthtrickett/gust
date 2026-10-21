@@ -43,6 +43,17 @@ def record(activation: dict) -> dict:
 
 
 def before_approved_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("scoped_byte_copy_r2_successor"):
+        from phase26_r2_scoped_copy_registration import normalize_relay, normalize_text
+        if path == CR15_PATH:
+            live_digest = normalize_relay({"phase26_activation_audit": activation}, live_digest)
+        successor = activation["scoped_byte_copy_r2_successor"]["phase23_text_surface_successor"]
+        matches = [entry for entry in successor["changed_rows"] if entry["path"] == path]
+        require(len(matches) <= 1, f"duplicate R2 text path: {path}")
+        if matches:
+            require(matches[0]["current_digest"] == live_digest,
+                    f"R2 text digest drifted: {path}")
+            live_digest = matches[0]["previous_digest"]
     reference_relay = activation.get(
         "reference_index_element_r4_cr15_relay_digest_successor")
     if reference_relay is not None and path == CR15_PATH:
@@ -148,6 +159,10 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    actual_live = live
+    if activation.get("scoped_byte_copy_r2_successor"):
+        from phase26_r2_scoped_copy_registration import normalize_spelling
+        live = normalize_spelling({"phase26_activation_audit": activation}, live)
     reference_index = activation.get(
         "reference_index_element_r4_spelling_inventory_successor")
     if reference_index is not None:
@@ -159,15 +174,18 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
             "compiler/phase26_reference_index_element_source.gst",
             "compiler/typechecker.gst",
         ]
+        from phase26_r2_scoped_copy_registration import prior_source_digest
         require(reference_index == {
             "contract_version":
                 "phase26_1r4_reference_index_element_spelling_inventory_successor_v1",
             "previous_inventory_summary": previous,
             "current_inventory_summary": live,
             "changed_source_hashes": [
-                {"path": path, "digest": digest(path)} for path in source_paths],
+                {"path": path, "digest": prior_source_digest(
+                    {"phase26_activation_audit": activation}, path)}
+                for path in source_paths],
             "partial_extra_or_substituted_inventory": "rejected",
-        } and live == manifest_summary(source_sites()) and
+        } and actual_live == manifest_summary(source_sites()) and
                 live["source_file_count"] == previous["source_file_count"] + 2 and
                 live["site_count"] == previous["site_count"] and
                 live["semantic_site_count"] == previous["semantic_site_count"] and
@@ -182,13 +200,20 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
         paths = ["compiler/experiments/cranelift/src/approved_package.rs",
                  "compiler/experiments/cranelift/src/full_program.rs",
                  "compiler/experiments/cranelift/src/main.rs"]
-        source_hashes = [{"path": path, "digest": digest(path)} for path in paths]
+        from phase26_r2_scoped_copy_registration import prior_source_digest
+        source_hashes = [{"path": path, "digest": prior_source_digest(
+            {"phase26_activation_audit": activation}, path)} for path in paths]
         sites = [{"path": site["path"], "line": site["line"],
                   "classification": site["classification"],
                   "spellings": site["spellings"]}
                  for site in source_sites()
                  if site["path"] == paths[0] or
                  (site["path"] == paths[1] and site["line"] == 2339)]
+        if activation.get("scoped_byte_copy_r2_successor"):
+            from phase26_r2_scoped_copy_registration import preserved_predecessor_sites
+            sites = preserved_predecessor_sites(
+                {"phase26_activation_audit": activation}, approved["added_sites"],
+                source_sites())
         require(approved == {
             "contract_version": "phase26_1r1_approved_package_spelling_successor_v1",
             "previous_inventory_summary": previous,
@@ -221,6 +246,10 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    actual_live = live
+    if activation.get("scoped_byte_copy_r2_successor"):
+        from phase26_r2_scoped_copy_registration import normalize_filename
+        live = normalize_filename({"phase26_activation_audit": activation}, live)
     reference_index = activation.get(
         "reference_index_element_r4_filename_site_successor")
     if reference_index is not None:
@@ -234,7 +263,7 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
             "line_deltas": [now["line"] - before["line"]
                             for before, now in zip(prior, live)],
             "partial_extra_or_substituted_site": "rejected",
-        } and live == source_sites() and len(prior) == len(live) == 3 and
+        } and actual_live == source_sites() and len(prior) == len(live) == 3 and
                 all({key: value for key, value in now.items() if key != "line"} ==
                     {key: value for key, value in before.items() if key != "line"}
                     for before, now in zip(prior, live)),

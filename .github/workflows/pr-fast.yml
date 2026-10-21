@@ -74,6 +74,9 @@ jobs:
       - name: Build Gust
         run: make gust
 
+      - name: Bind Phase 26 R2 build source and tools
+        run: python3 scripts/phase26_r2_tool_binding.py record
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
@@ -842,6 +845,9 @@ jobs:
 
       - name: Phase 26 composed borrow positions and native error status
         run: just guard-cranelift-phase26-ffi-policy-vector-status
+
+      - name: Phase 26 scoped signed byte-copy runtime
+        run: just guard-cranelift-phase26-scoped-byte-copy
 
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance

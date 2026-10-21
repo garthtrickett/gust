@@ -3858,6 +3858,9 @@ def relay_site_anchor(registry: dict) -> dict:
 def normalize_phase22_invocations(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Project the exact post relay onto the closed Phase 22 site identity."""
+    if registry.get("phase26_activation_audit", {}).get("scoped_byte_copy_r2_successor"):
+        from phase26_r2_scoped_copy_registration import normalize_invocations
+        rows = normalize_invocations(registry, rows)
     reference_index = registry.get("phase26_activation_audit", {}).get(
         "reference_index_element_r4_phase22_invocation_successor")
     if reference_index is not None:
@@ -4129,6 +4132,9 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    if registry.get("phase26_activation_audit", {}).get("scoped_byte_copy_r2_successor"):
+        from phase26_r2_scoped_copy_registration import normalize_text
+        rows = normalize_text(registry, rows)
     reference_index = registry.get("phase26_activation_audit", {}).get(
         "reference_index_element_r4_phase23_text_surface_successor")
     if reference_index is not None:

@@ -31,6 +31,7 @@ mod target_authority;
 mod scope_exit_cleanup;
 mod specialized_resource;
 mod full_program;
+mod scoped_byte_copy;
 mod approved_package;
 
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -16626,6 +16627,13 @@ fn compile_phase10_scalar_metadata_request_path(
                     &package_dir, selected, &parsed_program,
                     &approved_package::PRODUCTION_SNAPSHOT, &request.output_path,
                 )?);
+            } else if parsed_program.nodes.iter().any(|node|
+                node.kind == "Call" && node.second_integer == 10) {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "byte-span Call requires exact signed approved-package admission",
+                ));
             }
             full_program::lower_program(&parsed_program, &object_path)
             .map_err(|error| {

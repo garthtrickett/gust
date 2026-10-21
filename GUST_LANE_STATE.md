@@ -157,3 +157,120 @@ with one count relabelled:
   verification time; the latest scheduled run was `34577854352` on
   `2a91c35a`, `success`. The first post-closure nightly is the standing
   Level-3 signal named above.
+
+## Phase 26 FFI-R2 active work held at authority boundary (2026-10-20)
+
+The Cranelift R2 worktree is `codex/phase26-1r2-fallible-out-prototype` at
+`6cafb2eaa7254985dccfc217c61482903801cffa`, with uncommitted compiler,
+worker, and runtime changes. No R2 capability PR has been published. All six
+Phase 26 rows and the general mode 63 follow-up remain OPEN.
+
+The current test-only signed Byte adapter witness parsed the source-produced
+scoped canonical program, admitted a signed test object, lowered that same
+program, linked with the pinned compiler-owned runtime, and ran the resulting
+executable to its expected exit code 2. Work `1792502866032` finished with
+exit 0; its sole wait was reaped. The frozen result is
+`/home/gust/phase26-recovery/boot970ebe4e/r2-scoped-actual-signed-link-unit-v1/result.json`
+at SHA-256 `9c15997f08330257a1cb4cb7a62dfcd090fc6274fd28258e44d7903eaf0339f5`.
+All 163 input hashes matched before and after, peak memory was 1,357,692,928
+bytes, and OOM counters stayed zero. This observes the call and accepted byte
+count; it does not independently prove returned byte values. The production
+signing roots and approved package registry remain empty.
+
+Two decisions block the full safe first-release claim: the operator's pending
+choice of direct Vector versus branded Index tagged success representation,
+and ownership of a generic safe Vector repair. A separate compile-only R4
+probe accepted safe source assignments to Vector `len` and `capacity`; no
+hostile generated executable was run. The source-level observation and the
+existing unchecked native index and growth paths require a generic correction
+before a safe wrapper can rely on Vector backing or capacity. The R2 patch
+also still needs output byte, failure/contradiction, bootstrap, Stdlib wrapper,
+production signer/package, and public gate qualification.
+
+The complete current evidence and next frontier are pinned in
+`/home/gust/phase26-recovery/boot970ebe4e/r2-current-handoff-20261020.json`
+at SHA-256 `3b6d17c69e709ea9458beb4749ed59ce3092c59ac67f8720156baf2423593294`.
+No own job or wait is live. This is a terminal work record, not a Phase 26
+completion or a decision to change public representation or Vector semantics.
+
+### Resumption (2026-10-20)
+
+The operator resumed this Cranelift lane on the same worktree and branch.
+The terminal state above is historical. Work continues on independent R2
+qualification: actual output bytes, failure and cleanup paths, graph budgets,
+and generic caller shapes. The public tagged-result and collection ownership
+decisions remain open and are not being implemented by inference.
+
+### Post-R4 R2 successor (2026-10-20)
+
+The active isolated R2 successor is
+`/home/gust/code/worktrees/gust/p26-r2-scoped-copy` on
+`codex/phase26-1r2-scoped-copy`, based on merged R4 main `7e52a303`. The
+original prototype worktree and its frozen evidence remain untouched. This
+successor is still uncommitted and has no R2 pull request.
+
+The source-produced caller-borrowed five-argument fixture is now enrolled as
+`tests/cranelift/phase26_r2_scoped_caller_five_arg.gst` (SHA-256
+`cf49093591bc4adb2faacded836d7406c4ec02725774cbacbc952d10b2f82236`).
+The normal post-R4 Gust compiler and normal Rust worker produced its canonical
+bundle, then refused the production CLI route at canonical validation with
+`byte-span Call requires exact signed approved-package admission`. Actual
+compiler exit was 1 and no executable was produced. The diagnostic result is
+`r2-post-r4-inrepo-current-cli-v1/output/result.json` under the private
+Phase 26 recovery root, SHA-256
+`e10fdd8e373f5038a5a065d84612cb2789d00a2609fb7e9896f9d1fe4e04c246`.
+Only the source module path differs from the earlier private capture after
+normalizing path identity; this is not package admission.
+
+Separately, the current Rust test profile parsed the post-R4 canonical
+program, admitted its signed test package, linked the compiler-owned runtime,
+and executed the generated program with exit 2. A read-only trace of that
+exact executable observed output bytes 3 and 4 before exit. The normal worker
+ELF is SHA-256 `2426f845f633cf93e00f95fb2bc804dd0e60c58705ba4e51c5657ff9b2772028`;
+the focused signed witness and byte trace are
+`r2-post-r4-signed-borrowed-native-unit-v1/result.json` and
+`r2-post-r4-borrowed-output-byte-trace-v1/result.json` in the same recovery
+root. The later one-reference layout, ordinary operation dispatch, and
+meaning-anchored renamed-module parser controls pass in focused Rust tests;
+their test-only hardening is still in progress.
+
+The production package registry and signer root remain empty. Full FFI-R2
+still needs its coherent failure and cleanup cohort, bounded malformed-graph
+controls, bootstrap and owning guard qualification, and publication. The
+tagged public result choice and generic safe Vector invariant repair remain
+separate OPEN decisions; this record does not claim a safe wrapper,
+production approval, or Phase 26 closure.
+
+### R2 scoped-copy qualification update (2026-10-21)
+
+The same `codex/phase26-1r2-scoped-copy` successor remains active on merged R4
+base `7e52a303`; no R2 PR has been published. The test-profile owning guard V2
+completed with exit 0 after three in-repo source-to-canonical comparisons,
+production default-denial, focused parser and runtime tests, and four signed
+native test executables. Its immutable result and 35 retained artifacts are at
+`/home/gust/phase26-recovery/boot970ebe4e/r2-owning-fullguard-v2` and
+`r2-owning-fullguard-v2-retained-v1` under the same recovery root. This result
+predates the resource compatibility correction below and is predecessor
+evidence, not a current-source guard pass.
+
+The first R2 native bootstrap attempt stopped at compiler stage 1: the new
+generic nonlive resource check rejected the existing Guard → ReadDir loop →
+CloseDir path in `compiler/resolver.gst`. The correction retains the historical
+directory shadow transition while enforcing the new nonlive check for generic
+resource owners, including authenticated `fallible_owned_out` acquisitions.
+Focused changed-source controls passed legal direct release, rejected a
+scheduled owner's transfer and repeated consumption, and preserved the legacy
+open-directory move refusal. The changed-source native fixed point then passed:
+stage 1 and stage 2 each emitted one identical object and linked identical
+compiler executables. Frozen outcomes are `r2-owning-legacy-correction-focus-v4`
+and `r2-owning-bootstrap-v2`; the latter's objects, tools, and logs are retained
+in `r2-owning-bootstrap-v2-retained-v1` under the recovery root. The bootstrap
+stage-1 compiler build is the positive observation of the previously failing
+directory loop. No generated hostile source executable was run.
+
+The R2 owning guard now includes checked-in generic resource positives and
+misuse negatives so CI can preserve this correction. Its changed-source run,
+registration and pinned text inventory, fixed-commit review, PR checks, and
+merge are still pending. The production signing roots remain empty. Public
+tagged-result representation and the separate generic Vector safety floor
+remain OPEN; all six Phase 26 rows and general mode 63 remain OPEN.
