@@ -2717,11 +2717,15 @@ def main() -> int:
             return 0
         value, rows, summary = validate()
         projected = render(value, rows, summary)
+        from phase26_r4_collection_registration import spelling_review_path, spelling_review_text
+        live_registry = json.loads(REGISTRY.read_text())
+        review = spelling_review_path(live_registry, REVIEW)
+        projected = spelling_review_text(live_registry, projected)
         if args.command == "project":
-            REVIEW.write_text(projected, encoding="utf-8")
+            review.write_text(projected, encoding="utf-8")
         elif args.command in {"check-review", "full"}:
-            require(REVIEW.is_file(), f"missing generated review {REVIEW_PATH}")
-            require(REVIEW.read_text(encoding="utf-8") == projected,
+            require(review.is_file(), f"missing generated review {review}")
+            require(review.read_text(encoding="utf-8") == projected,
                     "generated spelling inventory is stale; run project")
         if args.command in {"evidence", "full"}:
             run_falsifiers(rows, summary)

@@ -282,7 +282,7 @@ def normalize_spelling(registry: dict, summary: dict) -> dict:
     return previous
 
 
-def normalize_filename(registry: dict, sites: list[dict]) -> list[dict]:
+def normalize_filename_predecessor(registry: dict, sites: list[dict]) -> list[dict]:
     value = identity(registry)["filename_site_successor"]
     previous = registry["phase26_activation_audit"][
         "reference_index_element_r4_filename_site_successor"]["current_sites"]
@@ -297,6 +297,11 @@ def normalize_filename(registry: dict, sites: list[dict]) -> list[dict]:
                 for before, now in zip(previous, sites)),
             "R2 filename selectors changed beyond exact line shifts")
     return previous
+
+
+def normalize_filename(registry: dict, sites: list[dict]) -> list[dict]:
+    from phase26_r4_collection_registration import project
+    return normalize_filename_predecessor(registry, project(registry, "filename", sites))
 
 
 def normalize_relay(registry: dict, live_digest: str) -> str:
@@ -380,7 +385,7 @@ def inversions() -> None:
     normalize_production_audit(registry, production)
     normalize_text(registry, surfaces)
     normalize_spelling(registry, spelling)
-    normalize_filename(registry, filename)
+    normalize_filename_predecessor(registry, filename)
     normalize_relay(registry, relay)
 
     def rejected(label: str, expected: str, call) -> None:
@@ -486,7 +491,7 @@ def inversions() -> None:
     changed_filename = copy.deepcopy(filename)
     changed_filename[0]["line"] -= 1
     rejected("changed filename selector", "R2 filename selectors",
-             lambda: normalize_filename(registry, changed_filename))
+             lambda: normalize_filename_predecessor(registry, changed_filename))
     rejected("changed relay digest", "R2 relay digest",
              lambda: normalize_relay(registry, "0" * 64))
     changed_production = copy.deepcopy(production)
@@ -533,9 +538,11 @@ def inversions() -> None:
         globals()["digest"] = altered_digest
         # The newer exact-file pin sees a current-tree removal before the R2
         # production projection; retain the rejection and name its real owner.
-        expected = ("R3 changed file digest" if registry.get(
-            "phase26_activation_audit", {}).get("zlib_adapter_r3_successor")
-            else "R2 production audit")
+        expected = ("R4 changed file drifted: justfile" if registry.get(
+            "phase26_activation_audit", {}).get("collection_validity_r4_successor") else
+            "R3 changed file digest" if registry.get(
+            "phase26_activation_audit", {}).get("zlib_adapter_r3_successor") else
+            "R2 production audit")
         rejected("missing R2 owning step", expected,
                  lambda: normalize_production_audit(registry, production))
     finally:

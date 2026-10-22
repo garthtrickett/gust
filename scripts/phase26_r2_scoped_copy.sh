@@ -113,9 +113,9 @@ rg -F 'collection caller graph is recursive' \
 python3 scripts/phase26_r2_source_projection.py recursive_caller \
     "$recursive_dir/keep/program.mir.bundle"
 
-# The typed producer emits both hostile caller histories. The current worker
-# must reject the field write and copied alias before package admission; only
-# canonical bytes are retained, and neither generated program is executed.
+# OD20 rejects the forged metadata write before native discovery. The copied
+# alias retains its worker rejection and canonical projection. Frozen canonical
+# tests below independently retain both worker proofs; neither hostile source runs.
 for case in forged_len copied_alias; do
     case_dir="$scratch/producer-$case"
     source="$PWD/tests/cranelift/phase26_r2_scoped_caller_${case}_never_execute.gst"
@@ -131,13 +131,13 @@ for case in forged_len copied_alias; do
     fi
     test "$status" -gt 0 && test "$status" -lt 128
     test ! -e "$case_dir/never-execute" && test ! -L "$case_dir/never-execute"
+    if test "$case" = forged_len; then
+        python3 scripts/phase26_r4_frontend_rejection.py validate "$case_dir" "$status"
+        continue
+    fi
     rg -F 'stage=canonical_mir_validation kind=invalid_canonical_mir' \
         "$case_dir/compile.stderr" >/dev/null
-    if test "$case" = forged_len; then
-        expected='collection caller has unsupported control or aliasing'
-    else
-        expected='collection caller local has an unproved initializer'
-    fi
+    expected='collection caller local has an unproved initializer'
     rg -F "$expected" "$case_dir/compile.stderr" >/dev/null
     python3 scripts/phase26_r2_source_projection.py "$case" \
         "$case_dir/keep/program.mir.bundle"

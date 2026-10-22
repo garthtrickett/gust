@@ -137,6 +137,11 @@ func mir_native_filesystem_analyze(
         {
             return model;
         }
+        if statements[0].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] ||
+           statements[2].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] ||
+           statements[3].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] ||
+           statements[5].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]]
+        { return model; }
         mut arena_call := ctx[statements[0].VarDecl.value];
         mut deferred_call := ctx[statements[1].Defer.expr];
         mut path_expression := ctx[statements[2].VarDecl.value];
@@ -197,6 +202,9 @@ func mir_native_allocation_analyze(
         if statements[0].tag != 4 || statements[1].tag != 11 ||
            statements[2].tag != 4 || statements[3].tag != 4 ||
            statements[4].tag != 5 || statements[5].tag != 13 || statements[6].tag != 13
+        { return model; }
+        if statements[0].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] ||
+           statements[2].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]]
         { return model; }
         mut arena_call := ctx[statements[0].VarDecl.value];
         mut deferred_call := ctx[statements[1].Defer.expr];

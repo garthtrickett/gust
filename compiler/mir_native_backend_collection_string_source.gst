@@ -477,7 +477,9 @@ func mir_native_collection_string_analyze_collections(
                     statement_recognized = 1;
                 }
             }
-            if statement.tag == 4 {
+            if statement.tag == 4 &&
+               statement.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+            {
                 mut value := ctx[statement.VarDecl.value];
                 mut call_name := mir_native_collection_string_call_name(value, ctx);
                 mut arguments: std.Vector[ast.Expression[ctx], ctx] :=
@@ -624,7 +626,9 @@ func mir_native_collection_string_analyze_strings(
         mut statement := statements[index];
         mut statement_recognized := 0;
         unsafe {
-            if statement.tag == 4 {
+            if statement.tag == 4 &&
+               statement.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+            {
                 mut value := ctx[statement.VarDecl.value];
                 mut resolved := mir_native_collection_string_string_value(
                     value, string_names, string_values, ctx

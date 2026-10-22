@@ -13,6 +13,9 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{default_libcall_names, DataDescription, DataId, FuncId, Linkage, Module};
 use cranelift_object::{ObjectBuilder, ObjectModule};
 
+#[path = "checked_collection.rs"]
+mod checked_collection;
+
 pub const FORMAT: &str = "gust.compiler_executable_mir.v1";
 
 #[derive(Debug, Clone)]
@@ -329,6 +332,39 @@ pub(crate) fn resolve_collection_intrinsic(program: &Program, index: usize)
     })
 }
 
+// The source records existing copy/ownership authority on an ordinary Pop
+// Call. This is not a new instruction or admission to the R2 scoped cohort.
+fn validate_collection_pop(program: &Program, index: usize) -> Result<(), Box<dyn Error>> {
+    let node = &program.nodes[index];
+    let plan = node.collection_intrinsic.as_ref().ok_or_else(|| invalid("Pop has no collection authority"))?;
+    if node.kind != "Call" || node.integer != 0 || node.second_integer != 0 ||
+       !matches!(plan.opcode.as_str(), "PopCopy" | "PopTransfer") ||
+       node.ty != plan.element_type || node.children.len() != 1 {
+        return Err(invalid("collection Pop authority has incompatible operation or operands"));
+    }
+    let callee = &program.nodes[node.children[0]];
+    if callee.kind != "FieldOrMethodSelect" || callee.text != "Pop" || callee.children.len() != 1 ||
+       program.nodes[callee.children[0]].ty != plan.receiver_type {
+        return Err(invalid("collection Pop authority disagrees with its receiver"));
+    }
+    let value_type = if plan.receiver_type.starts_with("Reference(") {
+        pointer_inner_type(&plan.receiver_type).ok_or_else(|| invalid("Pop reference has no value type"))?
+    } else { &plan.receiver_type };
+    let name = struct_type_name(value_type).ok_or_else(|| invalid("Pop receiver is not an aggregate"))?;
+    let layout = program.layouts.iter().find(|layout| layout.name == plan.layout_id)
+        .ok_or_else(|| invalid("Pop receiver layout is absent"))?;
+    if layout.erased_name != name || layout.brand != plan.brand || layout.repr_c || layout.packed || !layout.abi.is_empty() || layout.fields.len() != 4 {
+        return Err(invalid("Pop layout or brand disagrees"));
+    }
+    for (name, ty) in [("data", format!("RawPointer({})", plan.element_type)),
+        ("len", "Int".into()), ("capacity", "Int".into()), ("arena", "RawPointer(Arena)".into())] {
+        if layout.fields.iter().filter(|field| field.name == name && field.ty == ty).count() != 1 {
+            return Err(invalid("Pop storage fields disagree"));
+        }
+    }
+    Ok(())
+}
+
 fn validate_collection_intrinsic_shapes(program: &Program)
     -> Result<HashMap<usize, ResolvedCollectionIntrinsic>, Box<dyn Error>> {
     // Each resolver constructs the ordinary layout map and checks all matching
@@ -365,7 +401,8 @@ fn validate_collection_intrinsic_shapes(program: &Program)
             }
             resolved.insert(index, resolve_collection_intrinsic(program, index)?);
         } else if node.collection_intrinsic.is_some() {
-            return Err(invalid("non-intrinsic node has collection operation metadata"));
+            if !reachable.contains(&index) { return Err(invalid("collection Pop is outside every defined body")); }
+            validate_collection_pop(program, index)?;
         }
     }
     Ok(resolved)
@@ -3104,10 +3141,11 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let collection_intrinsic = if kind == "CollectionIntrinsic" {
+        let pop_plan = kind == "Call" && values.get(child_end) == Some(&"collection_pop.v1");
+        let collection_intrinsic = if kind == "CollectionIntrinsic" || pop_plan {
             if values.len() != child_end + 6 ||
-                values.get(child_end) != Some(&"collection_intrinsic.v1") ||
-                !values[3].is_empty() || !values[4].is_empty() ||
+                (!pop_plan && values.get(child_end) != Some(&"collection_intrinsic.v1")) ||
+                (!pop_plan && (!values[3].is_empty() || !values[4].is_empty())) ||
                 parse_i32(values[5], "collection integer")? != 0 || second_integer != 0 {
                 return Err(invalid("collection intrinsic has an unknown version or payload"));
             }
@@ -3120,10 +3158,12 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             validate_type(&element_type, "collection element type")?;
             let arity = match opcode.as_str() {
                 "Create" | "Clear" => 1,
+                "PopCopy" | "PopTransfer" if pop_plan => 1,
                 "Read" | "Append" => 2,
                 _ => return Err(invalid("collection intrinsic has an unknown opcode")),
             };
-            if child_count != arity || layout_id.is_empty() ||
+            if (pop_plan && !matches!(opcode.as_str(), "PopCopy" | "PopTransfer")) ||
+                child_count != arity || layout_id.is_empty() ||
                 (opcode == "Create" && ty != receiver_type) ||
                 (opcode == "Read" && ty != element_type) ||
                 (matches!(opcode.as_str(), "Clear" | "Append") && ty != "Void") {
@@ -3194,7 +3234,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             } else { None };
             Some(Box::new(IsolatedCallPlan { target_triple, cleanup, positions, retained }))
         } else {
-            if (kind != "CollectionIntrinsic" && values.len() != child_end) ||
+            if (kind != "CollectionIntrinsic" && !pop_plan && values.len() != child_end) ||
                 kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
                 return Err(invalid("full-program Call has an unknown optional policy or node extension"));
             }
@@ -3513,6 +3553,8 @@ impl<'a> FullProgramCompiler<'a> {
 
     fn declare_program(&mut self) -> Result<(), Box<dyn Error>> {
         for function in &self.program.functions {
+            checked_collection::reject_private_symbol(&function.qualified_name)?;
+            checked_collection::reject_private_symbol(&function.extern_symbol)?;
             let (signature, abi) = function_signature(&self.module, function, &mut self.layouts)?;
             let symbol = if function.is_extern {
                 function.extern_symbol.as_str()
@@ -3567,6 +3609,7 @@ impl<'a> FullProgramCompiler<'a> {
                 continue;
             }
             let symbol = runtime_symbol(node);
+            checked_collection::reject_private_symbol(&symbol)?;
             if symbol.is_empty() || symbol.ends_with("__") {
                 return Err(invalid(format!(
                     "full-program call {} has neither generic inline nor function authority",
@@ -3826,6 +3869,7 @@ impl<'a> FullProgramCompiler<'a> {
 
     fn finish(mut self, output_path: &Path) -> Result<String, Box<dyn Error>> {
         self.declare_program()?;
+        checked_collection::define_checks(&mut self.module)?;
         for index in 0..self.program.functions.len() {
             if !self.program.functions[index].is_extern {
                 self.define_function(index)?;
@@ -4497,13 +4541,8 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 let receiver_eval = self.lower_expression(builder, node.children[0], None)?;
                 self.scalar(builder, receiver_eval, &receiver_node.ty)?
             };
-            let base =
-                builder
-                    .ins()
-                    .load(self.pointer_type(), MemFlags::trusted(), arena_address, 0);
-            return Ok(Place {
-                address: builder.ins().iadd(base, index64),
-            });
+            let size = self.layouts.layout(&node.ty)?.size;
+            return Ok(self.checked_arena_slot(builder, arena_address, index, size));
         }
         let vector_type = if receiver_node.ty.starts_with("Reference(") {
             pointer_inner_type(&receiver_node.ty)
@@ -4514,18 +4553,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if native_vector_value_dispatch_name(vector_type).is_some() {
             let (receiver, receiver_type) =
                 self.lower_receiver_place(builder, node.children[0], false)?;
-            let (data_place, _) = self.field_place(builder, receiver, &receiver_type, "data")?;
-            let data = builder.ins().load(
-                self.pointer_type(),
-                MemFlags::trusted(),
-                data_place.address,
-                0,
-            );
-            let element_size = self.layouts.layout(&node.ty)?.size;
-            let scaled = builder.ins().imul_imm(index64, i64::from(element_size));
-            return Ok(Place {
-                address: builder.ins().iadd(data, scaled),
-            });
+            return self.checked_storage_element(builder, receiver, &receiver_type, index);
         }
         if is_pointer_type(&receiver_node.ty) {
             let receiver_eval = self.lower_expression(builder, node.children[0], None)?;
@@ -5757,20 +5785,18 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let index_node = &self.program.nodes[node.children[1]];
         let index_eval = self.lower_expression(builder, node.children[1], None)?;
         let index = self.scalar(builder, index_eval, &index_node.ty)?;
-        let base = builder
-            .ins()
-            .load(self.pointer_type(), MemFlags::trusted(), arena, 0);
-        let index64 = builder.ins().uextend(types::I64, index);
-        let address = builder.ins().iadd(base, index64);
-        if name == "get_ref" {
-            return Ok(Evaluated::Scalar(address));
-        }
         let element_type = index_element_layout_type(&index_node.ty)?;
+        let size = self.layouts.layout(&element_type)?.size;
+        if name == "get_ref" {
+            let slot = self.checked_arena_slot(builder, arena, index, size);
+            return Ok(Evaluated::Scalar(slot.address));
+        }
         let value_node = &self.program.nodes[node.children[2]];
         let value_eval = self.lower_expression(builder, node.children[2], Some(&element_type))?;
+        let slot = self.checked_arena_slot(builder, arena, index, size);
         self.store_evaluated_as(
             builder,
-            Place { address },
+            slot,
             value_eval,
             &value_node.ty,
             &element_type,
@@ -5794,72 +5820,41 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 "{name} receiver is not a vector: {receiver_type}"
             )));
         }
-        let (data_field, data_type) =
+        let (_, data_type) =
             self.field_place(builder, receiver, &receiver_type, "data")?;
-        let (len_field, _) = self.field_place(builder, receiver, &receiver_type, "len")?;
-        let (capacity_field, _) =
-            self.field_place(builder, receiver, &receiver_type, "capacity")?;
         let element_type = pointer_inner_type(&data_type)
             .ok_or_else(|| invalid("vector data field is not a pointer"))?
             .to_string();
         let element_size = self.layouts.layout(&element_type)?.size;
         if name == "Clear" {
+            let storage = self.checked_storage(builder, receiver, &receiver_type)?;
             let zero = builder.ins().iconst(types::I32, 0);
-            builder
-                .ins()
-                .store(MemFlags::trusted(), zero, len_field.address, 0);
+            builder.ins().store(MemFlags::trusted(), zero, storage.len_field.address, 0);
             return Ok(Evaluated::Void);
         }
         if name == "Set" {
             let index_node = &self.program.nodes[node.children[1]];
             let index_eval = self.lower_expression(builder, node.children[1], None)?;
             let index = self.scalar(builder, index_eval, &index_node.ty)?;
-            let data = builder.ins().load(
-                self.pointer_type(),
-                MemFlags::trusted(),
-                data_field.address,
-                0,
-            );
-            let index64 = builder.ins().uextend(types::I64, index);
-            let offset = builder.ins().imul_imm(index64, i64::from(element_size));
-            let destination = Place {
-                address: builder.ins().iadd(data, offset),
-            };
             let value_node = &self.program.nodes[node.children[2]];
-            let value_eval =
-                self.lower_expression(builder, node.children[2], Some(&element_type))?;
-            self.store_evaluated_as(
-                builder,
-                destination,
-                value_eval,
-                &value_node.ty,
-                &element_type,
-            )?;
+            let value_eval = self.lower_expression(builder, node.children[2], Some(&element_type))?;
+            let destination = self.checked_storage_element(builder, receiver, &receiver_type, index)?;
+            self.store_evaluated_as(builder, destination, value_eval, &value_node.ty, &element_type)?;
             return Ok(Evaluated::Void);
         }
         if name == "Pop" {
-            let len = builder
-                .ins()
-                .load(types::I32, MemFlags::trusted(), len_field.address, 0);
-            let new_len = builder.ins().iadd_imm(len, -1);
-            builder
-                .ins()
-                .store(MemFlags::trusted(), new_len, len_field.address, 0);
-            let data = builder.ins().load(
-                self.pointer_type(),
-                MemFlags::trusted(),
-                data_field.address,
-                0,
-            );
-            let index64 = builder.ins().uextend(types::I64, new_len);
-            let offset = builder.ins().imul_imm(index64, i64::from(element_size));
-            let source = Place {
-                address: builder.ins().iadd(data, offset),
-            };
+            let storage = self.checked_storage(builder, receiver, &receiver_type)?;
+            let nonempty = builder.ins().icmp_imm(IntCC::SignedGreaterThan, storage.len, 0);
+            builder.ins().trapz(nonempty, checked_collection::trap());
+            let new_len = builder.ins().iadd_imm(storage.len, -1);
+            let source = self.checked_element(builder, &storage, new_len);
+            builder.ins().store(MemFlags::trusted(), new_len, storage.len_field.address, 0);
             let result = self.place_for_type(builder, &element_type)?;
             self.copy_place(builder, result, source, element_size)?;
-            let layout = self.layouts.layout(&element_type)?;
-            self.zero_place(builder, source, &layout);
+            if !node.collection_intrinsic.as_ref().is_some_and(|plan| plan.opcode == "PopCopy") {
+                let layout = self.layouts.layout(&element_type)?;
+                self.zero_place(builder, source, &layout);
+            }
             return if is_scalar_type(&element_type) {
                 Ok(Evaluated::Scalar(load_scalar(
                     builder,
@@ -5874,91 +5869,13 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if name != "Push" {
             return Err(invalid(format!("unsupported vector method {name}")));
         }
-        let len = builder
-            .ins()
-            .load(types::I32, MemFlags::trusted(), len_field.address, 0);
-        let capacity =
-            builder
-                .ins()
-                .load(types::I32, MemFlags::trusted(), capacity_field.address, 0);
-        let must_grow = builder
-            .ins()
-            .icmp(IntCC::SignedGreaterThanOrEqual, len, capacity);
-        let grow = builder.create_block();
-        let ready = builder.create_block();
-        builder.ins().brif(must_grow, grow, &[], ready, &[]);
-        builder.switch_to_block(grow);
-        let capacity_zero = builder.ins().icmp_imm(IntCC::Equal, capacity, 0);
-        let eight = builder.ins().iconst(types::I32, 8);
-        let doubled = builder.ins().imul_imm(capacity, 2);
-        let new_capacity = builder.ins().select(capacity_zero, eight, doubled);
-        let (arena_field, _) = self.field_place(builder, receiver, &receiver_type, "arena")?;
-        let arena = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            arena_field.address,
-            0,
-        );
-        let bytes32 = builder
-            .ins()
-            .imul_imm(new_capacity, i64::from(element_size));
-        let bytes = builder.ins().uextend(types::I64, bytes32);
-        let allocate = self.runtime.get("os_ArenaAlloc").unwrap().clone();
-        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
-        let allocation = builder.ins().call(allocate_ref, &[arena, bytes]);
-        let allocation_result = builder.inst_results(allocation)[0];
-        let offset = builder.ins().uextend(types::I64, allocation_result);
-        let base = builder
-            .ins()
-            .load(self.pointer_type(), MemFlags::trusted(), arena, 0);
-        let new_data = builder.ins().iadd(base, offset);
-        let old_data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
-        let has_values = builder.ins().icmp_imm(IntCC::NotEqual, len, 0);
-        let copy = builder.create_block();
-        let grown = builder.create_block();
-        builder.ins().brif(has_values, copy, &[], grown, &[]);
-        builder.switch_to_block(copy);
-        let used32 = builder.ins().imul_imm(len, i64::from(element_size));
-        self.copy_dynamic(builder, new_data, old_data, used32)?;
-        builder.ins().jump(grown, &[]);
-        builder.switch_to_block(grown);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_data, data_field.address, 0);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_capacity, capacity_field.address, 0);
-        builder.ins().jump(ready, &[]);
-        builder.switch_to_block(ready);
-        let data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
-        let index64 = builder.ins().uextend(types::I64, len);
-        let value_offset = builder.ins().imul_imm(index64, i64::from(element_size));
-        let destination = Place {
-            address: builder.ins().iadd(data, value_offset),
-        };
         let value_node = &self.program.nodes[node.children[1]];
         let value_eval = self.lower_expression(builder, node.children[1], Some(&element_type))?;
-        self.store_evaluated_as(
-            builder,
-            destination,
-            value_eval,
-            &value_node.ty,
-            &element_type,
-        )?;
-        let next_len = builder.ins().iadd_imm(len, 1);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), next_len, len_field.address, 0);
+        let storage = self.checked_append_slot(builder, receiver, &receiver_type)?;
+        let destination = storage.destination;
+        self.store_evaluated_as(builder, destination, value_eval, &value_node.ty, &element_type)?;
+        let next_len = builder.ins().iadd_imm(storage.len, 1);
+        builder.ins().store(MemFlags::trusted(), next_len, storage.len_field.address, 0);
         Ok(Evaluated::Void)
     }
 
@@ -6318,87 +6235,15 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         source: Place,
         element_type: &str,
     ) -> Result<(), Box<dyn Error>> {
+        let storage = self.checked_append_slot(builder, vector, vector_type)?;
+        let destination = storage.destination;
         let element_size = self.layouts.layout(element_type)?.size;
-        let (data_field, _) = self.field_place(builder, vector, vector_type, "data")?;
-        let (len_field, _) = self.field_place(builder, vector, vector_type, "len")?;
-        let (capacity_field, _) = self.field_place(builder, vector, vector_type, "capacity")?;
-        let len = builder
-            .ins()
-            .load(types::I32, MemFlags::trusted(), len_field.address, 0);
-        let capacity =
-            builder
-                .ins()
-                .load(types::I32, MemFlags::trusted(), capacity_field.address, 0);
-        let must_grow = builder
-            .ins()
-            .icmp(IntCC::SignedGreaterThanOrEqual, len, capacity);
-        let grow = builder.create_block();
-        let ready = builder.create_block();
-        builder.ins().brif(must_grow, grow, &[], ready, &[]);
-        builder.switch_to_block(grow);
-        let capacity_zero = builder.ins().icmp_imm(IntCC::Equal, capacity, 0);
-        let eight = builder.ins().iconst(types::I32, 8);
-        let doubled = builder.ins().imul_imm(capacity, 2);
-        let new_capacity = builder.ins().select(capacity_zero, eight, doubled);
-        let (arena_field, _) = self.field_place(builder, vector, vector_type, "arena")?;
-        let arena = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            arena_field.address,
-            0,
-        );
-        let bytes32 = builder
-            .ins()
-            .imul_imm(new_capacity, i64::from(element_size));
-        let bytes = builder.ins().uextend(types::I64, bytes32);
-        let allocate = self.runtime.get("os_ArenaAlloc").unwrap().clone();
-        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
-        let allocation = builder.ins().call(allocate_ref, &[arena, bytes]);
-        let allocation_result = builder.inst_results(allocation)[0];
-        let allocation_offset = builder.ins().uextend(types::I64, allocation_result);
-        let base = builder
-            .ins()
-            .load(self.pointer_type(), MemFlags::trusted(), arena, 0);
-        let new_data = builder.ins().iadd(base, allocation_offset);
-        let old_data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
-        let has_values = builder.ins().icmp_imm(IntCC::NotEqual, len, 0);
-        let copy = builder.create_block();
-        let grown = builder.create_block();
-        builder.ins().brif(has_values, copy, &[], grown, &[]);
-        builder.switch_to_block(copy);
-        let used = builder.ins().imul_imm(len, i64::from(element_size));
-        self.copy_dynamic(builder, new_data, old_data, used)?;
-        builder.ins().jump(grown, &[]);
-        builder.switch_to_block(grown);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_data, data_field.address, 0);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_capacity, capacity_field.address, 0);
-        builder.ins().jump(ready, &[]);
-        builder.switch_to_block(ready);
-        let data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
-        let index = builder.ins().uextend(types::I64, len);
-        let offset = builder.ins().imul_imm(index, i64::from(element_size));
-        let destination = Place {
-            address: builder.ins().iadd(data, offset),
-        };
+        if element_size != storage.element_size {
+            return Err(invalid("append source stride disagrees with storage"));
+        }
         self.copy_place(builder, destination, source, element_size)?;
-        let next_len = builder.ins().iadd_imm(len, 1);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), next_len, len_field.address, 0);
+        let next = builder.ins().iadd_imm(storage.len, 1);
+        builder.ins().store(MemFlags::trusted(), next, storage.len_field.address, 0);
         Ok(())
     }
 
@@ -6587,85 +6432,14 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         value: Value,
         element_type: &str,
     ) -> Result<(), Box<dyn Error>> {
-        let element_size = self.layouts.layout(element_type)?.size;
-        let (data_field, _) = self.field_place(builder, vector, vector_type, "data")?;
-        let (len_field, _) = self.field_place(builder, vector, vector_type, "len")?;
-        let (capacity_field, _) = self.field_place(builder, vector, vector_type, "capacity")?;
-        let len = builder
-            .ins()
-            .load(types::I32, MemFlags::trusted(), len_field.address, 0);
-        let capacity =
-            builder
-                .ins()
-                .load(types::I32, MemFlags::trusted(), capacity_field.address, 0);
-        let must_grow = builder
-            .ins()
-            .icmp(IntCC::SignedGreaterThanOrEqual, len, capacity);
-        let grow = builder.create_block();
-        let ready = builder.create_block();
-        builder.ins().brif(must_grow, grow, &[], ready, &[]);
-        builder.switch_to_block(grow);
-        let capacity_zero = builder.ins().icmp_imm(IntCC::Equal, capacity, 0);
-        let eight = builder.ins().iconst(types::I32, 8);
-        let doubled = builder.ins().imul_imm(capacity, 2);
-        let new_capacity = builder.ins().select(capacity_zero, eight, doubled);
-        let (arena_field, _) = self.field_place(builder, vector, vector_type, "arena")?;
-        let arena = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            arena_field.address,
-            0,
-        );
-        let bytes32 = builder
-            .ins()
-            .imul_imm(new_capacity, i64::from(element_size));
-        let bytes = builder.ins().uextend(types::I64, bytes32);
-        let allocate = self.runtime.get("os_ArenaAlloc").unwrap().clone();
-        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
-        let allocation = builder.ins().call(allocate_ref, &[arena, bytes]);
-        let allocation_result = builder.inst_results(allocation)[0];
-        let offset = builder.ins().uextend(types::I64, allocation_result);
-        let base = builder
-            .ins()
-            .load(self.pointer_type(), MemFlags::trusted(), arena, 0);
-        let new_data = builder.ins().iadd(base, offset);
-        let old_data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
-        let has_values = builder.ins().icmp_imm(IntCC::NotEqual, len, 0);
-        let copy = builder.create_block();
-        let grown = builder.create_block();
-        builder.ins().brif(has_values, copy, &[], grown, &[]);
-        builder.switch_to_block(copy);
-        let used32 = builder.ins().imul_imm(len, i64::from(element_size));
-        self.copy_dynamic(builder, new_data, old_data, used32)?;
-        builder.ins().jump(grown, &[]);
-        builder.switch_to_block(grown);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_data, data_field.address, 0);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_capacity, capacity_field.address, 0);
-        builder.ins().jump(ready, &[]);
-        builder.switch_to_block(ready);
-        let data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
-        let index64 = builder.ins().uextend(types::I64, len);
-        let offset = builder.ins().imul_imm(index64, i64::from(element_size));
-        let destination = builder.ins().iadd(data, offset);
-        store_scalar(builder, destination, value);
-        let next = builder.ins().iadd_imm(len, 1);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), next, len_field.address, 0);
+        let storage = self.checked_append_slot(builder, vector, vector_type)?;
+        if self.layouts.layout(element_type)?.size != storage.element_size {
+            return Err(invalid("scalar append stride disagrees with storage"));
+        }
+        let destination = storage.destination;
+        store_scalar(builder, destination.address, value);
+        let next = builder.ins().iadd_imm(storage.len, 1);
+        builder.ins().store(MemFlags::trusted(), next, storage.len_field.address, 0);
         Ok(())
     }
 

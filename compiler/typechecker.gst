@@ -4702,6 +4702,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             return inner_t;
         }
         if expr.tag == 6 { // AddressOf
+            env_report_collection_metadata_place(env, expr.AddressOf.expr, scope, ctx);
             mut inner := check_expression(expr.AddressOf.expr, env, scope, ctx);
             mut addressed := ctx[expr.AddressOf.expr];
             if addressed.tag == 11 && inner.tag == 0 { // Selector of Int
@@ -5000,6 +5001,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             ctx
                         );
                         mut field_type := field_lookup.Val;
+                        if (*env).in_unsafe_block == 0 &&
+                           env_collection_value_kind(env, left_t, ctx) != typechecker_container_kind_none() &&
+                           field_type.tag != 0 && field_type.tag != 1 && field_type.tag != 2 {
+                            report_error(2, "Semantic Error: [CollectionRepresentationAccess] Collection backing and arena metadata require an explicit unsafe context", expr.Selector.span, env, ctx);
+                        }
                         mut substituted := typechecker_substitute_field_brand(field_type, left_t.Struct.brand, left_str, lookup_struct.Val, ctx);
                         mut resolved := env_resolve_type(env, substituted, ctx);
                         if env_struct_is_packed(env, struct_name, ctx) == 1 &&
@@ -7884,6 +7890,36 @@ func env_get_struct_container_kind(env: *TypeEnvironment[ctx], struct_name: str)
         }
     }
     return typechecker_container_kind_none();
+}
+
+// OD20: collection representation authority follows the registered type,
+// never a source spelling. Scalar observations do not expose mutation authority.
+func env_collection_value_kind(env: *TypeEnvironment[ctx], value: ast.Type[ctx], ctx: &Arena) int {
+    mut resolved := env_resolve_type(env, value, ctx);
+    unsafe {
+        if resolved.tag == 11 { resolved = env_resolve_type(env, ctx[resolved.Reference.inner], ctx); }
+        if resolved.tag == 9 { resolved = env_resolve_type(env, ctx[resolved.RawPointer.inner], ctx); }
+        if resolved.tag == 8 { return env_get_struct_container_kind(env, resolved.Struct.struct_name); }
+    }
+    return typechecker_container_kind_none();
+}
+
+func env_report_collection_metadata_place(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {
+    unsafe {
+        if (*env).in_unsafe_block == 1 { return 0; }
+        mut place := ctx[expression];
+        if place.tag == 11 {
+            mut receiver := check_expression(place.Selector.left, env, scope, ctx);
+            if env_collection_value_kind(env, receiver, ctx) != typechecker_container_kind_none() {
+                report_error(2, "Semantic Error: [CollectionMetadataAuthority] Collection metadata mutation and field-address escape require validated collection operations", place.Selector.span, env, ctx);
+                return 1;
+            }
+            return env_report_collection_metadata_place(env, place.Selector.left, scope, ctx);
+        }
+        if place.tag == 7 { return env_report_collection_metadata_place(env, place.Dereference.expr, scope, ctx); }
+        if place.tag == 9 { return env_report_collection_metadata_place(env, place.AsCast.left, scope, ctx); }
+    }
+    return 0;
 }
 
 func typechecker_is_arena_value_or_ref(t: ast.Type[ctx], ctx: &Arena) int {
@@ -14159,6 +14195,13 @@ func env_report_private_function_access(env: *TypeEnvironment[ctx], name: str, s
 
 func env_report_opaque_construction(env: *TypeEnvironment[ctx], t: ast.Type[ctx], span: token.Span, ctx: &Arena) int {
     mut resolved := env_resolve_type(env, t, ctx);
+    unsafe {
+        if (*env).in_unsafe_block == 0 &&
+           env_collection_value_kind(env, resolved, ctx) != typechecker_container_kind_none() {
+            report_error(2, "Semantic Error: [CollectionConstruction] A registered collection requires its validated constructor", span, env, ctx);
+            return 1;
+        }
+    }
     if resolved.tag != 8 { // Struct
         return 0;
     }
@@ -16191,6 +16234,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut assignment_rhs_resource_name_step52h := "";
 
             mut left := ctx[left_idx];
+            env_report_collection_metadata_place(env, left_idx, scope, ctx);
             
             // Step 4.5C: direct subscript writes require explicit unsafe or explicit write APIs.
             if (*env).in_unsafe_block == 0 {

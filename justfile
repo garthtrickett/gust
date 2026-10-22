@@ -24555,3 +24555,9 @@ guard-cranelift-phase26-zlib-adapter:
     python3 scripts/phase26_r3_zlib_adapter_registration.py
     python3 scripts/phase26_r3_zlib_adapter_registration.py inversions
     bash scripts/phase26_r3_zlib_adapter_guard.sh
+
+# OD20 registered collection validity, process traps, and copy preservation.
+guard-cranelift-phase26-collection-validity:
+    python3 scripts/phase26_r4_collection_registration.py validate
+    python3 scripts/phase26_r4_collection_registration.py inversions
+    python3 scripts/phase26_r4_collection_guard.py

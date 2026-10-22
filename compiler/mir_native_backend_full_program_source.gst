@@ -1565,7 +1565,9 @@ func mir_native_full_program_activate_collection_node(
 ) int {
     unsafe {
         mut node := (*nodes)[node_index];
-        if len(node.collection.opcode) == 0 { return 1; }
+        if len(node.collection.opcode) == 0 ||
+           std.str_eq(node.collection.opcode, "PopCopy") == 1 ||
+           std.str_eq(node.collection.opcode, "PopTransfer") == 1 { return 1; }
         mut old_children: std.Vector[int, ctx] := ctx[node.children];
         mut intrinsic_children: std.Vector[int, ctx] := std.VectorNew(ctx);
         if std.str_eq(node.collection.opcode, "Read") == 1 {
@@ -2251,6 +2253,24 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                     }
                 }
             }
+            // Existing ownership authority selects copy preservation; the
+            // backend must not infer resource semantics from physical fields.
+            if call_function.tag == 11 &&
+               std.str_eq(call_function.Selector.right, "Pop") == 1 {
+                mut pop_receiver := codegen.codegen_get_expression_type(
+                    call_function.Selector.left, env, ctx
+                );
+                mut pop_element := codegen.codegen_get_expression_type(expression_index, env, ctx);
+                mut ownership := typechecker.env_tracking_resource_type_name(
+                    env as *typechecker.TypeEnvironment[ctx], pop_element, ctx
+                );
+                mut pop_operation := "PopCopy";
+                if typechecker.type_is_resource(pop_element, ctx) == 1 ||
+                   len(ownership) > 0 { pop_operation = "PopTransfer"; }
+                node.collection = mir_native_full_program_collection_candidate(
+                    pop_receiver, pop_operation, env, ctx
+                );
+            }
         } else if expression.tag == 13 {
             node.kind = "ZeroInitialize";
             node.text_operand = mir_native_full_program_type_identity(
@@ -2848,11 +2868,15 @@ func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[c
 // These source facts are candidates; the worker validates their operands,
 // layout, brand, and reaching storage history before lowering.
 func mir_native_full_program_node_collection_plan(node: MirNativeFullProgramNode[ctx], ctx: &Arena) str {
-    if std.str_eq(node.kind, "CollectionIntrinsic") == 0 { return ""; }
+    mut pop_plan := std.str_eq(node.kind, "Call") == 1 &&
+        (std.str_eq(node.collection.opcode, "PopCopy") == 1 ||
+         std.str_eq(node.collection.opcode, "PopTransfer") == 1);
+    if std.str_eq(node.kind, "CollectionIntrinsic") == 0 && pop_plan == false { return ""; }
     if len(node.collection.opcode) == 0 || len(node.collection.layout_id) == 0 {
         return "";
     }
     mut plan := "|collection_intrinsic.v1|";
+    if pop_plan { plan = "|collection_pop.v1|"; }
     plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.opcode, ctx));
     plan = std.Concat(plan, "|");
     plan = std.Concat(plan, mir_native_full_program_utf8_hex(node.collection.receiver_type, ctx));

@@ -643,6 +643,9 @@ func mir_native_module_import_analyze_host_composition(function: MirNativeModule
             return analyzed;
         }
 
+        if statements[0].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] {
+            return analyzed;
+        }
         mut first_expression := ctx[statements[0].VarDecl.value];
         mut first_call := mir_native_module_import_analyze_host_call(
             first_expression,
@@ -730,6 +733,9 @@ func mir_native_module_import_analyze_host_predicate_branch(function: MirNativeM
             return analyzed;
         }
         mut local_name := statements[0].VarDecl.name;
+        if statements[0].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] {
+            return analyzed;
+        }
         mut call_expression := ctx[statements[0].VarDecl.value];
         mut call := mir_native_module_import_analyze_host_call(
             call_expression,

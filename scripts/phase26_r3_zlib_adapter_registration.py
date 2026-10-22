@@ -103,6 +103,8 @@ def identity(registry: dict) -> dict:
 
 
 def prior_digest(registry: dict, path: str, live_digest: str) -> str:
+    from phase26_r4_collection_registration import prior_digest as r4_prior
+    live_digest = r4_prior(registry, path, live_digest)
     if not record(registry):
         return live_digest
     pins = identity(registry)["changed_file_hashes"]
@@ -121,11 +123,13 @@ def prior_source_digest(registry: dict, path: str) -> str:
     return prior_digest(registry, path, digest(path))
 
 
-def project_ci_workflow(registry: dict, workflow: str) -> str:
+def project_ci_workflow_predecessor(registry: dict, workflow: str) -> str:
+    from phase26_r4_collection_registration import prior_digest as r4_prior
     if not record(registry):
         return workflow
     require(workflow.count(CI_STEP) == 1 and
-            digest(".github/workflows/pr-fast.yml") ==
+            r4_prior(
+                registry, ".github/workflows/pr-fast.yml", digest(".github/workflows/pr-fast.yml")) ==
                 hashlib.sha256(workflow.encode()).hexdigest(),
             "R3 CI owning step absent, duplicated, or substituted")
     projected = workflow.replace(CI_STEP, "", 1)
@@ -171,7 +175,7 @@ def old_text_row(path: str, current: dict) -> dict:
                 match_counts=counts)
 
 
-def normalize_text(registry: dict, rows: list[dict]) -> list[dict]:
+def normalize_text_predecessor(registry: dict, rows: list[dict]) -> list[dict]:
     if not record(registry):
         return rows
     value = identity(registry)["phase23_text_surface_successor"]
@@ -221,7 +225,7 @@ def normalize_invocations(registry: dict, rows: list[dict]) -> list[dict]:
     return [row for row in rows if row["path"] != INVOCATION_PATH]
 
 
-def normalize_production_audit(registry: dict, live: dict) -> dict:
+def normalize_production_audit_predecessor(registry: dict, live: dict) -> dict:
     if not record(registry):
         return live
     value = identity(registry)["production_audit_successor"]
@@ -236,7 +240,7 @@ def normalize_production_audit(registry: dict, live: dict) -> dict:
     return value["previous_audit"]
 
 
-def normalize_spelling(registry: dict, live: dict) -> dict:
+def normalize_spelling_predecessor(registry: dict, live: dict) -> dict:
     if not record(registry):
         return live
     value = identity(registry)["spelling_inventory_successor"]
@@ -252,6 +256,22 @@ def normalize_spelling(registry: dict, live: dict) -> dict:
             "R3 spelling population or source identity drifted")
     return previous
 
+
+def normalize_text(registry: dict, rows):
+    from phase26_r4_collection_registration import project
+    return normalize_text_predecessor(registry, project(registry, "text", rows))
+
+def normalize_spelling(registry: dict, live):
+    from phase26_r4_collection_registration import project
+    return normalize_spelling_predecessor(registry, project(registry, "spelling", live))
+
+def normalize_production_audit(registry: dict, live):
+    from phase26_r4_collection_registration import project
+    return normalize_production_audit_predecessor(registry, project(registry, "production", live))
+
+def project_ci_workflow(registry: dict, workflow):
+    from phase26_r4_collection_registration import project
+    return project_ci_workflow_predecessor(registry, project(registry, "workflow", workflow))
 
 def build_record() -> dict:
     from phase24_semantic_spelling_inventory import manifest_summary, source_sites
@@ -309,8 +329,9 @@ def build_record() -> dict:
 def validate() -> None:
     registry = json.loads(REGISTRY.read_text())
     value = identity(registry)
-    require(value == build_record(), "R3 additive registration or source census drifted")
-    historical = copy.deepcopy(registry)
+    from phase26_r4_collection_registration import project, project_registry
+    require(value == project(registry, "r3_record", build_record()), "R3 additive registration or source census drifted")
+    historical = project_registry(registry)
     del historical["phase26_activation_audit"][KEY]
     require(historical == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
             "R3 changed a predecessor registry field")
@@ -336,14 +357,17 @@ def validate() -> None:
 def inversions() -> None:
     registry = json.loads(REGISTRY.read_text())
     value = identity(registry)
-    baseline = build_record()
+    from phase26_r4_collection_registration import project, project_registry
+    baseline = project(registry, "r3_record", build_record())
     require(value == baseline, "R3 inversion baseline is not current")
-    text_rows = raw_text_surfaces()
+    text_rows = project(registry, "text", raw_text_surfaces())
     invocation = invocation_rows()
     from phase23_production_release_audit import scan as production_scan
     from phase24_semantic_spelling_inventory import manifest_summary, source_sites
-    production = production_scan()
-    spelling = manifest_summary(source_sites())
+    production = project(registry, "production", production_scan())
+    spelling = project(registry, "spelling", manifest_summary(source_sites()))
+    workflow = project(registry, "workflow", (ROOT / ".github/workflows/pr-fast.yml").read_text())
+    registry = project_registry(registry)
     normalize_text(registry, text_rows)
     normalize_invocations(registry, invocation)
     normalize_production_audit(registry, production)
@@ -387,7 +411,6 @@ def inversions() -> None:
     changed_spelling = dict(spelling, source_file_count=spelling["source_file_count"] - 1)
     rejected("missing R3 source", "R3 spelling population",
              lambda: normalize_spelling(registry, changed_spelling))
-    workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     rejected("missing R3 CI step", "R3 CI owning step",
              lambda: project_ci_workflow(registry, workflow.replace(CI_STEP, "")))
     print(f"{GUARD}: additive inversion set ok")

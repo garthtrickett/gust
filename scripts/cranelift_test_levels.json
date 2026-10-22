@@ -580,6 +580,7 @@
     "guard-cranelift-phase15-resource-authority-contract": 1,
     "guard-cranelift-phase15-close": 1,
     "guard-cranelift-phase24-close": 1,
-    "guard-cranelift-phase25-musl-c-free-link": 3
+    "guard-cranelift-phase25-musl-c-free-link": 3,
+    "guard-cranelift-phase26-collection-validity": 2
   }
 }
