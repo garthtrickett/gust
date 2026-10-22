@@ -30,6 +30,7 @@ CHANGED = (
     "compiler/mir_native_backend_structured_cfg_source.gst",
     "compiler/experiments/cranelift/src/full_program.rs",
     "scripts/phase26_r2_scoped_copy_registration.py",
+    "scripts/phase26_r2_scoped_copy.sh",
     "scripts/phase26_r3_zlib_adapter_registration.py",
     "scripts/phase24_semantic_spelling_inventory.py",
 )
@@ -41,6 +42,7 @@ ADDED = (
     "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
     "scripts/phase26_r4_collection_registration.py",
     "scripts/phase26_r4_collection_guard.py",
+    "scripts/phase26_r4_frontend_rejection.py",
     "tests/cranelift/phase26_r4_default_collection_rejected.gst",
     "tests/cranelift/phase26_r4_inferred_scalar.gst",
     "tests/cranelift/phase26_r4_metadata_reference_rejected.gst",

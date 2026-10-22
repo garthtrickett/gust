@@ -23,8 +23,8 @@ REBUILD_MAXIMUM = json.loads((ROOT / "scripts/cranelift_feature_registry.json").
 assert COMPILER.stat().st_size <= REBUILD_MAXIMUM, "compiler exceeds native rebuild artifact ceiling"
 
 
-def command(args, label, expected=0, timeout=240):
-    result = subprocess.run([str(arg) for arg in args], cwd=ROOT, env=ENV,
+def command(args, label, expected=0, timeout=240, env=None):
+    result = subprocess.run([str(arg) for arg in args], cwd=ROOT, env=ENV if env is None else env,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     (RUN / f"{label}.stdout").write_bytes(result.stdout)
     (RUN / f"{label}.stderr").write_bytes(result.stderr)
@@ -33,6 +33,32 @@ def command(args, label, expected=0, timeout=240):
     else:
         assert result.returncode == expected, (label, result.returncode, result.stdout[-4000:], result.stderr[-4000:])
     return result
+
+
+command(["python3", "scripts/phase26_r4_frontend_rejection.py", "inversions"], "frontend-rejection-inversions")
+# The retained R2 forged-length source now rejects before driver discovery.
+# A sentinel proves that this is an earlier compiler boundary, not worker denial.
+driver_marker = RUN / "forged-length-driver-called"
+driver = RUN / "forged-length-driver"
+driver.write_text('#!/bin/sh\nprintf called > "' + str(driver_marker) + '"\nexit 99\n')
+driver.chmod(0o700)
+for variant in ["original", "renamed"]:
+    case_dir = RUN / f"forged-length-{variant}"
+    case_dir.mkdir()
+    source = ROOT / "tests/cranelift/phase26_r2_scoped_caller_forged_len_never_execute.gst"
+    if variant == "renamed":
+        renamed = RUN / "arbitrary-forged-length.gst"
+        shutil.copyfile(source, renamed)
+        source = renamed
+    result = command([COMPILER, "--backend", "cranelift", "-o", case_dir / "never-execute", source],
+                     f"forged-length-{variant}", expected=None,
+                     env=dict(ENV, GUST_NATIVE_BACKEND_DRIVER=str(driver),
+                              GUST_NATIVE_KEEP_OBJECTS=str(case_dir / "keep")))
+    (case_dir / "compile.stdout").write_bytes(result.stdout)
+    (case_dir / "compile.stderr").write_bytes(result.stderr)
+    command(["python3", "scripts/phase26_r4_frontend_rejection.py", "validate", case_dir, result.returncode],
+            f"forged-length-{variant}-qualification")
+    assert not driver_marker.exists(), "forged-length source reached driver discovery"
 
 
 # Checked arena slots expose an old optional-fold absent annotation read.

@@ -48143,6 +48143,11 @@
           "current_digest": "e400c729e4b4f7a5deb89be05c19d9e706901ec3433d3090f116719e24f30bb7"
         },
         {
+          "path": "scripts/phase26_r2_scoped_copy.sh",
+          "previous_digest": "e44afec286e48e47c8b7693e7fd70c191c2d124ec356fb5af76d2d31e44095fe",
+          "current_digest": "8a2069c6b335019eb64c3703ec338c13aef360d4260eff4cb20106b5fba7d3c7"
+        },
+        {
           "path": "scripts/phase26_r3_zlib_adapter_registration.py",
           "previous_digest": "8898c4b3226970b829afb244a91618b56af57c1a8f0ebca8931a69b51e1581b6",
           "current_digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1"
@@ -48172,15 +48177,19 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "f01b6e75722a39d01b96e95818b88a7d8b9a08db7e089355b9ae06c5ec874575"
+          "digest": "2470cee51f003ee559ad7610fa5ec63dd3b496020f4cce0f8c7ffe988de49f18"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
-          "digest": "4a1e9c78a9e342c079ee987d4e71e1fdd1b5a57cc84523b7614a6055ff78c125"
+          "digest": "ec13723228e87bc874d4de03908eb7b27f1c0b8a33a83e764a00a54b3849a47e"
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
-          "digest": "f0a0b4e1723c448e3267c01291b14887f409b42c48d188e19e2b46562f2f563f"
+          "digest": "910d9e17648a4f64796278d8503dff69072f15aa08daa116c4586249e7006250"
+        },
+        {
+          "path": "scripts/phase26_r4_frontend_rejection.py",
+          "digest": "eb8e2270e5788eabc754b6214164656d2a7b02e59869510a680a9dc5053ed0c0"
         },
         {
           "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
@@ -48202,7 +48211,7 @@
       "projections": {
         "text": {
           "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
-          "current_digest": "858f49e497bb470091e846a5f99d93c583a1efad9bd3f533c57fb90676db6a1a"
+          "current_digest": "ce03166f1b7470a6f5b5c75642914e42187cd096cf448837a2a4cd903d9436f9"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",

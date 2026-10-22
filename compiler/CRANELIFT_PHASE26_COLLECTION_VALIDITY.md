@@ -59,6 +59,13 @@ Qualification is owned by `guard-cranelift-phase26-collection-validity`:
   check and must fail its precise semantic assertion;
 - local-linkage assertions and Pop receiver/layout/brand/operation mutations.
 
+The retained R2 forged-length source now rejects at the frontend with the
+metadata-authority diagnostic, before driver discovery or canonical publication.
+Original and renamed controls use a driver sentinel; rejection inversions refuse
+wrong-stage diagnostics, signal failures and any output artifact. The copied-alias
+source retains its worker rejection and canonical projection. Both frozen
+canonical worker mutation tests remain independently required by the R2 guard.
+
 The optional constant folder checks annotation/value presence before reading
 them. Inferred declarations retain the existing constant-evaluation proof,
 including the typed-query no-op terminal route; explicit annotations keep their
