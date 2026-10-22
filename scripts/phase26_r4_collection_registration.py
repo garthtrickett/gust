@@ -43,8 +43,20 @@ ARTIFACT_MAXIMUM = 10616832
 def require(ok: bool, message: str) -> None:
     if not ok: raise SystemExit(f"{GUARD}: {message}")
 
+@lru_cache(maxsize=1)
+def ensure_base() -> None:
+    if subprocess.run(["git", "cat-file", "-e", BASE + "^{commit}"], cwd=ROOT,
+                      stderr=subprocess.DEVNULL).returncode != 0:
+        subprocess.run(["git", "fetch", "--no-tags", "--depth=1", "origin", BASE],
+                       cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+        actual = subprocess.check_output(["git", "rev-parse", "FETCH_HEAD"], cwd=ROOT, text=True).strip()
+        require(actual == BASE, "R4 predecessor fetch changed identity")
+    actual = subprocess.check_output(["git", "rev-parse", BASE + "^{commit}"], cwd=ROOT, text=True).strip()
+    require(actual == BASE, "R4 predecessor identity changed")
+
 @lru_cache(maxsize=None)
 def base_bytes(path: str) -> bytes:
+    ensure_base()
     return subprocess.check_output(["git", "show", f"{BASE}:{path}"], cwd=ROOT)
 
 def sha(raw: bytes) -> str: return hashlib.sha256(raw).hexdigest()

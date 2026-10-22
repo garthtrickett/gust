@@ -48141,7 +48141,7 @@
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
-          "digest": "cb33c1452f8c8962697869582e8e1b3512e339d254ab79e2dd4f1a495aacec3a"
+          "digest": "19f981c5f3795985e8b70a35572050234759f3938538dea72c623ad563122046"
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
@@ -48163,7 +48163,7 @@
       "projections": {
         "text": {
           "previous_digest": "dca99aefa5fa65eb6c5149a9e1bba8bb2490d244f8c6e5ac5b9c2ed1d7ffd761",
-          "current_digest": "48c793f8b8b9b2434915abd82b0016ebcf8b6ee1f6a9ca666f0ed3173d9178f5"
+          "current_digest": "6af7eaa7d2441315a7fa00939548f72c58ed289591c13a323a5c11c125c1df66"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
