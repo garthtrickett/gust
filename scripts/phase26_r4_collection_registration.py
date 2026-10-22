@@ -17,6 +17,36 @@ GUARD = "guard-cranelift-phase26-collection-validity"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 CI_STEP = ("      - name: Phase 26 checked collection validity and copy preservation\n"
            "        run: just guard-cranelift-phase26-collection-validity\n\n")
+REBUILD_STEP = ("      - name: Phase 21 native rebuild reproducibility authority\n"
+                "        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract\n")
+BUNDLE_STEP = ("      - name: Full-program bundle validation smoke\n"
+               "        run: just guard-mir-native-full-program-bundle-validation-smoke\n\n")
+SHARD_STEP = ('      - name: Run PR fast shard\n'
+              '        run: just guard-pr-fast-shard "${{ matrix.shard }}"\n\n')
+QUALIFICATION_STEPS = '''      - name: Run PR fast shard
+        if: matrix.shard == 'routed-return-int'
+        run: just guard-pr-fast-shard "${{ matrix.shard }}"
+
+      - name: Prepare native compiler qualification package
+        if: matrix.shard == 'native-compiler-qualification'
+        run: |
+          chmod +x ./gust build/gust-native-backend
+          install -d build/phase10-package/bin
+          install -m 0755 gust build/phase10-package/bin/gust
+          install -m 0755 build/gust-native-backend build/phase10-package/bin/gust-native-backend
+          install -m 0644 build/gust-runtime-package.a build/phase10-package/bin/gust-runtime-package.a
+          test -x build/phase10-package/bin/gust
+          test -x build/phase10-package/bin/gust-native-backend
+
+      - name: Phase 21 native rebuild reproducibility authority
+        if: matrix.shard == 'native-compiler-qualification'
+        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract
+
+      - name: Full-program bundle validation smoke
+        if: matrix.shard == 'native-compiler-qualification'
+        run: just guard-mir-native-full-program-bundle-validation-smoke
+
+'''
 CHANGED = (
     "GUST_LANE_STATE.md", ".github/workflows/pr-fast.yml", "justfile",
     ".github/workflows/phase21-typed-query-noop-surface.yml",
@@ -73,6 +103,23 @@ def sha(raw: bytes) -> str: return hashlib.sha256(raw).hexdigest()
 def digest(path: str) -> str: return sha((ROOT / path).read_bytes())
 def base_registry() -> dict: return json.loads(base_bytes("scripts/cranelift_feature_registry.json"))
 def record(registry: dict) -> dict: return registry.get("phase26_activation_audit", {}).get(KEY, {})
+
+def expected_workflow() -> str:
+    """Partition two live compiler checks; preserve every predecessor command."""
+    text = base_bytes(".github/workflows/pr-fast.yml").decode()
+    for before, after in [
+        ("      - name: Phase 26 FFI position policy\n", CI_STEP + "      - name: Phase 26 FFI position policy\n"),
+        (REBUILD_STEP, ""),
+        (BUNDLE_STEP, ""),
+        ("          - routed-return-int\n", "          - routed-return-int\n          - native-compiler-qualification\n"),
+        (SHARD_STEP, QUALIFICATION_STEPS),
+    ]:
+        require(text.count(before) == 1, "R4 CI partition predecessor anchor drifted")
+        text = text.replace(before, after, 1)
+    return text
+
+def check_workflow(text: str) -> None:
+    require(text == expected_workflow(), "R4 CI partition or owning step drifted")
 
 def identity(registry: dict) -> dict:
     value = record(registry)
@@ -233,8 +280,7 @@ def validate() -> None:
     require(value == build_record(), "R4 registration or live census drifted")
     require(project_registry(registry) == base_registry(), "R4 changed a frozen registry field")
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
-    require(workflow.count(CI_STEP) == 1 and workflow.replace(CI_STEP, "", 1) == base_bytes(".github/workflows/pr-fast.yml").decode(),
-            "R4 owning CI step missing, duplicated or changed predecessor")
+    check_workflow(workflow)
     just = (ROOT / "justfile").read_text()
     suffix = "\n# OD20 registered collection validity, process traps, and copy preservation.\n" + GUARD + ":\n    python3 scripts/phase26_r4_collection_registration.py validate\n    python3 scripts/phase26_r4_collection_registration.py inversions\n    python3 scripts/phase26_r4_collection_guard.py\n"
     require(just == base_bytes("justfile").decode() + suffix, "R4 owning recipe or predecessor recipes drifted")
@@ -261,6 +307,34 @@ def inversions() -> None:
         rejected(f"old state {path}", lambda path=path: prior_digest(registry, path, sha(base_bytes(path))), f"R4 changed file drifted: {path}")
     for kind in identity(registry)["projections"]:
         rejected(f"missing {kind}", lambda kind=kind: project(registry, kind, None), f"R4 {kind} live projection drifted")
+    workflow = expected_workflow()
+    changes = [
+        ("missing qualification shard", "          - native-compiler-qualification\n", ""),
+        ("duplicate qualification shard", "          - native-compiler-qualification\n", "          - native-compiler-qualification\n" * 2),
+        ("missing native rebuild command", "        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract\n", ""),
+        ("duplicate native rebuild command", "        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract\n", "        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract\n" * 2),
+        ("substituted native rebuild command", "        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract\n", "        run: true\n"),
+        ("missing bundle smoke command", "        run: just guard-mir-native-full-program-bundle-validation-smoke\n", ""),
+        ("substituted bundle smoke command", "        run: just guard-mir-native-full-program-bundle-validation-smoke\n", "        run: true\n"),
+        ("duplicate bundle smoke", "        run: just guard-mir-native-full-program-bundle-validation-smoke\n", "        run: just guard-mir-native-full-program-bundle-validation-smoke\n" * 2),
+        ("unprepared package", "          install -m 0755 gust build/phase10-package/bin/gust\n", ""),
+        ("missing executable worker", "          test -x build/phase10-package/bin/gust-native-backend\n", ""),
+        ("changed shard selection", "        if: matrix.shard == 'routed-return-int'\n", "        if: false\n"),
+        ("missing final shard dependency", "needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]", "needs: [level1, phase20-nested-brand-annotation, phase26-ffi-position]"),
+        ("increased Level1 deadline", "    timeout-minutes: 120\n", "    timeout-minutes: 121\n"),
+        ("weakened shard build dependency", "    name: guard / ${{ matrix.shard }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    needs: build\n", "    name: guard / ${{ matrix.shard }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    needs: []\n"),
+        ("increased shard deadline", "    name: guard / ${{ matrix.shard }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n", "    name: guard / ${{ matrix.shard }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 61\n"),
+    ]
+    for label, before, after in changes:
+        require(workflow.count(before) == 1, f"{label} inversion lost its mechanism")
+        changed = workflow.replace(before, after, 1)
+        require(changed != workflow, f"{label} inversion did not change the workflow")
+        rejected(label, lambda changed=changed: check_workflow(changed), "R4 CI partition or owning step drifted")
+    for name in ("Prepare native compiler qualification package", "Phase 21 native rebuild reproducibility authority", "Full-program bundle validation smoke"):
+        before = f"      - name: {name}\n        if: matrix.shard == 'native-compiler-qualification'\n"
+        require(workflow.count(before) == 1, "qualification condition inversion lost its mechanism")
+        changed = workflow.replace(before, f"      - name: {name}\n        if: false\n", 1)
+        rejected(f"disabled {name}", lambda changed=changed: check_workflow(changed), "R4 CI partition or owning step drifted")
     import phase26_r3_zlib_adapter_registration as r3
     text = r3.raw_text_surfaces()
     selected = owned_text(text)[0]

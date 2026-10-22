@@ -554,8 +554,6 @@ jobs:
       - name: Phase 21 Cranelift-built compiler program compilation
         run: just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
 
-      - name: Phase 21 native rebuild reproducibility authority
-        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract
       - name: Phase 21 native compiler allocation scaling authority
         run: just guard-cranelift-phase21-native-compiler-allocation-scaling-contract
       - name: Phase 21 scheduler main-result completion authority
@@ -678,9 +676,6 @@ jobs:
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 
-      - name: Full-program bundle validation smoke
-        run: just guard-mir-native-full-program-bundle-validation-smoke
-
   guard:
     name: guard / ${{ matrix.shard }}
     runs-on: ubuntu-latest
@@ -692,6 +687,7 @@ jobs:
       matrix:
         shard:
           - routed-return-int
+          - native-compiler-qualification
 
     steps:
       - name: Checkout
@@ -713,7 +709,27 @@ jobs:
         run: chmod +x ./gust 2>/dev/null || true
 
       - name: Run PR fast shard
+        if: matrix.shard == 'routed-return-int'
         run: just guard-pr-fast-shard "${{ matrix.shard }}"
+
+      - name: Prepare native compiler qualification package
+        if: matrix.shard == 'native-compiler-qualification'
+        run: |
+          chmod +x ./gust build/gust-native-backend
+          install -d build/phase10-package/bin
+          install -m 0755 gust build/phase10-package/bin/gust
+          install -m 0755 build/gust-native-backend build/phase10-package/bin/gust-native-backend
+          install -m 0644 build/gust-runtime-package.a build/phase10-package/bin/gust-runtime-package.a
+          test -x build/phase10-package/bin/gust
+          test -x build/phase10-package/bin/gust-native-backend
+
+      - name: Phase 21 native rebuild reproducibility authority
+        if: matrix.shard == 'native-compiler-qualification'
+        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract
+
+      - name: Full-program bundle validation smoke
+        if: matrix.shard == 'native-compiler-qualification'
+        run: just guard-mir-native-full-program-bundle-validation-smoke
 
   phase20-nested-brand-annotation:
     name: Phase 20 nested brand annotation parity

@@ -66,6 +66,16 @@ wrong-stage diagnostics, signal failures and any output artifact. The copied-ali
 source retains its worker rejection and canonical projection. Both frozen
 canonical worker mutation tests remain independently required by the R2 guard.
 
+PR Fast partitions native rebuild authority and bundle-validation smoke into
+one additional instance of its existing guarded matrix. Both original commands
+remain mandatory, in order, with a prepared executable native package. The final
+job waits for every matrix instance. Level 1 keeps its 120-minute ceiling and
+the isolated shard keeps the existing 60-minute ceiling; guard assertions and
+internal deadlines are unchanged. This changes scheduling and the aggregate
+partition after a measured two-hour cancellation, rather than raising a deadline
+or caching a prior result. Exact workflow and omission/substitution inversions
+protect the relocation and its build gate, package prerequisite and fan-in.
+
 The optional constant folder checks annotation/value presence before reading
 them. Inferred declarations retain the existing constant-evaluation proof,
 including the typed-query no-op terminal route; explicit annotations keep their

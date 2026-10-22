@@ -48075,7 +48075,7 @@
         {
           "path": ".github/workflows/pr-fast.yml",
           "previous_digest": "3d76ad4fdd9c72c84d849bcade154dba567a2b71d39df8b687895569b4b43d1e",
-          "current_digest": "c87306984b2c0c4075535f6b54cd9fc2122a99aa91db873a12e8cc4f49f00dd1"
+          "current_digest": "311ea7dfac1df432b0b94bf7be46cc8ff6ed85c28ec40186df2588b18d76fcbf"
         },
         {
           "path": "justfile",
@@ -48177,11 +48177,11 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "2470cee51f003ee559ad7610fa5ec63dd3b496020f4cce0f8c7ffe988de49f18"
+          "digest": "0345d2718b947999e5168f10e892afbac22a12ff273702b1f5f1c90ed367ee47"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
-          "digest": "ec13723228e87bc874d4de03908eb7b27f1c0b8a33a83e764a00a54b3849a47e"
+          "digest": "c4bffef4c543b954c850c8890135cc2ff813ca637e83674c818b0c938017b856"
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
@@ -48211,7 +48211,7 @@
       "projections": {
         "text": {
           "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
-          "current_digest": "ce03166f1b7470a6f5b5c75642914e42187cd096cf448837a2a4cd903d9436f9"
+          "current_digest": "bba6dfb4ed94f3e7c64f93b58c6c4b210a2baecf001e5320789af582ba923c2d"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
@@ -48223,7 +48223,7 @@
         },
         "r3_record": {
           "previous_digest": "abb8846b7be0a2c671a1b66ee9fa5a5f0481d9b12c6766909b7aee61a9157b90",
-          "current_digest": "5a80988b9ff8e7ec4e928129b6f66bf6caff5c8b6028a7f2782634e007678a25"
+          "current_digest": "5350b768b579a5a74327135f1121c7ddd06fb15dd902880fc7f13bdc14b3c464"
         },
         "production": {
           "previous_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
@@ -48231,7 +48231,7 @@
         },
         "workflow": {
           "previous_digest": "b51fee12bebebbf9f6010a2db8e9a95c8e4cb056577f6902c122b110113dff8c",
-          "current_digest": "a4bdeb523755036f497312e1783e0d60a0985866630a901a358439f12181310b"
+          "current_digest": "65c8f76ecd1de25e32425d1e76208f985441d11bb23c2ad46a8d51d0d8f10f41"
         }
       }
     },
