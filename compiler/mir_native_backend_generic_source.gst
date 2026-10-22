@@ -374,17 +374,16 @@ func mir_native_generic_const_body(
             mut statement := statements[index];
 
             if statement.tag == 4 {
-                // Inferred declarations have no annotation slot. Decline
-                // this optional fold before reading absence; the existing
-                // scalar owner represents their inferred type.
-                if statement.VarDecl.var_type == empty[Index[ast.Type[ctx], ctx]] ||
-                   statement.VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] {
+                // Inference has no annotation slot. The existing constant
+                // evaluator below must still prove the initializer's value.
+                if statement.VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] {
                     return outcome;
                 }
-                // Only int locals; anything else is outside this evaluator.
-                mut declared_type := ctx[statement.VarDecl.var_type];
-                if declared_type.tag != 0 {
-                    return outcome;
+                if statement.VarDecl.var_type != empty[Index[ast.Type[ctx], ctx]] {
+                    mut declared_type := ctx[statement.VarDecl.var_type];
+                    if declared_type.tag != 0 {
+                        return outcome;
+                    }
                 }
                 // A name declared twice is a source-level error. Binding over
                 // the first would quietly give this route an answer for a

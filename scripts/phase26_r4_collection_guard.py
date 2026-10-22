@@ -36,7 +36,7 @@ def command(args, label, expected=0, timeout=240):
 
 
 # Checked arena slots expose an old optional-fold absent annotation read.
-# Both path spellings must compile through the existing scalar owner.
+# Inferred scalar and existing query-terminal owners must remain available.
 for variant in ["original", "renamed"]:
     source = ROOT / "tests/cranelift/phase26_r4_inferred_scalar.gst"
     if variant == "renamed":
@@ -46,6 +46,18 @@ for variant in ["original", "renamed"]:
     executable = RUN / f"inferred-{variant}"
     command([COMPILER, "--backend", "cranelift", "-o", executable, source], f"inferred-{variant}-compile")
     command([executable], f"inferred-{variant}-run", expected=3)
+
+for name, expected in [("trusted", 21), ("untrusted", 99)]:
+    fixture = ROOT / f"compiler/phase21_query_shape_{name}_baseline.gst"
+    for variant in ["original", "renamed"]:
+        source = fixture
+        if variant == "renamed":
+            source = RUN / f"arbitrary-query-{name}.gst"
+            shutil.copyfile(fixture, source)
+        executable = RUN / f"query-{name}-{variant}"
+        command([COMPILER, "--backend", "cranelift", "-o", executable, source],
+                f"query-{name}-{variant}-compile")
+        command([executable], f"query-{name}-{variant}-run", expected=expected)
 
 # Optional recognizers must decline absent initializers before reading slots.
 # This registered source retains its explicit public pre-driver deferral.

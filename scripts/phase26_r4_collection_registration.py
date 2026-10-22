@@ -19,6 +19,7 @@ CI_STEP = ("      - name: Phase 26 checked collection validity and copy preserva
            "        run: just guard-cranelift-phase26-collection-validity\n\n")
 CHANGED = (
     "GUST_LANE_STATE.md", ".github/workflows/pr-fast.yml", "justfile",
+    ".github/workflows/phase21-typed-query-noop-surface.yml",
     "scripts/cranelift_test_levels.json",
     "compiler/typechecker.gst", "compiler/mir_native_backend_full_program_source.gst",
     "compiler/mir_native_backend_generic_source.gst",

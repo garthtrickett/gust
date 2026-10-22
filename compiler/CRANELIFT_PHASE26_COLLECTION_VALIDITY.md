@@ -55,9 +55,10 @@ Qualification is owned by `guard-cranelift-phase26-collection-validity`:
   check and must fail its precise semantic assertion;
 - local-linkage assertions and Pop receiver/layout/brand/operation mutations.
 
-The optional constant folder checks that annotation/value indexes exist before
-reading them; inferred declarations can decline that optimization and use the
-existing scalar owner. This preserves generated scalar source compilation.
+The optional constant folder checks annotation/value presence before reading
+them. Inferred declarations retain the existing constant-evaluation proof,
+including the typed-query no-op terminal route; explicit annotations keep their
+type check. Generated scalar source compilation remains qualified separately.
 Other optional source recognizers similarly check initializer presence before
 reading declaration slots. An absent initializer declines only that recognizer;
 the existing supported owner or explicit pre-driver deferral still decides the

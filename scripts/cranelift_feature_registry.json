@@ -48083,6 +48083,11 @@
           "current_digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745"
         },
         {
+          "path": ".github/workflows/phase21-typed-query-noop-surface.yml",
+          "previous_digest": "3a3b119b05600872a253f9b1fb65c7c1ec19ae69ba0e74927b7b1b26fb3a548d",
+          "current_digest": "1f797966b4e4f1590e046f42f8b737dd4256f46e5972a65a77bded9daec2435d"
+        },
+        {
           "path": "scripts/cranelift_test_levels.json",
           "previous_digest": "8858693afd3e647b9e330b5906488436639b644ae052e3a66d41d17258945613",
           "current_digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d"
@@ -48100,7 +48105,7 @@
         {
           "path": "compiler/mir_native_backend_generic_source.gst",
           "previous_digest": "17bf1312308c4aefb2e650f5d71ce38766fcd398b0baa003d0fbfd44f96d8baa",
-          "current_digest": "471fb496b97e075665124bf4e4413911883ac7defbfca4c9ff272377fabcfbcd"
+          "current_digest": "1fa0e85e59442697cecc857c230e014bbfaa716ed4010dcfa039409975b017b8"
         },
         {
           "path": "compiler/mir_native_backend_collection_string_source.gst",
@@ -48167,15 +48172,15 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "2b8c3dc11cfadacdabcb20ce0bae3d0180a064c40848a7da1a5f0e11b0df4e18"
+          "digest": "37e84129147c4101317701af5edd0475b71bf45ea3a242ca1cf853de94469c04"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
-          "digest": "bc6b2a13d195f04157e079720c51d3d1eac8d73155504c89588e06ebe4bebf68"
+          "digest": "4a1e9c78a9e342c079ee987d4e71e1fdd1b5a57cc84523b7614a6055ff78c125"
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
-          "digest": "55f892db7d83ac9d99d720f6fbbc9e46557de980edfdd529ae8c27148684b23a"
+          "digest": "efbdd3698ca4bb9d5e7a806a5653353354fbb1749077461eb802c4c1dec19e79"
         },
         {
           "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
@@ -48197,7 +48202,7 @@
       "projections": {
         "text": {
           "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
-          "current_digest": "bf558cf00621de6852f7670e5ec369d95d3d43d06d55880182835361d6e0c623"
+          "current_digest": "3f2b142520f3f7809372e61dafe529dfc8dceb1b4542b0e7c6e46a19adf894c4"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",

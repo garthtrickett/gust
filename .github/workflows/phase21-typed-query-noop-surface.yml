@@ -65,3 +65,8 @@ jobs:
       - run: make gust
       - name: guard-cranelift-phase21-typed-query-noop-surface-evidence
         run: just guard-cranelift-phase21-typed-query-noop-surface-evidence
+      - name: Report typed-query evidence logs on failure
+        if: failure()
+        run: |
+          cat build/guards/phase21_typed_query_noop_parser/compiler.log
+          find build/guards/phase21_typed_query_noop_surface -type f \( -name '*.stdout' -o -name '*.stderr' -o -name '*.status' \) -print -exec cat {} \;
