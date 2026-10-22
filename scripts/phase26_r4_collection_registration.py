@@ -21,6 +21,7 @@ CHANGED = (
     "GUST_LANE_STATE.md", ".github/workflows/pr-fast.yml", "justfile",
     "scripts/cranelift_test_levels.json",
     "compiler/typechecker.gst", "compiler/mir_native_backend_full_program_source.gst",
+    "compiler/mir_native_backend_generic_source.gst",
     "compiler/experiments/cranelift/src/full_program.rs",
     "scripts/phase26_r2_scoped_copy_registration.py",
     "scripts/phase26_r3_zlib_adapter_registration.py",
@@ -35,6 +36,7 @@ ADDED = (
     "scripts/phase26_r4_collection_registration.py",
     "scripts/phase26_r4_collection_guard.py",
     "tests/cranelift/phase26_r4_default_collection_rejected.gst",
+    "tests/cranelift/phase26_r4_inferred_scalar.gst",
     "tests/cranelift/phase26_r4_metadata_reference_rejected.gst",
     "tests/cranelift/phase26_r4_metadata_write_rejected.gst",
 )
@@ -91,8 +93,47 @@ def prior_digest(registry: dict, path: str, live: str) -> str:
 def projection_digest(value) -> str:
     return sha(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
 
+def owned_text(rows: list[dict]) -> list[dict]:
+    return [row for row in rows if row["path"] in CHANGED or row["path"] in ADDED]
+
+def previous_owned_text() -> list[dict]:
+    import phase23_mir_to_c_deprecation_opening as p23
+    rows = []
+    for path in sorted(CHANGED):
+        raw = base_bytes(path)
+        counts = {name: len(pattern.findall(raw.decode())) for name, pattern in p23.SURFACE_PATTERNS.items()}
+        if not any(counts.values()): continue
+        classification, action, removal, falsifier = p23.classify_surface(path)
+        rows.append({"path": path, "digest": sha(raw), "match_counts": counts,
+            "classification": classification, "owner": p23.owner_for_path(path),
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": action, "removal_phase": removal, "falsifier": falsifier})
+    return rows
+
+def project_text(registry: dict, current: list[dict]) -> list[dict]:
+    value = identity(registry)["projections"]["text"]
+    require(isinstance(current, list) and projection_digest(owned_text(current)) == value["current_digest"],
+            "R4 text live projection drifted")
+    before = previous_owned_text()
+    require(projection_digest(before) == value["previous_digest"], "R4 text predecessor drifted")
+    prior = {row["path"]: row for row in before}
+    rows = []
+    for row in current:
+        path = row["path"]
+        if path in CHANGED or path in ADDED:
+            if path in prior: rows.append(copy.deepcopy(prior.pop(path)))
+        else:
+            # Foreign rows, including their order and duplicates, belong to
+            # their existing validators. Never normalize or freeze them here.
+            rows.append(copy.deepcopy(row))
+    for path, row in sorted(prior.items()):
+        index = next((i for i, item in enumerate(rows) if item["path"] > path), len(rows))
+        rows.insert(index, copy.deepcopy(row))
+    return rows
+
 def project(registry: dict, kind: str, current):
     if not record(registry): return current
+    if kind == "text": return project_text(registry, current)
     value = identity(registry)["projections"][kind]
     require(projection_digest(current) == value["current_digest"], f"R4 {kind} live projection drifted")
     baseline = base_registry()["phase26_activation_audit"]
@@ -101,15 +142,6 @@ def project(registry: dict, kind: str, current):
     elif kind == "r3_record": expected = baseline["zlib_adapter_r3_successor"]
     elif kind == "workflow": expected = base_bytes(".github/workflows/pr-fast.yml").decode()
     elif kind == "production": expected = baseline["zlib_adapter_r3_successor"]["production_audit_successor"]["current_audit"]
-    elif kind == "text":
-        expected = []
-        from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
-        for row in current:
-            path = row["path"]
-            if path in ADDED: continue
-            raw = base_bytes(path) if path in CHANGED else (ROOT / path).read_bytes()
-            counts = {name: len(pattern.findall(raw.decode())) for name, pattern in SURFACE_PATTERNS.items()}
-            if any(counts.values()): expected.append(dict(row, digest=sha(raw), match_counts=counts))
     else: raise SystemExit(f"unknown R4 projection: {kind}")
     require(value["previous_digest"] == projection_digest(expected), f"R4 {kind} predecessor drifted")
     before = expected
@@ -157,17 +189,9 @@ def live_projections() -> dict:
     from phase23_production_release_audit import scan as production_scan
     old = base_registry()["phase26_activation_audit"]
     current_text = r3.raw_text_surfaces()
-    previous_text = []
-    from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
-    for row in current_text:
-        path = row["path"]
-        if path in ADDED: continue
-        raw = base_bytes(path) if path in CHANGED else (ROOT / path).read_bytes()
-        counts = {name: len(pattern.findall(raw.decode())) for name, pattern in SURFACE_PATTERNS.items()}
-        if any(counts.values()): previous_text.append(dict(row, digest=sha(raw), match_counts=counts))
     production = production_scan()
     return {
-            "text": {"previous": previous_text, "current": current_text},
+            "text": {"previous": previous_owned_text(), "current": owned_text(current_text)},
             "spelling": {"previous": old["zlib_adapter_r3_successor"]["spelling_inventory_successor"]["current_inventory_summary"], "current": manifest_summary(source_sites())},
             "filename": {"previous": old["scoped_byte_copy_r2_successor"]["filename_site_successor"]["current_sites"], "current": filename_sites()},
             "r3_record": {"previous": old["zlib_adapter_r3_successor"], "current": r3.build_record()},
@@ -229,6 +253,30 @@ def inversions() -> None:
         rejected(f"old state {path}", lambda path=path: prior_digest(registry, path, sha(base_bytes(path))), f"R4 changed file drifted: {path}")
     for kind in identity(registry)["projections"]:
         rejected(f"missing {kind}", lambda kind=kind: project(registry, kind, None), f"R4 {kind} live projection drifted")
+    import phase26_r3_zlib_adapter_registration as r3
+    text = r3.raw_text_surfaces()
+    selected = owned_text(text)[0]
+    for label, changed in [
+        ("substituted registered text", [dict(row, digest="0" * 64) if row["path"] == selected["path"] else row for row in text]),
+        ("omitted registered text", [row for row in text if row["path"] != selected["path"]]),
+        ("duplicated registered text", text + [selected]),
+    ]:
+        rejected(label, lambda changed=changed: project(registry, "text", changed), "R4 text live projection drifted")
+    foreign = next(row for row in text if row["path"] not in CHANGED and row["path"] not in ADDED)
+    altered_foreign = dict(foreign, digest="0" * 64)
+    changed = [altered_foreign if row["path"] == foreign["path"] else row for row in text]
+    forwarded = project(registry, "text", changed)
+    require(next(row for row in forwarded if row["path"] == foreign["path"]) == altered_foreign,
+            "R4 rewrote a foreign text row")
+    duplicate_foreign = project(registry, "text", changed + [altered_foreign])
+    require(sum(row["path"] == foreign["path"] for row in duplicate_foreign) == 2,
+            "R4 hid a foreign duplicate from its owner")
+    path = "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py"
+    require(path not in CHANGED and any(row["path"] == path for row in text), "R3 tamper probe lost its foreign mechanism")
+    tampered = [dict(row, digest="0" * 64) if row["path"] == path else row for row in text]
+    rejected("foreign forbidden tamper retains R3 rejection", lambda: r3.normalize_text_predecessor(
+        registry, project(registry, "text", tampered)), "R3 text surface")
+    print(f"{GUARD}: foreign rows and duplicates forwarded unchanged to predecessor owners")
     changed_sites = copy.deepcopy(live_projections()["filename"]["current"])
     changed_sites[0]["line"] += 1
     rejected("unregistered filename coordinate", lambda: project(registry, "filename", changed_sites), "R4 filename live projection drifted")

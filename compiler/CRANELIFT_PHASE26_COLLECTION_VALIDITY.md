@@ -52,8 +52,13 @@ Qualification is owned by `guard-cranelift-phase26-collection-validity`:
   check and must fail its precise semantic assertion;
 - local-linkage assertions and Pop receiver/layout/brand/operation mutations.
 
-The additive registration recomputes complete live scan hashes and verifies
-exact predecessor projections. Historical registry fields and spelling-review
+The optional constant folder checks that annotation/value indexes exist before
+reading them; inferred declarations can decline that optimization and use the
+existing scalar owner. This preserves generated scalar source compilation.
+
+The additive registration recomputes live source-site hashes and verifies
+exact predecessor projections. Text projection binds only registered changed/added paths and passes other
+rows unchanged to their existing validators. Historical registry fields and spelling-review
 bytes remain frozen. Native bootstrap compares emitted objects at its fixed
 point; no removed C seed is reconstructed. GitHub exact-head checks remain the
 authoritative validation and are required before the checked Stdlib handoff.

@@ -48098,6 +48098,11 @@
           "current_digest": "f335e94139a1db75a8ed9617e2a8d88a6a2714ee44217526f45534ce0805c86e"
         },
         {
+          "path": "compiler/mir_native_backend_generic_source.gst",
+          "previous_digest": "17bf1312308c4aefb2e650f5d71ce38766fcd398b0baa003d0fbfd44f96d8baa",
+          "current_digest": "c47efb88ca6a38d0f117a6f9028b85fed4d4d57ae38b43bc1fa2fee5cc899e3c"
+        },
+        {
           "path": "compiler/experiments/cranelift/src/full_program.rs",
           "previous_digest": "39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc",
           "current_digest": "d25782755d96923e3c78d2d0e4e3ef4d50225c06890f668bb4a8a9dfd10eeb60"
@@ -48137,19 +48142,23 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "4378dec4d06130b2287dfef8525d4bb32f3ab7e57ffc1f049776493ec62a9d68"
+          "digest": "95d7bc1e6a4e3436d82703d750288a365cb5ca05c1ca7b4968bb1cdd7fb40c45"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
-          "digest": "19f981c5f3795985e8b70a35572050234759f3938538dea72c623ad563122046"
+          "digest": "1dff6629b04fe6fb974ee79b6733c82a3fa9f65a3b24992e1eab9e56724f4b8c"
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
-          "digest": "8b2f62db0f55ef1d4314de42d693c6d38727a37c088d1c617db521059e4c2cc7"
+          "digest": "6f9800f8a1c0f7dc7f121ce10bd5736e4f45fd1c3a6d6f5cba2d3d6749cd2a40"
         },
         {
           "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
           "digest": "ef701acfd9455248c331404b9083ae891fb709f234fe307cb6369a8a7d95d402"
+        },
+        {
+          "path": "tests/cranelift/phase26_r4_inferred_scalar.gst",
+          "digest": "d163a0f0fc7e8b2f25c1e4545bfa80f0ccf2607bceee5239f1d7ce24e9081f47"
         },
         {
           "path": "tests/cranelift/phase26_r4_metadata_reference_rejected.gst",
@@ -48162,8 +48171,8 @@
       ],
       "projections": {
         "text": {
-          "previous_digest": "dca99aefa5fa65eb6c5149a9e1bba8bb2490d244f8c6e5ac5b9c2ed1d7ffd761",
-          "current_digest": "6af7eaa7d2441315a7fa00939548f72c58ed289591c13a323a5c11c125c1df66"
+          "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
+          "current_digest": "63d63c475b295445a7674d2897f124c781a7391f5e90b346160d4e40b07f386f"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",

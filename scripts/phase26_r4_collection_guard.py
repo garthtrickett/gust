@@ -31,6 +31,18 @@ def command(args, label, expected=0, timeout=240):
     return result
 
 
+# Checked arena slots expose an old optional-fold absent annotation read.
+# Both path spellings must compile through the existing scalar owner.
+for variant in ["original", "renamed"]:
+    source = ROOT / "tests/cranelift/phase26_r4_inferred_scalar.gst"
+    if variant == "renamed":
+        renamed = RUN / "arbitrary-inferred.gst"
+        shutil.copyfile(source, renamed)
+        source = renamed
+    executable = RUN / f"inferred-{variant}"
+    command([COMPILER, "--backend", "cranelift", "-o", executable, source], f"inferred-{variant}-compile")
+    command([executable], f"inferred-{variant}-run", expected=3)
+
 for name, diagnostic in [("metadata_write", "CollectionMetadataAuthority"),
                          ("metadata_reference", "CollectionMetadataAuthority"),
                          ("default_collection", "CollectionConstruction")]:
