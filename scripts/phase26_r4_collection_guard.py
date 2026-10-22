@@ -17,6 +17,10 @@ COMPILER = ROOT / "gust"
 WORKER = ROOT / "build/gust-native-backend"
 RUNTIME = ROOT / "build/gust-runtime-package.a"
 ENV = dict(os.environ, GUST_NATIVE_BACKEND_DRIVER=str(WORKER))
+# Both predecessor owners remain enforced; the rebuild owner's 10-MiB
+# ceiling is stricter than R2's versioned compiler-program ceiling.
+REBUILD_MAXIMUM = json.loads((ROOT / "scripts/cranelift_feature_registry.json").read_text())["phase21_native_rebuild_reproducibility"]["measurements"]["maximum_artifact_bytes"]
+assert COMPILER.stat().st_size <= REBUILD_MAXIMUM, "compiler exceeds native rebuild artifact ceiling"
 
 
 def command(args, label, expected=0, timeout=240):

@@ -4550,8 +4550,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if native_vector_value_dispatch_name(vector_type).is_some() {
             let (receiver, receiver_type) =
                 self.lower_receiver_place(builder, node.children[0], false)?;
-            let storage = self.checked_storage(builder, receiver, &receiver_type)?;
-            return Ok(self.checked_element(builder, &storage, index));
+            return self.checked_storage_element(builder, receiver, &receiver_type, index);
         }
         if is_pointer_type(&receiver_node.ty) {
             let receiver_eval = self.lower_expression(builder, node.children[0], None)?;
@@ -5836,8 +5835,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             let index = self.scalar(builder, index_eval, &index_node.ty)?;
             let value_node = &self.program.nodes[node.children[2]];
             let value_eval = self.lower_expression(builder, node.children[2], Some(&element_type))?;
-            let storage = self.checked_storage(builder, receiver, &receiver_type)?;
-            let destination = self.checked_element(builder, &storage, index);
+            let destination = self.checked_storage_element(builder, receiver, &receiver_type, index)?;
             self.store_evaluated_as(builder, destination, value_eval, &value_node.ty, &element_type)?;
             return Ok(Evaluated::Void);
         }

@@ -9,7 +9,6 @@ pub(super) struct Storage {
     pub len: Value,
     pub capacity: Value,
     pub arena: Value,
-    pub arena_capacity: Value,
     pub data_field: Place,
     pub len_field: Place,
     pub capacity_field: Place,
@@ -53,6 +52,7 @@ fn checked_growth(
 // every emitted object, never imported from or exported by the runtime ABI.
 const SLOT_CHECK: &str = ".gust.checked_arena_slot";
 const STORAGE_CHECK: &str = ".gust.checked_collection_storage";
+const ELEMENT_CHECK: &str = ".gust.checked_collection_element";
 
 pub(super) fn define_checks(module: &mut ObjectModule) -> Result<(), Box<dyn Error>> {
     for (name, parameters) in [
@@ -60,6 +60,10 @@ pub(super) fn define_checks(module: &mut ObjectModule) -> Result<(), Box<dyn Err
         (
             STORAGE_CHECK,
             vec![types::I64, types::I32, types::I32, types::I64, types::I64],
+        ),
+        (
+            ELEMENT_CHECK,
+            vec![types::I64, types::I32, types::I32, types::I64, types::I64, types::I32],
         ),
     ] {
         let mut context = module.make_context();
@@ -80,8 +84,15 @@ pub(super) fn define_checks(module: &mut ObjectModule) -> Result<(), Box<dyn Err
             let args = builder.block_params(entry).to_vec();
             let result = if name == SLOT_CHECK {
                 emit_slot_check(&mut builder, args[0], args[1], args[2])
-            } else {
+            } else if name == STORAGE_CHECK {
                 emit_storage_check(&mut builder, args[0], args[1], args[2], args[3], args[4])
+            } else {
+                emit_storage_check(&mut builder, args[0], args[1], args[2], args[3], args[4]);
+                let valid = builder.ins().icmp(IntCC::UnsignedLessThan, args[5], args[1]);
+                builder.ins().trapz(valid, trap());
+                let index = builder.ins().uextend(types::I64, args[5]);
+                let offset = builder.ins().imul(index, args[4]);
+                builder.ins().iadd(args[0], offset)
             };
             builder.ins().return_(&[result]);
             builder.finalize();
@@ -221,7 +232,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
     /// Snapshot only after all operands have been evaluated. The source
     /// authority must also exclude metadata fabrication: numeric checks cannot
     /// prove that an arbitrary address names an allocation.
-    pub(super) fn checked_storage(
+    fn storage_fields(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
         receiver: Place,
@@ -260,23 +271,44 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             data_field.address,
             0,
         );
-        let stride = builder.ins().iconst(types::I64, i64::from(element_size));
-        let arena_capacity = self.call_storage_check(
-            builder,
-            STORAGE_CHECK,
-            &[data, len, capacity, arena, stride],
-        );
         Ok(Storage {
             data,
             len,
             capacity,
             arena,
-            arena_capacity,
             data_field,
             len_field,
             capacity_field,
             element_size,
         })
+    }
+
+    pub(super) fn checked_storage(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        receiver: Place,
+        receiver_type: &str,
+    ) -> Result<Storage, Box<dyn Error>> {
+        let storage = self.storage_fields(builder, receiver, receiver_type)?;
+        let stride = builder.ins().iconst(types::I64, i64::from(storage.element_size));
+        self.call_storage_check(builder, STORAGE_CHECK,
+            &[storage.data, storage.len, storage.capacity, storage.arena, stride]);
+        Ok(storage)
+    }
+
+    /// Combine storage and initialized-index validation in one local call.
+    /// Snapshot after operands, exactly as for the other checked operations.
+    pub(super) fn checked_storage_element(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        receiver: Place,
+        receiver_type: &str,
+        index: Value,
+    ) -> Result<Place, Box<dyn Error>> {
+        let storage = self.storage_fields(builder, receiver, receiver_type)?;
+        let stride = builder.ins().iconst(types::I64, i64::from(storage.element_size));
+        Ok(Place { address: self.call_storage_check(builder, ELEMENT_CHECK,
+            &[storage.data, storage.len, storage.capacity, storage.arena, stride, index]) })
     }
 
     pub(super) fn checked_element(
@@ -322,11 +354,13 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let ready = builder.create_block();
         builder.ins().brif(must_grow, grow, &[], ready, &[]);
         builder.switch_to_block(grow);
+        let arena_capacity = builder.ins().load(
+            types::I64, MemFlags::trusted(), storage.arena, 16);
         let (new_capacity64, bytes) = checked_growth(
             builder,
             storage.capacity,
             storage.element_size,
-            storage.arena_capacity,
+            arena_capacity,
         );
         let allocate = self
             .runtime

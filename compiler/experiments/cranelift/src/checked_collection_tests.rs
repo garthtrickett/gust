@@ -186,7 +186,7 @@ fn run(program: &Program, label: &str) -> std::process::ExitStatus {
     lower_program(program, &object).unwrap();
     let bytes = fs::read(&object).unwrap();
     let parsed = object::File::parse(bytes.as_slice()).unwrap();
-    for name in [SLOT_CHECK, STORAGE_CHECK] {
+    for name in [SLOT_CHECK, STORAGE_CHECK, ELEMENT_CHECK] {
         let symbol = parsed
             .symbols()
             .find(|symbol| symbol.name().ok() == Some(name))
