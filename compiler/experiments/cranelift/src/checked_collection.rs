@@ -42,6 +42,16 @@ impl StorageShape {
     }
 }
 
+// Source/canonical identities must never impersonate module-cached helpers.
+pub(super) fn reject_private_symbol(symbol: &str) -> Result<(), Box<dyn Error>> {
+    if symbol.starts_with(".gust.checked_") {
+        return Err(invalid(
+            "checked collection helper namespace is compiler-private",
+        ));
+    }
+    Ok(())
+}
+
 pub(super) fn trap() -> TrapCode {
     TrapCode::unwrap_user(26)
 }

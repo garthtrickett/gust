@@ -48135,7 +48135,7 @@
         {
           "path": "compiler/experiments/cranelift/src/full_program.rs",
           "previous_digest": "39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc",
-          "current_digest": "4e9f48cef7a85f1bbbf5819eab87784afb2fbe0946934c2ecc9faf564de36a52"
+          "current_digest": "39b78c209146749ffcfd048abbd07392d1a17b73339ec9ac546995cdbc5a0355"
         },
         {
           "path": "scripts/phase26_r2_scoped_copy_registration.py",
@@ -48156,11 +48156,11 @@
       "added_files": [
         {
           "path": "compiler/experiments/cranelift/src/checked_collection.rs",
-          "digest": "aff1f4d376e03b36506f345f465a4dcb5ff906c1b01e249607df1c3ae179837a"
+          "digest": "dfbb4757252a55fdd06240644d7190a5d62fec8150f97a62ddad6e6953a78eb1"
         },
         {
           "path": "compiler/experiments/cranelift/src/checked_collection_tests.rs",
-          "digest": "d516ab3b83a92960da62165ef1401cae60757941a3f15f2d7103bd840f86266a"
+          "digest": "4b725b5e5a7a080bf8c23e7464934f9af3b10fd9f23b24c22ce4e9eece6330f3"
         },
         {
           "path": "compiler/typechecker_phase26_collection_authority_test_entry.gst",
@@ -48168,11 +48168,11 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_SPELLING_INVENTORY.md",
-          "digest": "ac06f13a396ce5966d175f4180a6a265a0bd9402820d20f569bee72d38ec0144"
+          "digest": "e9e8b0aae1a82b0cef59e376bdf420c660b299c07323d06b03042c67940ebe7d"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "69156f0b4b56a713acc7c9dc81f0dad05724a1ec43f69ae0aa200b6243112c90"
+          "digest": "f01b6e75722a39d01b96e95818b88a7d8b9a08db7e089355b9ae06c5ec874575"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
@@ -48180,7 +48180,7 @@
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
-          "digest": "54de3114e3cb6eac826997b04d7a4889091387c549f61c2ae90b2f1e9ad8560d"
+          "digest": "f0a0b4e1723c448e3267c01291b14887f409b42c48d188e19e2b46562f2f563f"
         },
         {
           "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
@@ -48202,11 +48202,11 @@
       "projections": {
         "text": {
           "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
-          "current_digest": "f0823e826deffc540f2e2224c44017affe89ec62c4877e16ef13220a5230087a"
+          "current_digest": "858f49e497bb470091e846a5f99d93c583a1efad9bd3f533c57fb90676db6a1a"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
-          "current_digest": "96787c5c9588445028b01eb0a5bc6a0ec8938a39928ae0377150d13aefd437ca"
+          "current_digest": "6042e9eaea9e4cd55a10a9d7fc19d4e070616f00e066b5929e40acb0e47737ed"
         },
         "filename": {
           "previous_digest": "25ba49db7f444dccdfe9550d8d91adf524900f141eba223b5c1f3b8298502f9c",
@@ -48214,7 +48214,7 @@
         },
         "r3_record": {
           "previous_digest": "abb8846b7be0a2c671a1b66ee9fa5a5f0481d9b12c6766909b7aee61a9157b90",
-          "current_digest": "968ddfe34254f9dea035ee1915c571b7b28fa60ba4d26fbcca0b3ee5034e9ae2"
+          "current_digest": "5a80988b9ff8e7ec4e928129b6f66bf6caff5c8b6028a7f2782634e007678a25"
         },
         "production": {
           "previous_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",

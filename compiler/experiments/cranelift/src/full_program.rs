@@ -3553,6 +3553,8 @@ impl<'a> FullProgramCompiler<'a> {
 
     fn declare_program(&mut self) -> Result<(), Box<dyn Error>> {
         for function in &self.program.functions {
+            checked_collection::reject_private_symbol(&function.qualified_name)?;
+            checked_collection::reject_private_symbol(&function.extern_symbol)?;
             let (signature, abi) = function_signature(&self.module, function, &mut self.layouts)?;
             let symbol = if function.is_extern {
                 function.extern_symbol.as_str()
@@ -3607,6 +3609,7 @@ impl<'a> FullProgramCompiler<'a> {
                 continue;
             }
             let symbol = runtime_symbol(node);
+            checked_collection::reject_private_symbol(&symbol)?;
             if symbol.is_empty() || symbol.ends_with("__") {
                 return Err(invalid(format!(
                     "full-program call {} has neither generic inline nor function authority",

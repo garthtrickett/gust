@@ -28,7 +28,9 @@ Factoring them keeps the compiler within its unchanged artifact-size ceiling.
 Storage loads and initialized-index checks share one object-local call for reads
 and Set, keyed only by resolved field offsets and element stride. Append growth/allocation/copy is likewise shared in an object-local helper,
 using only existing allocator and memcpy declarations and preserving mutation
-order. Both existing artifact owners remain enforced, including the stricter
+order. Function identities, explicit extern symbols and synthetic imports cannot
+use the compiler-private helper namespace; compile-only controls enforce that
+boundary before object definition. Both existing artifact owners remain enforced, including the stricter
 10-MiB native-rebuild ceiling as well as R2's versioned compiler-program ceiling.
 
 The typed producer records existing element resource classification on an

@@ -166,7 +166,7 @@ source_native("inactive-enum-component", "type Maybe[ctx] enum { None, Some { va
 ENV.update(GUST_R4_RUNTIME_ARCHIVE=str(RUNTIME), GUST_R4_TEST_OUTPUT=str(RUN / "native"))
 native_result = command(["cargo", "test", "--locked", "--manifest-path", ROOT / "compiler/experiments/cranelift/Cargo.toml",
          "checked_collection::tests", "--", "--include-ignored", "--nocapture"], "native", timeout=600)
-assert b"test result: ok. 6 passed; 0 failed; 0 ignored" in native_result.stdout, "R4 native test population did not execute"
+assert b"test result: ok. 7 passed; 0 failed; 0 ignored" in native_result.stdout, "R4 native test population did not execute"
 # Invert each growth check in an isolated source copy. The production tree is
 # never rewritten; each mutant must fail its corresponding semantic assertion.
 crate = ROOT / "compiler/experiments/cranelift"

@@ -256,6 +256,59 @@ fn run(program: &Program, label: &str) -> std::process::ExitStatus {
 }
 
 #[test]
+fn user_symbols_cannot_impersonate_checked_helpers() {
+    // Exercise declaration admission only: no colliding object is defined,
+    // written, linked, or executed, even if an assertion regresses.
+    for route in ["qualified", "extern", "synthetic"] {
+        for reserved in [false, true] {
+            let name = if reserved {
+                ".gust.checked_probe"
+            } else {
+                "ordinary_probe"
+            };
+            let mut example = Example::new("Int");
+            let result = example.integer(0);
+            if route == "synthetic" {
+                let callee = example.local(name, "Void");
+                let call = example.node("Call", "Int", name, vec![callee]);
+                example.evaluate(call);
+            }
+            let mut program = example.finish(result);
+            if route == "qualified" {
+                let mut function = program.functions[program.entry_function].clone();
+                function.source_name = name.into();
+                function.qualified_name = name.into();
+                program.functions.push(function);
+            } else if route == "extern" {
+                program.functions.push(Function {
+                    module_index: 0,
+                    source_name: "ordinary_external".into(),
+                    qualified_name: "ordinary_external".into(),
+                    is_extern: true,
+                    extern_symbol: name.into(),
+                    result_type: "Int".into(),
+                    body_node: None,
+                    parameters: vec![],
+                    ffi_contract: None,
+                    scoped_byte_copy: None,
+                });
+            }
+            let mut compiler = FullProgramCompiler::new(&program).unwrap();
+            let declared = compiler.declare_program();
+            if reserved {
+                assert_eq!(
+                    declared.unwrap_err().to_string(),
+                    "checked collection helper namespace is compiler-private",
+                    "{route}"
+                );
+            } else {
+                declared.unwrap();
+            }
+        }
+    }
+}
+
+#[test]
 #[ignore = "owning R4 native guard supplies isolated output and exact runtime"]
 fn valid_stride_growth_set_and_pop_preserve_copy() {
     for element in ["Int", "Byte", "Bool"] {
