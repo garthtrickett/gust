@@ -3,7 +3,7 @@
 Generated from the complete live source scan; no historical review is rewritten.
 
 - Predecessor main: `6bca6cdde2a3966758fc3fb40e04fc3115e270ad`
-- Complete current rendered inventory SHA-256: `45db3baa4827d5e50bb433dc8cdfcf058eeb86980eca02ed8e966c288213241e`
+- Complete current rendered inventory SHA-256: `a6cbb5f338e9e10ea7576ae7e12a70835b8db400538482c4ec727a681862af51`
 - Frozen predecessor review SHA-256: `a7bf91d10095bcb4c9792548c060e16cfc9fc81aab941adebb1ac897e10f6f97`
 
 The owning registration separately binds the complete source-site manifest, classification

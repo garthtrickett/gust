@@ -59,6 +59,19 @@ for name, expected in [("trusted", 21), ("untrusted", 99)]:
                 f"query-{name}-{variant}-compile")
         command([executable], f"query-{name}-{variant}-run", expected=expected)
 
+# A staged non-collection record is not an initialization-specific match.
+# The existing threading owner must keep accepting its unrelated declaration.
+for variant in ["original", "renamed"]:
+    source = ROOT / "compiler/phase20_component_threading_source.gst"
+    if variant == "renamed":
+        renamed = RUN / "arbitrary-threading.gst"
+        shutil.copyfile(source, renamed)
+        source = renamed
+    executable = RUN / f"threading-{variant}"
+    command([COMPILER, "--backend", "cranelift", "-o", executable, source], f"threading-{variant}-compile")
+    result = command([executable], f"threading-{variant}-run")
+    assert result.stdout == b"1\n" and not result.stderr
+
 # Optional recognizers must decline absent initializers before reading slots.
 # This registered source retains its explicit public pre-driver deferral.
 for variant in ["original", "renamed"]:

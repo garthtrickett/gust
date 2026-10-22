@@ -60,9 +60,11 @@ them. Inferred declarations retain the existing constant-evaluation proof,
 including the typed-query no-op terminal route; explicit annotations keep their
 type check. Generated scalar source compilation remains qualified separately.
 Other optional source recognizers similarly check initializer presence before
-reading declaration slots. An absent initializer declines only that recognizer;
-the existing supported owner or explicit pre-driver deferral still decides the
-source's disposition.
+reading declaration slots. Loops that ignore unmatched declarations skip an
+absent initializer; fixed patterns that require an initializer decline that
+candidate. This preserves existing staged non-collection records, including the
+threading owner's argument record, while leaving source disposition to its
+existing supported owner or explicit pre-driver deferral.
 
 The additive registration recomputes live source-site hashes and verifies
 exact predecessor projections. Text projection binds only registered changed/added paths and passes other

@@ -630,10 +630,9 @@ func mir_native_resource_sync_threading_analyze(
         index = 0;
         while index < len(statements) {
             mut statement := statements[index];
-            if statement.tag == 4 {
-                if statement.VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] {
-                    return model;
-                }
+            if statement.tag == 4 &&
+               statement.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+            {
                 mut value := ctx[statement.VarDecl.value];
                 mut call_name := mir_native_resource_sync_call_name(value, ctx);
                 if std.str_eq(call_name, "os.Arena.New") == 1 {

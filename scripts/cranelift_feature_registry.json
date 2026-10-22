@@ -48110,7 +48110,7 @@
         {
           "path": "compiler/mir_native_backend_collection_string_source.gst",
           "previous_digest": "bc5b0ca69dfcb4a64549e0dd1982798cf107c9a3897c49f27fecccea0ade9e50",
-          "current_digest": "f0e4ac694f9d0be15f790d5614bc1a570120d963960c510bb9b4fb3a46eb2d83"
+          "current_digest": "2e597ffcef333bde6222f89ad64c07b6148fefb0c7f720429c39a1a2ecbe4f8e"
         },
         {
           "path": "compiler/mir_native_backend_filesystem_allocation_source.gst",
@@ -48125,7 +48125,7 @@
         {
           "path": "compiler/mir_native_backend_resource_sync_source.gst",
           "previous_digest": "14456b2736d8a9e0b180cfe0bd8812cbb26cb68f90a68f8c952aa27c8a5d9426",
-          "current_digest": "f736d83d5d0b4cb2fdc8f6465a04d7374d9ca3db29b7e14b27c4fae719c98e9b"
+          "current_digest": "219c516808fbee0d67458784be04637ca8a95e55f2135d52779ad7364b7c8ba3"
         },
         {
           "path": "compiler/mir_native_backend_structured_cfg_source.gst",
@@ -48168,11 +48168,11 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_SPELLING_INVENTORY.md",
-          "digest": "3fcd4405bf745a17af50e84f6897006f89545aac3620dd9b02c63d330ad18917"
+          "digest": "a94e324cb657b248322b9bf3f3b47e77a2d03b3b50b00fa7a2213eb440f97fac"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "37e84129147c4101317701af5edd0475b71bf45ea3a242ca1cf853de94469c04"
+          "digest": "f989f796d6a1b31aa4b16f0d4da686e8ef1e4dcd9206d4b885065b3ac9178d75"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
@@ -48180,7 +48180,7 @@
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
-          "digest": "efbdd3698ca4bb9d5e7a806a5653353354fbb1749077461eb802c4c1dec19e79"
+          "digest": "54de3114e3cb6eac826997b04d7a4889091387c549f61c2ae90b2f1e9ad8560d"
         },
         {
           "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
@@ -48206,7 +48206,7 @@
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
-          "current_digest": "f6ea21743690c7bc9e447a88b850d40d3256799169919d9f1877c04f96537692"
+          "current_digest": "019fdfb687c9d1546c75bfd702458ee1c42c3987575b098e04a2a80fd569ded2"
         },
         "filename": {
           "previous_digest": "25ba49db7f444dccdfe9550d8d91adf524900f141eba223b5c1f3b8298502f9c",
@@ -48214,7 +48214,7 @@
         },
         "r3_record": {
           "previous_digest": "abb8846b7be0a2c671a1b66ee9fa5a5f0481d9b12c6766909b7aee61a9157b90",
-          "current_digest": "40818ac5fb77e33606be0547f2a457b7d91aacdc846c09237921c660629ae379"
+          "current_digest": "f2749e4c395818352ca7472c4882624bcbb73a273cd1f299394b0fd6634667df"
         },
         "production": {
           "previous_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
