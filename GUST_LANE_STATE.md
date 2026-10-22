@@ -390,3 +390,84 @@ tool binding and full owning guard still require current-source validation.
 The public tagged-result contract and separate generic Vector safety repair
 remain OPEN. All six Phase 26 rows, general mode 63, and phase closure remain
 OPEN; there is no R2 PR or production signing root.
+
+## Phase 26.1 R4 preflight resumption and terminal record — 2026-10-22
+
+The operator's startup invalidated the old checkout's waiting record for this
+resumed work. This new worktree is the single Cranelift lane on
+`codex/phase26-1r4-collection-preflight`; fetched `origin/main` and local HEAD
+both equal `6bca6cdde2a3966758fc3fb40e04fc3115e270ad`.
+The older prototype checkout and frozen artifacts were read only and preserved.
+PR #603 and #604 merges were independently verified through GitHub. Draft
+PR #605 has head `98aeeceb77b836eae1f959e3216c2a28eda04b3c`; its OPEN OD20
+proposal grants no compiler authority.
+
+Authorized independent preflight is finished: static body audit, concrete
+repair proposal, compatibility analysis, exact files/layers, seven-point report,
+and qualification gates are retained at
+`/home/gust/phase26-recovery/r4-preflight-20261022/decision-ready-design-v1.json`,
+SHA256 `2775f848b8adf756b81ca510532e160cadb4c41474533d3396f271dd84a82998`.
+Findings and recommendation were sent to Vision through Paseo with
+`notifyOnFinish: true`. No Vision file or branch was edited.
+
+WAITING FOR OPERATOR SEMANTIC AUTHORITY: metadata visibility/mutation and valid
+initialization; invalid index, empty Pop and growth overflow failure scope;
+and copy/alias validity on destructive removal. Ordinary Set and Pop and the
+second growth helper belong in the generic repair design. Pop's backing zeroing
+raises an alias/initialized-value qualification concern, not a newly executed
+runtime reproduction. Public Vector versus branded Index tagged success and
+production signer/trust/revocation choices remain separate and pending.
+No new MIR/runtime meaning or collection/API semantics were implemented.
+
+Continuation ladder checked: R1 production data lacks designated authority;
+R2/R3 scoped TEST capabilities are merged; R4 design is now concrete but the
+repair/handoff is authority-blocked; release R5/R6 depend on merged safe wrapper
+and production qualification. Standing containment/demo proposals were read;
+unrelated secret/effects/platform/trace work does not fit this selected patch.
+No further bounded documentation learned by this audit remains unwritten.
+All Phase 26 statuses and full R1–R6 release gates remain OPEN.
+
+Validation: `git fetch origin`, exact `git rev-parse HEAD origin/main`, GitHub
+PR metadata reads, retained report/proposal `sha256sum`, and static source body
+reads passed. No build, compiler execution, bootstrap or new CI was run for
+this design-only preflight. No malformed executable was executed. No patch
+was published or merged. No background job, wait or duplicate monitor was
+started. The registrar's existing heartbeat remains its owner's responsibility.
+Resume invalidates this terminal record; implement only after explicit authority.
+
+### Resumed — delegated OD20 choices, 2026-10-22
+
+The operator relayed Vision's bounded A/B/C decisions and directed this lane to
+resume design/compatibility work. The preceding terminal waiting record is now
+invalid. PR605 is still OPEN at independently verified head
+`062abf47a85fa90dc3a8bf88e3d7698bf8a845bb`; semantic edits wait for merged
+decision authority. Public result and production signing do not block the
+independent generic collection repair. Audit/implementation sequencing is active.
+
+### Active repair — documentation-merge wait superseded, 2026-10-22
+
+The operator explicitly corrected the temporary docs-merge wait. Exercised OD20
+A/B/C authority is durable on disk and authorizes compiler work now. This lane
+is implementing generic metadata/construction gates and checked ordinary storage
+operations, preserving permitted copies, existing resource transfers, allocator
+ABI and process-trap scope. No unmerged capability is handed to Stdlib.
+Baseline and integrated native builds pass; six focused patched-worker tests
+pass. Qualification and exact additive predecessor registration remain active;
+no release or safe-wrapper completion is claimed. Older malformed programs are
+never executed. Earlier waiting statements above are historical and inactive.
+
+### Active qualification — OD23 recorded, 2026-10-22
+
+OD23 is OPEN before future public resource-collection admission. The independent
+compile-only witness and seven-point report are retained at
+`/home/gust/phase26-recovery/r4-preflight-20261022/resource-slot-ownership-boundary-v1.json`,
+SHA256 `04200c19ec506523cef1afca9febb974fc90d0b514afffd99fd5fc276fcf2d9a`.
+Vision registered it in its own docs PR605; no docs merge hold applies. Public
+resource deferral and transfer clearing remain unchanged. No resource witness
+was linked or run. OD21 public result and OD22 production trust remain separate.
+
+Standards/spec review corrections and expanded source/native qualification are
+in progress. Private object-local check factoring replaces repeated machine
+code; the compiler artifact ceiling stays unchanged. Native emitted-object
+bootstrap and authoritative CI are required before publication/merge/handoff.
+This is an active record, not terminal waiting; earlier waiting text is inactive.

@@ -816,6 +816,9 @@ jobs:
       - name: Phase 26 pinned zlib adapter and signed test-profile link
         run: just guard-cranelift-phase26-zlib-adapter
 
+      - name: Phase 26 checked collection validity and copy preservation
+        run: just guard-cranelift-phase26-collection-validity
+
       - name: Phase 26 FFI position policy
         run: just guard-cranelift-phase26-ffi-position-policy
 

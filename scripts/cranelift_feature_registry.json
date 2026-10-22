@@ -48056,6 +48056,137 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "collection_validity_r4_successor": {
+      "contract_version": "phase26_1r4_collection_validity_v1",
+      "predecessor_main_sha": "6bca6cdde2a3966758fc3fb40e04fc3115e270ad",
+      "owner": "cranelift",
+      "owning_guard": "guard-cranelift-phase26-collection-validity",
+      "release_status": "capability_only_wrapper_and_release_open",
+      "failure_scope": "deterministic_process_native_trap_no_unwind",
+      "allocator_abi": "u32_offset_encoded_in_i32_exhaustion_aborts",
+      "new_i32_allocation_byte_ceiling": false,
+      "compiler_artifact_maximum_unchanged": 10616832,
+      "changed_files": [
+        {
+          "path": "GUST_LANE_STATE.md",
+          "previous_digest": "9673d6d9a844f770232a1fa7c33353a1ea5be8162961f16fd8b0c96bfdcdb5f3",
+          "current_digest": "7f394ded9b1efd9bc4cb7e520986645e4fc7426fc29ab45b681c88f1ae0794d6"
+        },
+        {
+          "path": ".github/workflows/pr-fast.yml",
+          "previous_digest": "3d76ad4fdd9c72c84d849bcade154dba567a2b71d39df8b687895569b4b43d1e",
+          "current_digest": "c87306984b2c0c4075535f6b54cd9fc2122a99aa91db873a12e8cc4f49f00dd1"
+        },
+        {
+          "path": "justfile",
+          "previous_digest": "8fd0f5cf0ea8d3208e693cbabba1e515bbbde5f10a5d226c0c1a44849f4ebd09",
+          "current_digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745"
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "8858693afd3e647b9e330b5906488436639b644ae052e3a66d41d17258945613",
+          "current_digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d"
+        },
+        {
+          "path": "compiler/typechecker.gst",
+          "previous_digest": "ab588402efc7e0314bed2832255b3a31fc1c2fc1dec12ec83be11b072f09f303",
+          "current_digest": "55c873b917efcce279abaf2446b1fb881b2f332cc9d2e4d01db485ee3cc7c416"
+        },
+        {
+          "path": "compiler/mir_native_backend_full_program_source.gst",
+          "previous_digest": "09dd7ba0eff20eafdfdcb0b5fbe4142e03692fc8694a46b8a6e6176956676f17",
+          "current_digest": "f335e94139a1db75a8ed9617e2a8d88a6a2714ee44217526f45534ce0805c86e"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/full_program.rs",
+          "previous_digest": "39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc",
+          "current_digest": "d25782755d96923e3c78d2d0e4e3ef4d50225c06890f668bb4a8a9dfd10eeb60"
+        },
+        {
+          "path": "scripts/phase26_r2_scoped_copy_registration.py",
+          "previous_digest": "e2f916e4afb79dde326440715784935d2c8813205ebb6777d468b7d402bbede1",
+          "current_digest": "e400c729e4b4f7a5deb89be05c19d9e706901ec3433d3090f116719e24f30bb7"
+        },
+        {
+          "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+          "previous_digest": "8898c4b3226970b829afb244a91618b56af57c1a8f0ebca8931a69b51e1581b6",
+          "current_digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1"
+        },
+        {
+          "path": "scripts/phase24_semantic_spelling_inventory.py",
+          "previous_digest": "3cf8778c08cddab9270c45f5344ee186f3ad319219ac2b3e2d26c778b246805f",
+          "current_digest": "af5c00103aa89beb49a81d82d3572de8abb1c95630a736ba00ee99336f741b8e"
+        }
+      ],
+      "added_files": [
+        {
+          "path": "compiler/experiments/cranelift/src/checked_collection.rs",
+          "digest": "604c8a7c0bb8498f5863426c626ff642f0e40c6731e278af32cc5d3605ffb7d4"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/checked_collection_tests.rs",
+          "digest": "90138b24203400bbf4e150dd36256622ca3cce42890ec4f00e5d07e38d1c57cd"
+        },
+        {
+          "path": "compiler/typechecker_phase26_collection_authority_test_entry.gst",
+          "digest": "823efc319533e1fd40f1b4af678ec9f41afa4a81e0b32a6c913850bf74a0fb2f"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_COLLECTION_SPELLING_INVENTORY.md",
+          "digest": "a734d3aea0cbef4e7533c9efc281ffbf89e101f47d38ac4efd06c3c5bebabc84"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
+          "digest": "4378dec4d06130b2287dfef8525d4bb32f3ab7e57ffc1f049776493ec62a9d68"
+        },
+        {
+          "path": "scripts/phase26_r4_collection_registration.py",
+          "digest": "cb33c1452f8c8962697869582e8e1b3512e339d254ab79e2dd4f1a495aacec3a"
+        },
+        {
+          "path": "scripts/phase26_r4_collection_guard.py",
+          "digest": "8b2f62db0f55ef1d4314de42d693c6d38727a37c088d1c617db521059e4c2cc7"
+        },
+        {
+          "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
+          "digest": "ef701acfd9455248c331404b9083ae891fb709f234fe307cb6369a8a7d95d402"
+        },
+        {
+          "path": "tests/cranelift/phase26_r4_metadata_reference_rejected.gst",
+          "digest": "8801b707b7dcff69fa5734621871c6a58ccd5c9ccb893367b3d845bb903c2787"
+        },
+        {
+          "path": "tests/cranelift/phase26_r4_metadata_write_rejected.gst",
+          "digest": "52ea7b40dded2381236a3837a66765d2fb45f9a34af69a87382a3dfbffa7bab9"
+        }
+      ],
+      "projections": {
+        "text": {
+          "previous_digest": "dca99aefa5fa65eb6c5149a9e1bba8bb2490d244f8c6e5ac5b9c2ed1d7ffd761",
+          "current_digest": "48c793f8b8b9b2434915abd82b0016ebcf8b6ee1f6a9ca666f0ed3173d9178f5"
+        },
+        "spelling": {
+          "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
+          "current_digest": "f84ecb0ec04635f9b91fd741b5bccb5d2d78e6b7a09782c2b8bf62193e510dd1"
+        },
+        "filename": {
+          "previous_digest": "25ba49db7f444dccdfe9550d8d91adf524900f141eba223b5c1f3b8298502f9c",
+          "current_digest": "96f3433a10f5c471c4b0bce8f229ea8394760ead5096f0adb7157bdac5487130"
+        },
+        "r3_record": {
+          "previous_digest": "abb8846b7be0a2c671a1b66ee9fa5a5f0481d9b12c6766909b7aee61a9157b90",
+          "current_digest": "ab151e931e1d32b75050ffe26721e687c1d73a5b0955cb9840c9338a5737e405"
+        },
+        "production": {
+          "previous_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
+          "current_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73"
+        },
+        "workflow": {
+          "previous_digest": "b51fee12bebebbf9f6010a2db8e9a95c8e4cb056577f6902c122b110113dff8c",
+          "current_digest": "a4bdeb523755036f497312e1783e0d60a0985866630a901a358439f12181310b"
+        }
+      }
+    },
     "scoped_byte_copy_r2_successor": {
       "contract_version": "phase26_1r2_scoped_byte_copy_successor_v1",
       "predecessor_main_sha": "7e52a30352e5632857194062c12e3fa5234d3b4d",
