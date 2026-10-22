@@ -43,6 +43,33 @@ for variant in ["original", "renamed"]:
     command([COMPILER, "--backend", "cranelift", "-o", executable, source], f"inferred-{variant}-compile")
     command([executable], f"inferred-{variant}-run", expected=3)
 
+# Optional recognizers must decline absent initializers before reading slots.
+# This registered source retains its explicit public pre-driver deferral.
+for variant in ["original", "renamed"]:
+    source = ROOT / "tests/test_thread_local_context_registration_valid.gst"
+    if variant == "renamed":
+        renamed = RUN / "arbitrary-thread-local.gst"
+        shutil.copyfile(source, renamed)
+        source = renamed
+    output = RUN / f"thread-local-{variant}"
+    result = command([COMPILER, "--backend", "cranelift", "-o", output, source],
+                     f"thread-local-{variant}", expected=None)
+    combined = result.stdout + result.stderr
+    assert b"expected_failure_stage=before_driver_discovery" in combined
+    assert b"reason_code=" in combined and not output.exists()
+
+for label, body in [("two", "mut unused: int; return 3;"),
+                    ("three", "mut unused: int; if true { } return 3;")]:
+    source = RUN / f"absent-initializer-{label}.gst"
+    source.write_text("func main() int { " + body + " }\n")
+    output = RUN / f"absent-initializer-{label}"
+    result = subprocess.run([str(COMPILER), "--backend", "cranelift", "-o", str(output), str(source)],
+                            cwd=ROOT, env=ENV, capture_output=True, timeout=240)
+    assert result.returncode in (0, 1), (label, result.returncode, result.stdout, result.stderr)
+    if result.returncode != 0:
+        assert b"expected_failure_stage=before_driver_discovery" in result.stdout + result.stderr
+        assert not output.exists()
+
 for name, diagnostic in [("metadata_write", "CollectionMetadataAuthority"),
                          ("metadata_reference", "CollectionMetadataAuthority"),
                          ("default_collection", "CollectionConstruction")]:

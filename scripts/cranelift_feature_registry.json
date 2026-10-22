@@ -48100,7 +48100,32 @@
         {
           "path": "compiler/mir_native_backend_generic_source.gst",
           "previous_digest": "17bf1312308c4aefb2e650f5d71ce38766fcd398b0baa003d0fbfd44f96d8baa",
-          "current_digest": "c47efb88ca6a38d0f117a6f9028b85fed4d4d57ae38b43bc1fa2fee5cc899e3c"
+          "current_digest": "471fb496b97e075665124bf4e4413911883ac7defbfca4c9ff272377fabcfbcd"
+        },
+        {
+          "path": "compiler/mir_native_backend_collection_string_source.gst",
+          "previous_digest": "bc5b0ca69dfcb4a64549e0dd1982798cf107c9a3897c49f27fecccea0ade9e50",
+          "current_digest": "f0e4ac694f9d0be15f790d5614bc1a570120d963960c510bb9b4fb3a46eb2d83"
+        },
+        {
+          "path": "compiler/mir_native_backend_filesystem_allocation_source.gst",
+          "previous_digest": "23c4dcff254659ed41b1119081fcceb9bf81943bbc4b1dbc31db775292ec2a49",
+          "current_digest": "ed74a0f64ea1ab21375b70cde937b521a38f6949e021f3ca424899097c0fd35a"
+        },
+        {
+          "path": "compiler/mir_native_backend_module_import_source.gst",
+          "previous_digest": "93814859d82d0f602ddbf93d3bd70b68893a962b18e58cfcf207614bb5dfb680",
+          "current_digest": "a6aff090e3157cf878cc857d551ea46431149e1ec6e37e3024f750ddb1903f47"
+        },
+        {
+          "path": "compiler/mir_native_backend_resource_sync_source.gst",
+          "previous_digest": "14456b2736d8a9e0b180cfe0bd8812cbb26cb68f90a68f8c952aa27c8a5d9426",
+          "current_digest": "f736d83d5d0b4cb2fdc8f6465a04d7374d9ca3db29b7e14b27c4fae719c98e9b"
+        },
+        {
+          "path": "compiler/mir_native_backend_structured_cfg_source.gst",
+          "previous_digest": "0608a7521be3c15ef7bfe333f7a7539dc4651be4c2551a17960e87dad273c6f7",
+          "current_digest": "d0d56a62e997a185eefd7896d64924d7473bff950530ce57d6de8dbbbafdbaec"
         },
         {
           "path": "compiler/experiments/cranelift/src/full_program.rs",
@@ -48138,19 +48163,19 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_SPELLING_INVENTORY.md",
-          "digest": "a734d3aea0cbef4e7533c9efc281ffbf89e101f47d38ac4efd06c3c5bebabc84"
+          "digest": "97e57f0b5de71f2600592f71838fdc05a03350171b527fd67380f6d322a7b1d3"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
-          "digest": "95d7bc1e6a4e3436d82703d750288a365cb5ca05c1ca7b4968bb1cdd7fb40c45"
+          "digest": "f7432ffb3d9345bdcb86434e945fdc592727b56abfec9e83ebd6fa62a5131597"
         },
         {
           "path": "scripts/phase26_r4_collection_registration.py",
-          "digest": "1dff6629b04fe6fb974ee79b6733c82a3fa9f65a3b24992e1eab9e56724f4b8c"
+          "digest": "bc6b2a13d195f04157e079720c51d3d1eac8d73155504c89588e06ebe4bebf68"
         },
         {
           "path": "scripts/phase26_r4_collection_guard.py",
-          "digest": "6f9800f8a1c0f7dc7f121ce10bd5736e4f45fd1c3a6d6f5cba2d3d6749cd2a40"
+          "digest": "eda13806538ef130863b30b48e662672ac7bd85c32dcc300ae36fe1cdce27fdc"
         },
         {
           "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
@@ -48172,11 +48197,11 @@
       "projections": {
         "text": {
           "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
-          "current_digest": "63d63c475b295445a7674d2897f124c781a7391f5e90b346160d4e40b07f386f"
+          "current_digest": "8e20ea87ed88f2b8966692bc381ef9cdc9d711c36658f7e8feb6872cad8305c6"
         },
         "spelling": {
           "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
-          "current_digest": "f84ecb0ec04635f9b91fd741b5bccb5d2d78e6b7a09782c2b8bf62193e510dd1"
+          "current_digest": "aa92d1e1c3dde70e42aa493b97ac30bda9fedd4b9f84a72f2fa7cabf6d999002"
         },
         "filename": {
           "previous_digest": "25ba49db7f444dccdfe9550d8d91adf524900f141eba223b5c1f3b8298502f9c",
@@ -48184,7 +48209,7 @@
         },
         "r3_record": {
           "previous_digest": "abb8846b7be0a2c671a1b66ee9fa5a5f0481d9b12c6766909b7aee61a9157b90",
-          "current_digest": "ab151e931e1d32b75050ffe26721e687c1d73a5b0955cb9840c9338a5737e405"
+          "current_digest": "4a786e95ae1880d927bd260397905653fdb92be8e1b13cc9a2bb3eab5403bd58"
         },
         "production": {
           "previous_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",

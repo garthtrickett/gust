@@ -629,7 +629,9 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
         if len(statements) == 2 {
             mut local_statement := statements[0];
             mut second_statement := statements[1];
-            if local_statement.tag == 4 {
+            if local_statement.tag == 4 &&
+               local_statement.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+            {
                 mut local_expression := ctx[local_statement.VarDecl.value];
                 mut declared_type_is_int := 1;
                 if local_statement.VarDecl.var_type !=
@@ -783,6 +785,7 @@ func mir_native_generic_analyze_single_function(statement: ast.Statement[ctx], s
 
             if local_statement.tag == 4 &&
                local_statement.VarDecl.is_mut == 1 &&
+               local_statement.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
                if_statement.tag == 7 &&
                return_statement.tag == 12
             {

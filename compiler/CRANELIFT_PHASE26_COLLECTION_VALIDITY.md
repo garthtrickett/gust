@@ -55,6 +55,10 @@ Qualification is owned by `guard-cranelift-phase26-collection-validity`:
 The optional constant folder checks that annotation/value indexes exist before
 reading them; inferred declarations can decline that optimization and use the
 existing scalar owner. This preserves generated scalar source compilation.
+Other optional source recognizers similarly check initializer presence before
+reading declaration slots. An absent initializer declines only that recognizer;
+the existing supported owner or explicit pre-driver deferral still decides the
+source's disposition.
 
 The additive registration recomputes live source-site hashes and verifies
 exact predecessor projections. Text projection binds only registered changed/added paths and passes other

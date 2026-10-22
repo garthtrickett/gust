@@ -244,11 +244,16 @@ func mir_native_resource_sync_effect_from_function(
         mut body := ctx[statement.FunctionDecl.body];
         mut statements: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
 
-        if len(statements) == 2 && statements[0].tag == 4 && statements[1].tag == 7 {
+        if len(statements) == 2 && statements[0].tag == 4 &&
+           statements[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
+           statements[1].tag == 7
+        {
             mut outer := mir_native_resource_sync_call_literal(ctx[statements[0].VarDecl.value], acquire_name, ctx);
             mut consequence := ctx[statements[1].If.consequence];
             mut nested: std.Vector[ast.Statement[ctx], ctx] := ctx[consequence.statements];
-            if outer >= 0 && len(nested) == 1 && nested[0].tag == 4 {
+            if outer >= 0 && len(nested) == 1 && nested[0].tag == 4 &&
+                   nested[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+                {
                 mut inner := mir_native_resource_sync_call_literal(ctx[nested[0].VarDecl.value], acquire_name, ctx);
                 if inner >= 0 {
                     effect.represented = 1; effect.first = inner; effect.second = outer; effect.count = 2;
@@ -268,7 +273,10 @@ func mir_native_resource_sync_effect_from_function(
             }
         }
 
-        if len(statements) == 2 && statements[0].tag == 4 && statements[1].tag == 12 {
+        if len(statements) == 2 && statements[0].tag == 4 &&
+           statements[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
+           statements[1].tag == 12
+        {
             mut token := mir_native_resource_sync_call_literal(ctx[statements[0].VarDecl.value], acquire_name, ctx);
             mut returned := ctx[statements[1].Return.expr];
             if token >= 0 && returned.tag == 1 {
@@ -278,7 +286,10 @@ func mir_native_resource_sync_effect_from_function(
             }
         }
 
-        if len(statements) == 2 && statements[0].tag == 4 && statements[1].tag == 11 {
+        if len(statements) == 2 && statements[0].tag == 4 &&
+           statements[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
+           statements[1].tag == 11
+        {
             mut token := mir_native_resource_sync_call_literal(ctx[statements[0].VarDecl.value], acquire_name, ctx);
             mut deferred := ctx[statements[1].Defer.expr];
             if token >= 0 && std.str_eq(mir_native_resource_sync_call_name(deferred, ctx), consume_name) == 1 {
@@ -290,7 +301,9 @@ func mir_native_resource_sync_effect_from_function(
         if len(statements) == 2 && statements[0].tag == 4 && statements[1].tag == 6 {
             mut loop_body := ctx[statements[1].While.body];
             mut nested: std.Vector[ast.Statement[ctx], ctx] := ctx[loop_body.statements];
-            if len(nested) == 2 && nested[0].tag == 4 {
+            if len(nested) == 2 && nested[0].tag == 4 &&
+                   nested[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+                {
                 mut token := mir_native_resource_sync_call_literal(ctx[nested[0].VarDecl.value], acquire_name, ctx);
                 if token >= 0 {
                     effect.represented = 1; effect.first = token; effect.count = 1;
@@ -332,7 +345,9 @@ func mir_native_resource_sync_effect_from_function(
                 }
                 mut selected_body := ctx[cases[selected_index].body];
                 mut selected: std.Vector[ast.Statement[ctx], ctx] := ctx[selected_body.statements];
-                if len(selected) == 1 && selected[0].tag == 4 {
+                if len(selected) == 1 && selected[0].tag == 4 &&
+                   selected[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]]
+                {
                     mut token := mir_native_resource_sync_call_literal(ctx[selected[0].VarDecl.value], acquire_name, ctx);
                     if token >= 0 {
                         effect.represented = 1; effect.first = token; effect.count = 1;
@@ -342,7 +357,10 @@ func mir_native_resource_sync_effect_from_function(
             }
         }
 
-        if len(statements) == 2 && statements[0].tag == 4 && statements[1].tag == 13 {
+        if len(statements) == 2 && statements[0].tag == 4 &&
+           statements[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
+           statements[1].tag == 13
+        {
             mut token := mir_native_resource_sync_call_literal(ctx[statements[0].VarDecl.value], acquire_name, ctx);
             mut consumed := ctx[statements[1].Expression.expr];
             if token >= 0 && std.str_eq(mir_native_resource_sync_call_name(consumed, ctx), consume_name) == 1 {
@@ -573,6 +591,7 @@ func mir_native_resource_sync_threading_analyze(
             ctx[worker_unsafe_body.statements];
         if len(worker_unsafe_statements) != 3 ||
            worker_unsafe_statements[0].tag != 4 ||
+           worker_unsafe_statements[0].VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] ||
            worker_unsafe_statements[1].tag != 5 ||
            worker_unsafe_statements[2].tag != 13 ||
            std.str_eq(
@@ -612,6 +631,9 @@ func mir_native_resource_sync_threading_analyze(
         while index < len(statements) {
             mut statement := statements[index];
             if statement.tag == 4 {
+                if statement.VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] {
+                    return model;
+                }
                 mut value := ctx[statement.VarDecl.value];
                 mut call_name := mir_native_resource_sync_call_name(value, ctx);
                 if std.str_eq(call_name, "os.Arena.New") == 1 {
@@ -667,6 +689,7 @@ func mir_native_resource_sync_threading_analyze(
                     mut wait_branch: std.Vector[ast.Statement[ctx], ctx] :=
                         ctx[consequence.statements];
                     if len(wait_unsafe) == 3 && wait_unsafe[0].tag == 4 &&
+                       wait_unsafe[0].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
                        wait_unsafe[1].tag == 5 && wait_unsafe[2].tag == 13 &&
                        std.str_eq(
                            mir_native_resource_sync_call_selector(

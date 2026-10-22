@@ -599,13 +599,15 @@ func mir_native_structured_cfg_collect_declarations(
                 );
             } else if statement.tag == 7 {
                 mut consequence := ctx[statement.If.consequence];
-                mut alternative := ctx[statement.If.alternative];
                 mut then_statements:
                     std.Vector[ast.Statement[ctx], ctx] :=
                         ctx[consequence.statements];
-                mut else_statements:
-                    std.Vector[ast.Statement[ctx], ctx] :=
-                        ctx[alternative.statements];
+                mut else_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                    std.VectorNew(ctx);
+                if statement.If.alternative != empty[Index[ast.BlockStatement[ctx], ctx]] {
+                    mut alternative := ctx[statement.If.alternative];
+                    else_statements = ctx[alternative.statements];
+                }
                 collected = mir_native_structured_cfg_collect_declarations(
                     then_statements,
                     collected,
@@ -830,13 +832,15 @@ func mir_native_structured_cfg_lower_sequence(
         if statement.tag == 7 {
             unsafe {
                 mut consequence := ctx[statement.If.consequence];
-                mut alternative := ctx[statement.If.alternative];
                 mut then_statements:
                     std.Vector[ast.Statement[ctx], ctx] :=
                         ctx[consequence.statements];
-                mut else_statements:
-                    std.Vector[ast.Statement[ctx], ctx] :=
-                        ctx[alternative.statements];
+                mut else_statements: std.Vector[ast.Statement[ctx], ctx] :=
+                    std.VectorNew(ctx);
+                if statement.If.alternative != empty[Index[ast.BlockStatement[ctx], ctx]] {
+                    mut alternative := ctx[statement.If.alternative];
+                    else_statements = ctx[alternative.statements];
+                }
                 mut source_state := result.states[0];
                 mut condition := ctx[statement.If.condition];
                 mut materialized :=
