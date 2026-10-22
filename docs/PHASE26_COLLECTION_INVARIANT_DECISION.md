@@ -19,11 +19,38 @@ proposal does not select new syntax, a trap scope, a recoverable error API, a
 new MIR operation, or a runtime ABI. A decision must state which of those
 interfaces it authorizes the compiler owner to change.
 
+The Cranelift preflight separates that decision into three explicit choices:
+
+| Choice | Proposal and alternatives | Compatibility boundary |
+| --- | --- | --- |
+| A — metadata and construction | Reserve metadata mutation and field-address escape to validated registered-collection operations; require valid construction before active use. Retain harmless scalar metadata reads and existing valid constructor signatures. | Reject safe fabrication and use without valid initialization. Qualify staged initialization and nested/arena-slot/call-return paths; zeroed inactive enum payloads alone are not active invalid collection use. |
+| B — failure scope | Choose behavior for invalid index/state, empty Pop and growth/size overflow. A deterministic nonrecoverable native trap preserves existing signatures. Recoverable collection APIs or request/job-local panic require their own API/runtime route and authority. | A process-level trap is not request/job containment and may terminate unrelated work. Do not infer cleanup or unwinding. Optional lookup retains its absence semantics. |
+| C — copies and removal | Choose how valid initialized elements remain valid for copied collections when removal changes shared backing: preserve valid backing for aliases where legal, invalidate aliases through a generic rule, or authorize different storage/copy authority. | Pop currently clears backing while a copy may retain the old length. Metadata sealing and bounds checks alone do not prove element validity. Preserve valid copy/borrow behavior where qualified; do not make collections globally move-only or change drop semantics by inference. |
+
+The recommended direction is A with existing constructor signatures and harmless
+reads preserved, while retaining valid copy behavior where possible. B and C
+need explicit choices before implementation. Removing Pop's zeroing alone is
+not an approved repair: its interaction with element ownership and cleanup
+also needs qualification.
+
 Checking caller-controlled length and capacity alone cannot establish the
 actual allocation extent. The design must cover construction, direct fields,
 copies, references, aliases, aggregate carriage and calls. It must preserve
 ordinary valid construction and brand lifetimes without recognizing a zlib
 wrapper or one library type by name in a backend.
+
+Operand evaluation also belongs in the design: evaluate side-effecting operands
+once, then take the final checked metadata snapshot and storage address without
+holding a stale destination across another operand. Qualify this against the
+existing source evaluation order before choosing a lowering change.
+
+The allocator contract stays explicit. `os_ArenaAlloc` returns a u32 offset
+encoded in i32 bits; exhaustion aborts. Neither an allocation-error return nor
+a changed offset interpretation follows from this proposal. A suggested
+conservative `INT32_MAX` allocation-byte ceiling would change which very large
+requests can succeed and therefore needs its own explicit approval. Checks
+must not reject valid non-growing operations merely because a hypothetical
+growth would overflow.
 
 ## Seven-point ownership report
 
@@ -39,7 +66,10 @@ wrapper or one library type by name in a backend.
    length check. `lower_vector_method` doubles capacity and computes byte
    counts in I32 without an overflow check. The scoped collection intrinsic
    added by R2 has a separate admission proof and does not cover these ordinary
-   operations.
+   operations. The same method lowerer computes Set destinations without a
+   bounds check, and Pop decrements length before any nonempty check and zeroes
+   the removed slot. `push_place_vector` independently repeats the I32 growth
+   arithmetic. These are static observations, not executed failure claims.
 3. **Smallest proposed semantic change.** Give registered collections a generic
    metadata and initialization authority invariant, checked initialized-element
    access, and checked growth. Decide source compatibility and observable
@@ -71,10 +101,23 @@ source hashes are:
 | --- | --- |
 | `compiler/typechecker.gst` | `ab588402efc7e0314bed2832255b3a31fc1c2fc1dec12ec83be11b072f09f303` |
 | `compiler/experiments/cranelift/src/full_program.rs` | `39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc` |
+| `src/runtime-rs/src/arena.rs` | `2d4907b7d597924cc2cf500ed1df5c416c20c0a8e2e5914dd120edb9c2d120a4` |
 
 The relevant sites are `env_register_std_templates`, `lower_index_place`,
-and the Push branch of `lower_vector_method`. The registrar read those bodies;
+the Set/Pop/Push branches of `lower_vector_method`, and `push_place_vector`.
+The registrar read those bodies, including the additional sites independently
+identified by the Cranelift lane on 2026-10-22;
 this is a static audit, not a fresh compile or runtime reproduction.
+The registrar also read `os_ArenaAlloc` and `out_of_capacity` to check the
+allocator ABI and exhaustion boundary.
+
+The completed Cranelift design is retained at
+`/home/gust/phase26-recovery/r4-preflight-20261022/decision-ready-design-v1.json`,
+SHA-256 `2775f848b8adf756b81ca510532e160cadb4c41474533d3396f271dd84a82998`.
+Its digest was rechecked before incorporation. It carries exact source hashes,
+the seven-point report, affected producer/worker/registry seams, compatibility
+analysis, required qualification and a continuation audit. It is a proposal,
+not semantic authority or an executed soundness result.
 
 Retained local evidence lives beneath
 `/home/gust/phase26-recovery/boot970ebe4e/`:
@@ -97,7 +140,15 @@ The compiler owner must qualify valid direct/reference Byte, Int and Bool
 construction, copying, indexing and growth; exact metadata/default-invalid
 diagnostics; alias, arena and brand regressions; initialized-length boundaries;
 and growth/size overflow without huge allocations or executing invalid memory
-accesses. Preserve unchanged predecessor projections and obtain the native
+accesses. Cover both growth implementations, Set and empty Pop, and admitted
+element types for which all-zero storage is not a valid value. In particular,
+qualify copies and aliases when Pop clears shared backing, and argument side
+effects when Push or Set holds an element destination or collection metadata
+across evaluation of another expression. These are design and qualification
+questions; this record does not assert that an untested alias path is accepted
+or choose copy, move, reference or evaluation-order semantics.
+
+Preserve unchanged predecessor projections and obtain the native
 fixed point, exact-head owning CI, independent review and merged support before
 the Stdlib wrapper handoff. A design is falsified if safe source can fabricate
 the authority it checks, or if ordinary valid collection uses lose their
@@ -123,3 +174,11 @@ At the 2026-10-22 00:37 UTC registrar check, Paseo listed only the new VISION
 agent, the work board was empty, and GitHub had no open capability PR. Resuming
 the compiler owner and selecting OD-20's semantics are distinct prerequisites;
 the registrar supplies neither semantic authority nor another lane's activation.
+
+The operator subsequently started the Cranelift lane in
+`p26-r4-collection-preflight` on `codex/phase26-1r4-collection-preflight`.
+Its 2026-10-22 preflight finished with the retained design above and a written
+waiting state in that worktree's `GUST_LANE_STATE.md`. No compiler implementation
+or duplicate monitor was started. The next compiler action depends on explicit
+authority for A–C; the public result representation and production signing
+remain separate pending choices.
