@@ -130,6 +130,13 @@ unknown-signer, revoked, or mismatched packages. Offline verification uses a
 pinned trust/revocation snapshot and states its freshness limit. Digests alone
 are insufficient for the platform-code claim.
 
+[OD-22's selected first-release trust policy](PHASE26_PACKAGE_TRUST_DECISION.md)
+names the repository operator as signing/custody and withdrawal/replacement
+owner, a dedicated production Ed25519 identity `gust-native-release-1`, and
+worker-pinned trust snapshots with at most seven days of offline validity.
+Actual public-key provisioning/enrollment and production artifact qualification
+remain release gates; test roots do not supply that production identity.
+
 zlib is optional for ordinary Gust programs and compiler/bootstrap builds.
 Dedicated FFI release jobs require its approved package and fail if absent;
 existing suite jobs and populations are preserved. Building a foreign adapter
@@ -212,8 +219,12 @@ The selected safe storage representation is `std.Vector[byte, ctx]`. The
 Stdlib lane owns this wrapper and its public API, after a merged compiler
 handoff; this planning decision does not activate or edit its roadmap. Its
 inputs are the input Vector, compression level or decompression capacity, and
-an explicit output arena. It returns a checked success Vector or a classified
-error in a tagged result type expressible with existing enum support. The final
+an explicit output arena. Under the operator-selected
+[OD-21 ticket representation](PHASE26_TAGGED_RESULT_DECISION.md), success carries
+`Index[std.Vector[byte, ctx], ctx]` to a completed Vector in that output arena;
+failure carries a classified error and no usable output Index. Publish the
+Index only after successful copy-out and native temporary cleanup. The tagged
+result must be expressible with existing enum support. The final
 public type, function names and error-type spelling are Stdlib-owned; this does
 not assume a builtin `Result` or `?` operator. The count/error ABI and these
 invariants are fixed here.

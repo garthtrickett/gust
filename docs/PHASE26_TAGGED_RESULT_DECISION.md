@@ -1,9 +1,16 @@
-# First-release tagged success representation — OD-21 proposal
+# First-release tagged success representation — OD-21 decision
 
-**Status: OPEN proposal, registered 2026-10-22.**
-[VISION §0.15](VISION.md#015-open-decisions) owns the status. This question is
-separate from OD-20's delegated metadata, failure and copy decisions. It does
-not block independent work on that generic collection repair.
+**Status: RESOLVED 2026-10-22 — operator selected B, branded Index success.**
+[VISION §0.15](VISION.md#015-open-decisions) owns the status. The operator's
+explicit choice was “od21: ticket”; it is separate from OD-20's metadata,
+failure and copy decisions.
+
+Success carries `Index[std.Vector[byte, ctx], ctx]` into the caller's explicit
+output arena. The Vector must be complete, copy-out successful and native
+temporary cleanup finished before the wrapper publishes that Index. The caller
+uses the existing checked arena access to obtain the Vector. Error carries no
+usable output Index. This selects the public representation; implementation
+and qualification remain with a separately activated Stdlib owner.
 
 ## The boundary
 
@@ -29,18 +36,17 @@ an enum guard or quietly replace the promised public value with a handle.
 | A — direct Vector success | Keep the direct-value interpretation and qualify generic large aggregate enum payload support through Cranelift. Preserve layout, native return/match/move behavior, brands and non-laundering; prove surviving rejections can still fail and qualify the native fixed point and owning CI. | A compiler prerequisite beyond the collection invariant repair. Existing native layout machinery is a starting point, not proof that the frontend guard is dispensable. No Vector-specific exception. |
 | B — branded Index success | Explicitly permit a success value containing an existing `Index[std.Vector[byte, ctx], ctx]` into the caller's output arena. Publish the completed Vector through checked arena operations only after successful copy-out and cleanup. Stdlib chooses and tests its public surface after merged compiler support. | Requires an explicit release-contract interpretation/change. It adds an arena lookup to access success; existing separate mechanisms do not qualify their combination or prove this public API safe. |
 
-**Proposal: prefer B for the first release**, subject to the named contract
-decision and qualification. It uses the selected Vector storage and existing
-branded indirection without requiring general by-value enum expansion. It must
+**Decision: B for the first release.** It uses the selected Vector storage and
+existing branded indirection without requiring general by-value enum expansion. It must
 not convert a native pointer into a safe Index, change arena/brand lifetime, or
 publish partial output. Falsify the preference if the combined checked path
-cannot preserve those properties or the required public behavior. This is a
-proposal, not a delegated decision or authorization to edit the contract.
+cannot preserve those properties or the required public behavior. Such a finding
+must be reported before changing the selected public representation or semantics.
 
 ## Qualification and ownership
 
-Whichever option is selected, qualify the complete public success/error path,
-empty output, native failure, no partial publication, output-arena brand/escape
+For the selected Index representation, qualify the complete public success/error
+path, empty output, native failure, no partial publication, output-arena brand/escape
 rejection, cleanup order, and return/move/access behavior. Keep allocator
 exhaustion distinct from recoverable adapter errors. A raw-pointer or unsafe-only
 public workaround does not satisfy the release contract.
@@ -48,8 +54,8 @@ public workaround does not satisfy the release contract.
 Cranelift owns any required generic frontend/canonical/native capability and
 its bootstrap evidence. Stdlib owns final public API ergonomics and tests once
 its lane is activated and compiler support is merged. Docs/vision records the
-decision and any approved contract wording. No implementation is activated by
-this proposal; all full release gates remain open.
+decision and approved contract wording. This decision does not activate another
+lane's roadmap; all full release gates remain open.
 
 ## Evidence and limits
 
