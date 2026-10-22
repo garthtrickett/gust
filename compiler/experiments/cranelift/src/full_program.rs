@@ -5868,8 +5868,8 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         }
         let value_node = &self.program.nodes[node.children[1]];
         let value_eval = self.lower_expression(builder, node.children[1], Some(&element_type))?;
-        let storage = self.checked_storage(builder, receiver, &receiver_type)?;
-        let destination = self.checked_append_slot(builder, &storage)?;
+        let storage = self.checked_append_slot(builder, receiver, &receiver_type)?;
+        let destination = storage.destination;
         self.store_evaluated_as(builder, destination, value_eval, &value_node.ty, &element_type)?;
         let next_len = builder.ins().iadd_imm(storage.len, 1);
         builder.ins().store(MemFlags::trusted(), next_len, storage.len_field.address, 0);
@@ -6232,8 +6232,8 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         source: Place,
         element_type: &str,
     ) -> Result<(), Box<dyn Error>> {
-        let storage = self.checked_storage(builder, vector, vector_type)?;
-        let destination = self.checked_append_slot(builder, &storage)?;
+        let storage = self.checked_append_slot(builder, vector, vector_type)?;
+        let destination = storage.destination;
         let element_size = self.layouts.layout(element_type)?.size;
         if element_size != storage.element_size {
             return Err(invalid("append source stride disagrees with storage"));
@@ -6429,11 +6429,11 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         value: Value,
         element_type: &str,
     ) -> Result<(), Box<dyn Error>> {
-        let storage = self.checked_storage(builder, vector, vector_type)?;
+        let storage = self.checked_append_slot(builder, vector, vector_type)?;
         if self.layouts.layout(element_type)?.size != storage.element_size {
             return Err(invalid("scalar append stride disagrees with storage"));
         }
-        let destination = self.checked_append_slot(builder, &storage)?;
+        let destination = storage.destination;
         store_scalar(builder, destination.address, value);
         let next = builder.ins().iadd_imm(storage.len, 1);
         builder.ins().store(MemFlags::trusted(), next, storage.len_field.address, 0);

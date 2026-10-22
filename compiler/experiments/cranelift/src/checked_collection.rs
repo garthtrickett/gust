@@ -9,10 +9,37 @@ pub(super) struct Storage {
     pub len: Value,
     pub capacity: Value,
     pub arena: Value,
-    pub data_field: Place,
     pub len_field: Place,
-    pub capacity_field: Place,
     pub element_size: u32,
+}
+
+pub(super) struct AppendSlot {
+    pub destination: Place,
+    pub len: Value,
+    pub len_field: Place,
+    pub element_size: u32,
+}
+
+// Machine-code sharing is keyed by resolved placement, never source identity.
+struct StorageShape {
+    offsets: [u32; 4], // data, len, capacity, arena
+    stride: u32,
+}
+impl StorageShape {
+    fn load(&self, builder: &mut FunctionBuilder<'_>, receiver: Place) -> [Value; 4] {
+        let types = [types::I64, types::I32, types::I32, types::I64];
+        let mut load = |index: usize| {
+            let address = add_offset(builder, receiver.address, self.offsets[index]);
+            builder
+                .ins()
+                .load(types[index], MemFlags::trusted(), address, 0)
+        };
+        let len = load(1);
+        let capacity = load(2);
+        let arena = load(3);
+        let data = load(0);
+        [data, len, capacity, arena]
+    }
 }
 
 pub(super) fn trap() -> TrapCode {
@@ -24,7 +51,7 @@ pub(super) fn trap() -> TrapCode {
 fn checked_growth(
     builder: &mut FunctionBuilder<'_>,
     capacity: Value,
-    element_size: u32,
+    element_size: Value,
     arena_capacity: Value,
 ) -> (Value, Value) {
     let zero = builder.ins().icmp_imm(IntCC::Equal, capacity, 0);
@@ -38,9 +65,7 @@ fn checked_growth(
         i64::from(i32::MAX),
     );
     builder.ins().trapz(count_valid, trap());
-    let bytes = builder
-        .ins()
-        .imul_imm(new_capacity64, i64::from(element_size));
+    let bytes = builder.ins().imul(new_capacity64, element_size);
     let bytes_valid = builder
         .ins()
         .icmp(IntCC::UnsignedLessThanOrEqual, bytes, arena_capacity);
@@ -53,6 +78,7 @@ fn checked_growth(
 const SLOT_CHECK: &str = ".gust.checked_arena_slot";
 const STORAGE_CHECK: &str = ".gust.checked_collection_storage";
 const ELEMENT_CHECK: &str = ".gust.checked_collection_element";
+const APPEND_CHECK: &str = ".gust.checked_collection_append";
 
 pub(super) fn define_checks(module: &mut ObjectModule) -> Result<(), Box<dyn Error>> {
     for (name, parameters) in [
@@ -60,10 +86,6 @@ pub(super) fn define_checks(module: &mut ObjectModule) -> Result<(), Box<dyn Err
         (
             STORAGE_CHECK,
             vec![types::I64, types::I32, types::I32, types::I64, types::I64],
-        ),
-        (
-            ELEMENT_CHECK,
-            vec![types::I64, types::I32, types::I32, types::I64, types::I64, types::I32],
         ),
     ] {
         let mut context = module.make_context();
@@ -87,14 +109,10 @@ pub(super) fn define_checks(module: &mut ObjectModule) -> Result<(), Box<dyn Err
             } else if name == STORAGE_CHECK {
                 emit_storage_check(&mut builder, args[0], args[1], args[2], args[3], args[4])
             } else {
-                emit_storage_check(&mut builder, args[0], args[1], args[2], args[3], args[4]);
-                let valid = builder.ins().icmp(IntCC::UnsignedLessThan, args[5], args[1]);
-                builder.ins().trapz(valid, trap());
-                let index = builder.ins().uextend(types::I64, args[5]);
-                let offset = builder.ins().imul(index, args[4]);
-                builder.ins().iadd(args[0], offset)
+                unreachable!("private check definitions have fixed names")
             };
             builder.ins().return_(&[result]);
+            builder.seal_all_blocks();
             builder.finalize();
         }
         module.define_function(id, &mut context)?;
@@ -198,7 +216,96 @@ fn emit_storage_check(
     arena_capacity
 }
 
+// Called only after the caller's checked storage snapshot, with no intervening
+// operand evaluation. It preserves the existing allocation/copy/metadata order.
+fn emit_append(
+    builder: &mut FunctionBuilder<'_>,
+    args: &[Value],
+    allocate: cranelift_codegen::ir::FuncRef,
+    memcpy: cranelift_codegen::ir::FuncRef,
+) -> Value {
+    let [data, len, capacity, arena, element_size, data_field, capacity_field] = args else {
+        unreachable!("private append helper has a fixed signature")
+    };
+    let (data, len, capacity, arena, element_size, data_field, capacity_field) = (
+        *data,
+        *len,
+        *capacity,
+        *arena,
+        *element_size,
+        *data_field,
+        *capacity_field,
+    );
+    let count_room = builder
+        .ins()
+        .icmp_imm(IntCC::SignedLessThan, len, i64::from(i32::MAX));
+    builder.ins().trapz(count_room, trap());
+    let must_grow = builder.ins().icmp(IntCC::Equal, len, capacity);
+    let grow = builder.create_block();
+    let ready = builder.create_block();
+    builder.ins().brif(must_grow, grow, &[], ready, &[]);
+    builder.switch_to_block(grow);
+    let arena_capacity = builder
+        .ins()
+        .load(types::I64, MemFlags::trusted(), arena, 16);
+    let (new_capacity64, bytes) = checked_growth(builder, capacity, element_size, arena_capacity);
+    let allocation = builder.ins().call(allocate, &[arena, bytes]);
+    let allocation_result = builder.inst_results(allocation)[0];
+    let offset = builder.ins().uextend(types::I64, allocation_result);
+    let base = builder
+        .ins()
+        .load(types::I64, MemFlags::trusted(), arena, 0);
+    let new_data = builder.ins().iadd(base, offset);
+    let copy = builder.create_block();
+    let grown = builder.create_block();
+    let has_values = builder.ins().icmp_imm(IntCC::NotEqual, len, 0);
+    builder.ins().brif(has_values, copy, &[], grown, &[]);
+    builder.switch_to_block(copy);
+    let len64 = builder.ins().uextend(types::I64, len);
+    let used64 = builder.ins().imul(len64, element_size);
+    builder.ins().call(memcpy, &[new_data, data, used64]);
+    builder.ins().jump(grown, &[]);
+    builder.switch_to_block(grown);
+    let new_capacity = builder.ins().ireduce(types::I32, new_capacity64);
+    builder
+        .ins()
+        .store(MemFlags::trusted(), new_data, data_field, 0);
+    builder
+        .ins()
+        .store(MemFlags::trusted(), new_capacity, capacity_field, 0);
+    builder.ins().jump(ready, &[]);
+    builder.switch_to_block(ready);
+    let data = builder
+        .ins()
+        .load(types::I64, MemFlags::trusted(), data_field, 0);
+    let index64 = builder.ins().uextend(types::I64, len);
+    let offset = builder.ins().imul(index64, element_size);
+    builder.ins().iadd(data, offset)
+}
+
 impl<'a, 'm> FunctionLowerer<'a, 'm> {
+    fn storage_shape(&mut self, receiver_type: &str) -> Result<StorageShape, Box<dyn Error>> {
+        let layout = self.layouts.layout(receiver_type)?;
+        let mut offsets = [0; 4];
+        for (index, field) in ["data", "len", "capacity", "arena"].into_iter().enumerate() {
+            offsets[index] = layout
+                .fields
+                .get(field)
+                .ok_or_else(|| invalid(format!("checked storage has no {field} field")))?
+                .offset;
+        }
+        if layout.fields["len"].ty != "Int" || layout.fields["capacity"].ty != "Int" {
+            return Err(invalid("checked storage count fields are not Int"));
+        }
+        let element = pointer_inner_type(&layout.fields["data"].ty)
+            .ok_or_else(|| invalid("checked storage data has no resolved element"))?;
+        let stride = self.layouts.layout(element)?.size;
+        if stride == 0 {
+            return Err(invalid("checked storage has zero element stride"));
+        }
+        Ok(StorageShape { offsets, stride })
+    }
+
     fn call_storage_check(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
@@ -238,47 +345,18 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         receiver: Place,
         receiver_type: &str,
     ) -> Result<Storage, Box<dyn Error>> {
-        let (data_field, data_type) = self.field_place(builder, receiver, receiver_type, "data")?;
-        let element_type = pointer_inner_type(&data_type)
-            .ok_or_else(|| invalid("checked storage data has no resolved element"))?;
-        let element_size = self.layouts.layout(element_type)?.size;
-        if element_size == 0 {
-            return Err(invalid("checked storage has zero element stride"));
-        }
-        let (len_field, len_type) = self.field_place(builder, receiver, receiver_type, "len")?;
-        let (capacity_field, capacity_type) =
-            self.field_place(builder, receiver, receiver_type, "capacity")?;
-        if len_type != "Int" || capacity_type != "Int" {
-            return Err(invalid("checked storage count fields are not Int"));
-        }
-        let (arena_field, _) = self.field_place(builder, receiver, receiver_type, "arena")?;
-        let len = builder
-            .ins()
-            .load(types::I32, MemFlags::trusted(), len_field.address, 0);
-        let capacity =
-            builder
-                .ins()
-                .load(types::I32, MemFlags::trusted(), capacity_field.address, 0);
-        let arena = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            arena_field.address,
-            0,
-        );
-        let data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            data_field.address,
-            0,
-        );
+        let shape = self.storage_shape(receiver_type)?;
+        let [data, len, capacity, arena] = shape.load(builder, receiver);
+        let len_field = Place {
+            address: add_offset(builder, receiver.address, shape.offsets[1]),
+        };
+        let element_size = shape.stride;
         Ok(Storage {
             data,
             len,
             capacity,
             arena,
-            data_field,
             len_field,
-            capacity_field,
             element_size,
         })
     }
@@ -290,14 +368,115 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         receiver_type: &str,
     ) -> Result<Storage, Box<dyn Error>> {
         let storage = self.storage_fields(builder, receiver, receiver_type)?;
-        let stride = builder.ins().iconst(types::I64, i64::from(storage.element_size));
-        self.call_storage_check(builder, STORAGE_CHECK,
-            &[storage.data, storage.len, storage.capacity, storage.arena, stride]);
+        let stride = builder
+            .ins()
+            .iconst(types::I64, i64::from(storage.element_size));
+        self.call_storage_check(
+            builder,
+            STORAGE_CHECK,
+            &[
+                storage.data,
+                storage.len,
+                storage.capacity,
+                storage.arena,
+                stride,
+            ],
+        );
         Ok(storage)
     }
 
-    /// Combine storage and initialized-index validation in one local call.
-    /// Snapshot after operands, exactly as for the other checked operations.
+    fn shape_check(
+        &mut self,
+        shape: &StorageShape,
+        operation: &str,
+    ) -> Result<FuncId, Box<dyn Error>> {
+        let name = format!(
+            "{operation}_{}_{}_{}_{}_{}",
+            shape.offsets[0], shape.offsets[1], shape.offsets[2], shape.offsets[3], shape.stride
+        );
+        if let Some(cranelift_module::FuncOrDataId::Func(id)) = self.module.get_name(&name) {
+            return Ok(id);
+        }
+        let append = operation == APPEND_CHECK;
+        let mut context = self.module.make_context();
+        context
+            .func
+            .signature
+            .params
+            .push(AbiParam::new(types::I64));
+        if !append {
+            context
+                .func
+                .signature
+                .params
+                .push(AbiParam::new(types::I32));
+        }
+        context
+            .func
+            .signature
+            .returns
+            .push(AbiParam::new(types::I64));
+        if append {
+            context
+                .func
+                .signature
+                .returns
+                .push(AbiParam::new(types::I32));
+        }
+        let id = self
+            .module
+            .declare_function(&name, Linkage::Local, &context.func.signature)?;
+        let mut frontend = FunctionBuilderContext::new();
+        {
+            let mut check = FunctionBuilder::new(&mut context.func, &mut frontend);
+            let entry = check.create_block();
+            check.append_block_params_for_function_params(entry);
+            check.switch_to_block(entry);
+            check.seal_block(entry);
+            let params = check.block_params(entry).to_vec();
+            let [data, len, capacity, arena] = shape.load(&mut check, Place { address: params[0] });
+            let stride = check.ins().iconst(types::I64, i64::from(shape.stride));
+            emit_storage_check(&mut check, data, len, capacity, arena, stride);
+            if append {
+                let data_field = add_offset(&mut check, params[0], shape.offsets[0]);
+                let capacity_field = add_offset(&mut check, params[0], shape.offsets[2]);
+                let allocate = self
+                    .module
+                    .declare_func_in_func(self.runtime["os_ArenaAlloc"].id, check.func);
+                let memcpy = self
+                    .module
+                    .declare_func_in_func(self.runtime["memcpy"].id, check.func);
+                let address = emit_append(
+                    &mut check,
+                    &[
+                        data,
+                        len,
+                        capacity,
+                        arena,
+                        stride,
+                        data_field,
+                        capacity_field,
+                    ],
+                    allocate,
+                    memcpy,
+                );
+                check.ins().return_(&[address, len]);
+            } else {
+                let valid = check.ins().icmp(IntCC::UnsignedLessThan, params[1], len);
+                check.ins().trapz(valid, trap());
+                let index = check.ins().uextend(types::I64, params[1]);
+                let offset = check.ins().imul(index, stride);
+                let address = check.ins().iadd(data, offset);
+                check.ins().return_(&[address]);
+            }
+            check.seal_all_blocks();
+            check.finalize();
+        }
+        self.module.define_function(id, &mut context)?;
+        Ok(id)
+    }
+
+    /// Snapshot and validate after all operands, sharing only resolved placement.
     pub(super) fn checked_storage_element(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
@@ -305,10 +484,13 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         receiver_type: &str,
         index: Value,
     ) -> Result<Place, Box<dyn Error>> {
-        let storage = self.storage_fields(builder, receiver, receiver_type)?;
-        let stride = builder.ins().iconst(types::I64, i64::from(storage.element_size));
-        Ok(Place { address: self.call_storage_check(builder, ELEMENT_CHECK,
-            &[storage.data, storage.len, storage.capacity, storage.arena, stride, index]) })
+        let shape = self.storage_shape(receiver_type)?;
+        let id = self.shape_check(&shape, ELEMENT_CHECK)?;
+        let reference = self.module.declare_func_in_func(id, builder.func);
+        let call = builder.ins().call(reference, &[receiver.address, index]);
+        Ok(Place {
+            address: builder.inst_results(call)[0],
+        })
     }
 
     pub(super) fn checked_element(
@@ -340,85 +522,25 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
     pub(super) fn checked_append_slot(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
-        storage: &Storage,
-    ) -> Result<Place, Box<dyn Error>> {
-        let count_room =
-            builder
-                .ins()
-                .icmp_imm(IntCC::SignedLessThan, storage.len, i64::from(i32::MAX));
-        builder.ins().trapz(count_room, trap());
-        let must_grow = builder
-            .ins()
-            .icmp(IntCC::Equal, storage.len, storage.capacity);
-        let grow = builder.create_block();
-        let ready = builder.create_block();
-        builder.ins().brif(must_grow, grow, &[], ready, &[]);
-        builder.switch_to_block(grow);
-        let arena_capacity = builder.ins().load(
-            types::I64, MemFlags::trusted(), storage.arena, 16);
-        let (new_capacity64, bytes) = checked_growth(
-            builder,
-            storage.capacity,
-            storage.element_size,
-            arena_capacity,
-        );
-        let allocate = self
-            .runtime
-            .get("os_ArenaAlloc")
-            .ok_or_else(|| invalid("checked storage allocator is absent"))?
-            .clone();
-        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
-        let allocation = builder.ins().call(allocate_ref, &[storage.arena, bytes]);
-        let allocation_result = builder.inst_results(allocation)[0];
-        let offset = builder.ins().uextend(types::I64, allocation_result);
-        let base = builder
-            .ins()
-            .load(self.pointer_type(), MemFlags::trusted(), storage.arena, 0);
-        let new_data = builder.ins().iadd(base, offset);
-        let copy = builder.create_block();
-        let grown = builder.create_block();
-        let has_values = builder.ins().icmp_imm(IntCC::NotEqual, storage.len, 0);
-        builder.ins().brif(has_values, copy, &[], grown, &[]);
-        builder.switch_to_block(copy);
-        let len64 = builder.ins().uextend(types::I64, storage.len);
-        let used64 = builder
-            .ins()
-            .imul_imm(len64, i64::from(storage.element_size));
-        let memcpy = self
-            .runtime
-            .get("memcpy")
-            .ok_or_else(|| invalid("checked storage memcpy is absent"))?
-            .clone();
-        let memcpy_ref = self.module.declare_func_in_func(memcpy.id, builder.func);
-        builder
-            .ins()
-            .call(memcpy_ref, &[new_data, storage.data, used64]);
-        builder.ins().jump(grown, &[]);
-        builder.switch_to_block(grown);
-        let new_capacity = builder.ins().ireduce(types::I32, new_capacity64);
-        builder
-            .ins()
-            .store(MemFlags::trusted(), new_data, storage.data_field.address, 0);
-        builder.ins().store(
-            MemFlags::trusted(),
-            new_capacity,
-            storage.capacity_field.address,
-            0,
-        );
-        builder.ins().jump(ready, &[]);
-        builder.switch_to_block(ready);
-        let data = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            storage.data_field.address,
-            0,
-        );
-        let index64 = builder.ins().uextend(types::I64, storage.len);
-        let offset = builder
-            .ins()
-            .imul_imm(index64, i64::from(storage.element_size));
-        Ok(Place {
-            address: builder.ins().iadd(data, offset),
+        receiver: Place,
+        receiver_type: &str,
+    ) -> Result<AppendSlot, Box<dyn Error>> {
+        let shape = self.storage_shape(receiver_type)?;
+        let id = self.shape_check(&shape, APPEND_CHECK)?;
+        let reference = self.module.declare_func_in_func(id, builder.func);
+        let call = builder.ins().call(reference, &[receiver.address]);
+        let results = builder.inst_results(call);
+        let destination = Place {
+            address: results[0],
+        };
+        let len = results[1];
+        Ok(AppendSlot {
+            destination,
+            len,
+            len_field: Place {
+                address: add_offset(builder, receiver.address, shape.offsets[1]),
+            },
+            element_size: shape.stride,
         })
     }
 }

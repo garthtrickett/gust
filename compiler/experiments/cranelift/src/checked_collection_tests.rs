@@ -186,7 +186,7 @@ fn run(program: &Program, label: &str) -> std::process::ExitStatus {
     lower_program(program, &object).unwrap();
     let bytes = fs::read(&object).unwrap();
     let parsed = object::File::parse(bytes.as_slice()).unwrap();
-    for name in [SLOT_CHECK, STORAGE_CHECK, ELEMENT_CHECK] {
+    for name in [SLOT_CHECK, STORAGE_CHECK] {
         let symbol = parsed
             .symbols()
             .find(|symbol| symbol.name().ok() == Some(name))
@@ -195,6 +195,37 @@ fn run(program: &Program, label: &str) -> std::process::ExitStatus {
             symbol.is_definition() && symbol.is_local() && !symbol.is_global(),
             "checked machine helper must remain object-local, outside the runtime ABI"
         );
+    }
+
+    for (prefix, expected) in [
+        (
+            ELEMENT_CHECK,
+            program.nodes.iter().any(|node| {
+                node.kind == "IndexRead" || (node.kind == "Call" && node.text == "Set")
+            }),
+        ),
+        (
+            APPEND_CHECK,
+            program
+                .nodes
+                .iter()
+                .any(|node| node.kind == "Call" && node.text == "Push"),
+        ),
+    ] {
+        let symbols: Vec<_> = parsed
+            .symbols()
+            .filter(|symbol| symbol.name().is_ok_and(|name| name.starts_with(prefix)))
+            .collect();
+        assert!(
+            !expected || !symbols.is_empty(),
+            "fixture must exercise its factored machine helper"
+        );
+        for symbol in symbols {
+            assert!(
+                symbol.is_definition() && symbol.is_local() && !symbol.is_global(),
+                "layout-factored helpers must remain object-local"
+            );
+        }
     }
 
     let request = crate::CompilerMirLinkRequest {
@@ -399,6 +430,7 @@ fn growth_boundaries_use_allocator_bytes_without_i32_byte_ceiling() {
             builder.seal_block(entry);
             let capacity = builder.ins().iconst(types::I32, cap);
             let arena_capacity = builder.ins().iconst(types::I64, 1i64 << 32);
+            let stride = builder.ins().iconst(types::I64, i64::from(stride));
             let (_, bytes) = checked_growth(&mut builder, capacity, stride, arena_capacity);
             if !fails {
                 let exact = builder.ins().icmp_imm(IntCC::Equal, bytes, 1i64 << 32);
