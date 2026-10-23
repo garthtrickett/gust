@@ -11,6 +11,10 @@ use crate::full_program::{inline_call_name, is_inline_call,
     CollectionIntrinsicPlan, Function, Node, Program, ScopedBinding};
 use crate::scoped_byte_copy::ScopedProof;
 
+#[path = "collection_composition.rs"]
+mod composition;
+use composition::{CompositionContext, check_ticket_match};
+
 fn invalid(message: &str) -> Box<dyn Error> {
     Box::new(IoError::new(ErrorKind::InvalidData, message.to_owned()))
 }
@@ -133,6 +137,12 @@ fn operation<'a>(program: &'a Program, index: usize, opcode: &str)
 }
 
 #[derive(Clone)]
+struct PublishedInput {
+    arena: String,
+    ty: String,
+}
+
+#[derive(Clone)]
 struct Storage {
     arena: String,
     ty: String,
@@ -216,7 +226,8 @@ fn scoped_formals(program: &Program, function: &Function)
 fn call_actuals(program: &Program, call: &Node, target: &Function,
     arenas: &HashSet<String>, storages: &HashMap<String, Storage>,
     immutable: &HashMap<String, String>, facts: &DirectCallFacts,
-    shared_formal_brand: bool, budget: &mut WorkBudget)
+    shared_formal_brand: bool, published: &HashMap<String, PublishedInput>,
+    budget: &mut WorkBudget)
     -> Result<(), Box<dyn Error>> {
     budget.charge(target.parameters.len() + 1)?;
     if !direct_call(program, call, target, facts) {
@@ -238,23 +249,31 @@ fn call_actuals(program: &Program, call: &Node, target: &Function,
             let value_ty = ty.strip_prefix("Reference(")
                 .and_then(|tail| tail.strip_suffix(", None)"))
                 .ok_or_else(|| invalid("collection input formal is not a borrow"))?;
-            let storage_name = address_of_local(program, actual_index, value_ty)
-                .ok_or_else(|| invalid("collection input actual is not a direct borrow"))?;
-            let storage = storages.get(&storage_name).ok_or_else(|| invalid(
-                "collection input has no executable Create history"))?;
+            let actual = &program.nodes[actual_index];
+            let (storage_ty, storage_arena) = if actual.kind == "LocalRead" &&
+                actual.children.is_empty() && published.contains_key(&actual.text) {
+                let origin = &published[&actual.text];
+                (&origin.ty, &origin.arena)
+            } else {
+                let storage_name = address_of_local(program, actual_index, value_ty)
+                    .ok_or_else(|| invalid("collection input actual is not a direct borrow"))?;
+                let storage = storages.get(&storage_name).ok_or_else(|| invalid(
+                    "collection input has no executable Create history"))?;
+                (&storage.ty, &storage.arena)
+            };
             // The input borrow carries its own proven Create history. The
             // explicit Arena actual above owns fresh output storage; it need
             // not be the Arena that owns the borrowed input. Both must stay
             // live through this call, and erased-layout congruence was
             // checked when this same Program was parsed.
-            if storage.ty != value_ty || !arenas.contains(&storage.arena) {
+            if storage_ty != value_ty || !arenas.contains(storage_arena) {
                 return Err(invalid("collection input has no live created backing"));
             }
             // One formal brand is one substitution in the existing source
             // call rule. Distinct live Arenas are admissible only when the
             // checked input Read and output Create carry distinct formal
             // brands; physical storage liveness is proven independently.
-            if shared_formal_brand && storage.arena != arena_actual {
+            if shared_formal_brand && *storage_arena != arena_actual {
                 return Err(invalid("collection shared formal brand changes Arena actual"));
             }
             continue;
@@ -265,6 +284,7 @@ fn call_actuals(program: &Program, call: &Node, target: &Function,
     }
     Ok(())
 }
+
 
 fn check_caller(program: &Program, caller: &Function,
     scoped: &HashMap<String, (usize, bool)>, allowed: &mut HashSet<usize>,
@@ -286,6 +306,7 @@ fn check_caller(program: &Program, caller: &Function,
     let mut storages: HashMap<String, Storage> = HashMap::new();
     let mut immutable = HashMap::new();
     let mut tagged = HashMap::new();
+    let published = HashMap::new();
     let mut calls = 0usize;
     let mut returned = false;
     for (position, index) in body.children.iter().enumerate() {
@@ -330,7 +351,7 @@ fn check_caller(program: &Program, caller: &Function,
                             }
                             let target = &program.functions[*target_index];
                             call_actuals(program, call, target, &arenas, &storages,
-                                &immutable, facts, *shared_brand, budget)?;
+                                &immutable, facts, *shared_brand, &published, budget)?;
                             let (arena_position, _) = scoped_formals(program, target)?;
                             let arena = address_of_local(program, call.children[arena_position + 1], "Arena")
                                 .ok_or_else(|| invalid("ticket result loses its actual Arena"))?;
@@ -370,7 +391,7 @@ fn check_caller(program: &Program, caller: &Function,
                     let (target_index, shared_brand) = *scoped.get(&expression.second_text).ok_or_else(|| invalid(
                         "collection caller makes an extra call"))?;
                     call_actuals(program, expression, &program.functions[target_index],
-                        &arenas, &storages, &immutable, facts, shared_brand, budget)?;
+                        &arenas, &storages, &immutable, facts, shared_brand, &published, budget)?;
                     calls += 1;
                 } else {
                     return Err(invalid("collection caller has an unproved statement effect"));
@@ -381,8 +402,10 @@ fn check_caller(program: &Program, caller: &Function,
                 let (contract, arena) = tagged.get(&subject.text).ok_or_else(|| invalid(
                     "ticket match subject lacks a scoped publication"))?;
                 if !arenas.contains(arena) { return Err(invalid("ticket result Arena is not live")); }
-                budget.charge(crate::ticket_result_use::validate(program, *index, contract,
-                    &subject.text, arena, &immutable, &declared, allowed)?)?;
+                let context = CompositionContext { program, scoped, results, facts,
+                    arenas: &arenas, storages: &storages };
+                check_ticket_match(&context, *index, contract, &subject.text, arena,
+                    &immutable, &published, allowed, budget, 0)?;
                 returned = true;
             }
             "Return" if statement.children.len() == 1 &&
@@ -400,7 +423,7 @@ fn check_caller(program: &Program, caller: &Function,
                     let (target_index, shared_brand) = *scoped.get(&value.second_text).ok_or_else(|| invalid(
                         "collection caller returns an unknown Call"))?;
                     call_actuals(program, value, &program.functions[target_index],
-                        &arenas, &storages, &immutable, facts, shared_brand, budget)?;
+                        &arenas, &storages, &immutable, facts, shared_brand, &published, budget)?;
                     calls += 1;
                 } else if !pure_scalar(program, statement.children[0], &immutable) {
                     return Err(invalid("collection caller returns an unproved value"));
@@ -490,7 +513,7 @@ pub(crate) fn validate(program: &Program, scoped_proofs: &HashMap<usize, ScopedP
             stack.extend(node.children.iter().copied());
         }
     }
-    if callers.is_empty() || call_counts.values().any(|count| *count == 0) {
+    if callers.is_empty() {
         return Err(invalid(
         "collection scoped function has no direct caller")); }
     // Every scoped caller must be in the closed entry graph. An executable
@@ -505,8 +528,19 @@ pub(crate) fn validate(program: &Program, scoped_proofs: &HashMap<usize, ScopedP
         }
     }
     if callers.iter().any(|index| !reachable.contains(index)) ||
-        scoped.values().any(|(index, _)| !reachable.contains(index)) {
+        scoped.iter().any(|(name, (index, _))|
+            !reachable.contains(index) && call_counts[name] != 0) {
         return Err(invalid("collection scoped call is outside the entry graph"));
+    }
+    // An ordinary imported module may contain another fully proved producer
+    // that this entry never calls. All defined functions have Local linkage;
+    // the complete scan above rejects its address escape and every alternate
+    // dispatch, including in dead bodies. A zero-caller producer therefore has
+    // no invocation requiring actual-to-formal storage substitution. A caller
+    // disconnected from entry is still rejected above. Do not admit a scoped
+    // entry itself without a checked caller/actual history.
+    if scoped.values().any(|(index, _)| *index == program.entry_function) {
+        return Err(invalid("collection scoped entry has no checked actual history"));
     }
     let mut indegree = HashMap::new();
     for index in &reachable { indegree.insert(*index, 0usize); }

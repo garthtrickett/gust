@@ -1,6 +1,7 @@
 use crate::full_program::{self, Node, Program};
 
 const SOURCE: &str = include_str!("testdata/scoped_ticket_publication_producer.canonical");
+const COMPOSITION: &str = include_str!("testdata/scoped_ticket_composition_producer.canonical");
 
 fn within(program: &Program, name: &str, predicate: impl Fn(&Node) -> bool) -> usize {
     let function = program.functions.iter().find(|function| function.source_name == name).unwrap();
@@ -176,4 +177,46 @@ fn ticket_caller_return_evaluates_before_arena_cleanup() {
         let index = within(program, "main", |node| node.kind == "EnumMatchArm");
         program.nodes[index].integer = 1 - program.nodes[index].integer;
     }, "ticket match is not exact and exhaustive");
+}
+
+#[test]
+fn source_produced_composition_has_two_scoped_producers() {
+    let program = full_program::parse(COMPOSITION).expect("source-produced nested baseline");
+    let proofs = crate::scoped_byte_copy::validate(&program).unwrap();
+    assert_eq!(proofs.len(), 2);
+    assert!(proofs.values().all(|proof| proof.ticket_result.is_some()));
+}
+
+#[test]
+fn normalized_failure_still_has_bounded_pure_payload_and_actual_status() {
+    rejected_from(COMPOSITION, |program| {
+        let index = within(program, "classify_failure", |node| node.kind == "BinaryOperation");
+        assert_eq!(program.nodes[index].text, "-");
+        program.nodes[index].text = "*".into();
+    }, "ticket constructor publishes another value or variant");
+    rejected_from(COMPOSITION, |program| {
+        let index = within(program, "copy_bytes", |node| node.kind == "Call" &&
+            node.text == "classify_failure");
+        let status = program.nodes[index].children[2];
+        assert_eq!(program.nodes[status].text, "status");
+        program.nodes[status].text = "input_count".into();
+    }, "scoped failed Guard has an effectful or unrelated return");
+}
+
+#[test]
+fn composed_input_reference_requires_its_exact_publication() {
+    rejected_from(COMPOSITION, |program| {
+        let index = within(program, "main", |node| node.kind == "Call" &&
+            node.text == "restore_bytes");
+        let input = program.nodes[index].children[2];
+        assert_eq!(program.nodes[input].text, "bytes");
+        program.nodes[input].text = "input".into();
+    }, "collection input actual is not a direct borrow");
+    rejected_from(COMPOSITION, |program| {
+        let index = within(program, "main", |node| node.kind == "Call" &&
+            node.text == "destination.get_ref" &&
+            program.nodes[node.children[1]].text == "decoded");
+        let receiver = program.nodes[program.nodes[index].children[0]].children[0];
+        program.nodes[receiver].text = "other_arena".into();
+    }, "ticket output access changes its live Arena");
 }

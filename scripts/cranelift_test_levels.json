@@ -584,6 +584,7 @@
     "guard-cranelift-phase15-close": 1,
     "guard-cranelift-phase24-close": 1,
     "guard-cranelift-phase25-musl-c-free-link": 3,
-    "guard-cranelift-phase26-collection-validity": 2
+    "guard-cranelift-phase26-collection-validity": 2,
+    "guard-cranelift-phase26-ticket-composition": 2
   }
 }

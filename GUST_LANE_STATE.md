@@ -1,3 +1,17 @@
+# Active Cranelift continuation — closed ticket composition (2026-10-23)
+
+Owner `ea414019-6671-4c02-a629-b705e64769fb`; explicit worktree
+`/home/gust/code/worktrees/gust/p26-scoped-ticket-publication`; branch
+`codex/phase26-1r4-closed-ticket-composition`; base `8acaa88f30da775c018dde38eea3800bda66c783`.
+PR611 import support merged with all150 eligible PR workflows and Trusted passed.
+Next gate: bounded pure error constructor proof and lexical closed nested ticket
+caller provenance, then local native/fixed-point/pin qualification and own CI.
+Stdlib remains waiting for the complete merged handoff. No new semantic decision,
+resource/ABI/lifetime meaning or runtime symbol is authorized. Phase26.1 OPEN.
+No live jobs, CI observer or fixed `/tmp` reservations at this activation.
+Startup symlink and physical worktree remain required and preserved.
+Prior active entries below are historical, not a current terminal.
+
 # Active Cranelift continuation — Phase26.1 wrapper audit (2026-10-23)
 
 Owner: `ea414019-6671-4c02-a629-b705e64769fb`. Worktree:

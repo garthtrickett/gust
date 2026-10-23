@@ -78,15 +78,24 @@ impl ReadProof<'_> {
     }
 }
 
+pub(crate) struct PublishedUse<'a> {
+    pub(crate) binding: &'a str,
+    pub(crate) copied: &'a str,
+    pub(crate) bytes: &'a str,
+    pub(crate) reference_type: String,
+    pub(crate) tail: &'a [usize],
+}
+
 pub(crate) fn validate(program: &Program, index: usize, contract: &TicketResult,
     result: &str, arena: &str, immutable: &HashMap<String, String>,
-    declared: &HashSet<String>, allowed: &mut HashSet<usize>) -> Result<usize, Box<dyn Error>> {
+    allowed: &mut HashSet<usize>,
+    continuation: &mut dyn FnMut(PublishedUse<'_>, &mut HashSet<usize>) -> Result<usize, Box<dyn Error>>,
+) -> Result<usize, Box<dyn Error>> {
     let selection = node(program, index, "EnumMatch")?;
     if selection.children.len() != 3 || !local(program, selection.children[0], result, &contract.result_type) {
         return Err(invalid("ticket match does not use its proved result"));
     }
-    let mut proof = ReadProof { program, published_brand: &contract.output_brand,
-        immutable, allowed, seen: HashSet::new() };
+    let mut total = 0;
     let mut observed = HashSet::new();
     for arm_index in &selection.children[1..] {
         let arm = node(program, *arm_index, "EnumMatchArm")?;
@@ -96,16 +105,21 @@ pub(crate) fn validate(program: &Program, index: usize, contract: &TicketResult,
             return Err(invalid("ticket match is not exact and exhaustive"));
         }
         let binding = node(program, arm.children[0], "EnumPayloadBinding")?;
-        if binding.text.is_empty() || declared.contains(&binding.text) ||
+        if binding.text.is_empty() || binding.text == arena ||
             binding.second_text != name || binding.integer != 0 ||
             !binding.children.is_empty() {
             return Err(invalid("ticket match payload binding disagrees"));
         }
         let body = node(program, arm.children[1], "Block")?;
+        // Match arms have their own lexical bindings. Mask parent scalar names
+        // before checking reads; a parent binding is never authority for a
+        // shadowing payload, ticket or published reference.
+        let mut scalars = immutable.clone();
+        scalars.remove(&binding.text);
         let value = if success {
-            if body.children.len() != 3 { return Err(invalid("ticket success use has extra effects")); }
+            if body.children.len() < 3 { return Err(invalid("ticket success use has extra effects")); }
             let copied = node(program, body.children[0], "LocalDeclare")?;
-            if copied.text.is_empty() || copied.text == binding.text || declared.contains(&copied.text) ||
+            if copied.text.is_empty() || copied.text == binding.text || copied.text == arena ||
                 copied.ty != contract.ticket_type || copied.children.len() != 1 {
                 return Err(invalid("ticket match copy is not fresh"));
             }
@@ -117,7 +131,7 @@ pub(crate) fn validate(program: &Program, index: usize, contract: &TicketResult,
             let bytes = node(program, body.children[1], "LocalDeclare")?;
             let reference_type = format!("Reference({}, None)", contract.output_type);
             if bytes.text.is_empty() || bytes.text == copied.text || bytes.text == binding.text ||
-                declared.contains(&bytes.text) || bytes.ty != reference_type || bytes.children.len() != 1 {
+                bytes.text == arena || bytes.ty != reference_type || bytes.children.len() != 1 {
                 return Err(invalid("ticket output reference is not fresh"));
             }
             let get = node(program, bytes.children[0], "Call")?;
@@ -131,11 +145,22 @@ pub(crate) fn validate(program: &Program, index: usize, contract: &TicketResult,
                 !local(program, receiver.children[0], arena, "Arena") {
                 return Err(invalid("ticket output access changes its live Arena"));
             }
+            scalars.remove(&copied.text);
+            scalars.remove(&bytes.text);
+            if body.children.len() != 3 || program.nodes[body.children[2]].kind != "Return" {
+                total += continuation(PublishedUse { binding: &binding.text,
+                    copied: &copied.text, bytes: &bytes.text,
+                    reference_type, tail: &body.children[2..] }, allowed)?;
+                continue;
+            }
             let exit = node(program, body.children[2], "Return")?;
             if exit.integer != 1 || exit.children.len() != 1 {
                 return Err(invalid("ticket success does not evaluate before caller cleanup"));
             }
+            let mut proof = ReadProof { program, published_brand: &contract.output_brand,
+                immutable: &scalars, allowed, seen: HashSet::new() };
             proof.scalar(exit.children[0], None, Some((&bytes.text, &reference_type)))?;
+            total += proof.seen.len();
             exit.children[0]
         } else {
             if body.children.len() != 1 { return Err(invalid("ticket error use has extra effects")); }
@@ -143,10 +168,13 @@ pub(crate) fn validate(program: &Program, index: usize, contract: &TicketResult,
             if exit.integer != 1 || exit.children.len() != 1 {
                 return Err(invalid("ticket failure does not evaluate before caller cleanup"));
             }
+            let mut proof = ReadProof { program, published_brand: &contract.output_brand,
+                immutable: &scalars, allowed, seen: HashSet::new() };
             proof.scalar(exit.children[0], Some(&binding.text), None)?;
+            total += proof.seen.len();
             exit.children[0]
         };
         if program.nodes[value].ty != "Int" { return Err(invalid("ticket caller result is not Int")); }
     }
-    Ok(proof.seen.len())
+    Ok(total)
 }

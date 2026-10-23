@@ -24582,3 +24582,11 @@ guard-cranelift-phase26-imported-native:
     python3 scripts/phase26_imported_native_registration.py validate
     python3 scripts/phase26_imported_native_registration.py inversions
     python3 scripts/phase26_ticket_publication_guard.py --imported
+
+# Generic pure failure classification and closed nested ticket use.
+guard-cranelift-phase26-ticket-composition:
+    python3 scripts/phase26_ticket_composition_registration.py validate
+    python3 scripts/phase26_ticket_composition_registration.py inversions
+    cargo test --locked --manifest-path compiler/experiments/cranelift/Cargo.toml ticket_result_tests
+    python3 scripts/phase26_ticket_composition_guard.py
+    python3 scripts/phase26_ticket_composition_guard.py --imported
