@@ -32,6 +32,10 @@ mod scope_exit_cleanup;
 mod specialized_resource;
 mod full_program;
 mod scoped_byte_copy;
+mod ticket_result;
+mod ticket_result_use;
+#[cfg(test)]
+mod ticket_result_tests;
 mod collection_provenance;
 mod approved_package;
 

@@ -188,6 +188,57 @@ func mir_native_parameter_argument_type_class(
     return 2;
 }
 
+// Local ticket results use the existing Index scalar and tagged enum ABI.
+// This early source-shape gate is not an ABI or constructor proof: canonical
+// type/layout/brand validation and full-program lowering remain authoritative.
+// In particular, no direct aggregate payload or extern position is admitted.
+func mir_native_parameter_argument_is_ticket_result(
+    value_type: ast.Type[ctx],
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        mut name: str := "";
+        if value_type.tag == 8 { name = value_type.Struct.struct_name; }
+        if value_type.tag == 10 {
+            mut args: std.Vector[ast.Type[ctx], ctx] := ctx[value_type.Generic.args];
+            if len(args) != 1 { return 0; }
+            name = value_type.Generic.name;
+        }
+        if len(name) == 0 { return 0; }
+        mut index := 0;
+        while index < len(statements) {
+            mut declaration := statements[index];
+            if declaration.tag == 2 && declaration.EnumDecl.is_repr_int == 0 &&
+               std.str_eq(declaration.EnumDecl.name, name) == 1 {
+                mut brands: std.Vector[str, ctx] := ctx[declaration.EnumDecl.generics];
+                mut variants: std.Vector[ast.VariantDef[ctx], ctx] := ctx[declaration.EnumDecl.variants];
+                if len(brands) != 1 || len(variants) != 2 { return 0; }
+                mut tickets := 0;
+                mut errors := 0;
+                mut variant_index := 0;
+                while variant_index < len(variants) {
+                    mut fields: std.Vector[ast.FieldDef[ctx], ctx] := ctx[variants[variant_index].fields];
+                    if len(fields) != 1 { return 0; }
+                    mut field := fields[0].field_type;
+                    if field.tag == 0 {
+                        errors = errors + 1;
+                    } else {
+                        if field.tag != 7 { return 0; }
+                        if std.str_eq(ctx[field.Index.brand], brands[0]) == 0 { return 0; }
+                        tickets = tickets + 1;
+                    }
+                    variant_index = variant_index + 1;
+                }
+                if tickets == 1 && errors == 1 { return 1; }
+                return 0;
+            }
+            index = index + 1;
+        }
+    }
+    return 0;
+}
+
 func mir_native_parameter_argument_is_repr_int_enum(
     value_type: ast.Type[ctx],
     statements: std.Vector[ast.Statement[ctx], ctx]
@@ -279,6 +330,12 @@ func mir_native_parameter_argument_scan_deferred(
                             parameter.param_type,
                             ctx
                         );
+                    if statement.FunctionDecl.is_extern == 0 &&
+                       (parameter.param_type.tag == 7 ||
+                        mir_native_parameter_argument_is_ticket_result(
+                            parameter.param_type, statements, ctx) == 1) {
+                        parameter_class = 0;
+                    }
                     if parameter_class == 1 &&
                        mir_native_parameter_argument_is_repr_int_enum(parameter.param_type, statements) == 1 {
                         parameter_class = 0;
@@ -382,6 +439,12 @@ func mir_native_parameter_argument_scan_deferred(
                 mut return_type := ctx[statement.FunctionDecl.return_type];
                 mut return_class :=
                     mir_native_parameter_argument_type_class(return_type, ctx);
+                if statement.FunctionDecl.is_extern == 0 &&
+                   (return_type.tag == 7 ||
+                    mir_native_parameter_argument_is_ticket_result(
+                        return_type, statements, ctx) == 1) {
+                    return_class = 0;
+                }
                 if return_class == 1 &&
                    mir_native_parameter_argument_is_repr_int_enum(return_type, statements) == 1 {
                     return_class = 0;

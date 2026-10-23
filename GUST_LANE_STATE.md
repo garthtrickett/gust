@@ -1,3 +1,22 @@
+# Active Cranelift lane — scoped ticket publication, 2026-10-23
+
+Owner `ea414019-6671-4c02-a629-b705e64769fb`; worktree
+`/home/gust/code/worktrees/gust/p26-scoped-ticket-publication`; branch
+`codex/phase26-1r4-scoped-ticket-publication`; base `0c8e31c9`.
+Production trust PR609 is merged with all 153 exact-head PR workflows and
+Trusted Actor successful. Checked production handoff is retained at
+`/home/gust/phase26-recovery/phase26-release-activation-20261023/checked-merged-production-handoff-v1.json`.
+
+Next gate: independently qualify the existing generic enum constructors and
+normal cleanup path, then the smallest bounded proof/lowering correction for
+completed-output/status propagation and checked caller-Arena ticket publication.
+No direct large-Vector enum admission, new MIR meaning, resource/lifetime/ABI
+expansion, Stdlib API implementation or resource witness is authorized here.
+Stdlib waits for separately merged compiler support. R4 wrapper/audit, R5/R6
+and exact final-main Historical closure remain OPEN. This owner remains active.
+
+---
+
 # Active Cranelift lane — production trust activation, 2026-10-23
 
 Owner `ea414019-6671-4c02-a629-b705e64769fb`; worktree
