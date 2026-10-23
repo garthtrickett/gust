@@ -1,0 +1,87 @@
+name: Stdlib S26 Native Bytes
+
+on:
+  pull_request:
+    paths:
+      - 'src/stdlib/native_bytes.gst'
+      - 'tests/stdlib_s26_1_*.gst'
+      - 'scripts/stdlib_s26_1_native_bytes.py'
+      - '.github/workflows/stdlib-s26-native-bytes.yml'
+      - 'docs/STDLIB_PHASE26_NATIVE_BYTES_AUDIT.md'
+      - 'TASK_STDLIB.md'
+      - 'compiler/**'
+      - 'src/runtime-rs/**'
+      - 'Makefile'
+      - 'scripts/phase26_production_*.py'
+      - 'scripts/phase26_ticket_publication_guard.py'
+      - 'scripts/phase26_r3_zlib_adapter.sh'
+      - 'scripts/install-native-deps-ci.sh'
+  push:
+    branches: [main]
+    paths:
+      - 'src/stdlib/native_bytes.gst'
+      - 'tests/stdlib_s26_1_*.gst'
+      - 'scripts/stdlib_s26_1_native_bytes.py'
+      - '.github/workflows/stdlib-s26-native-bytes.yml'
+      - 'docs/STDLIB_PHASE26_NATIVE_BYTES_AUDIT.md'
+      - 'TASK_STDLIB.md'
+      - 'compiler/**'
+      - 'src/runtime-rs/**'
+      - 'Makefile'
+      - 'scripts/phase26_production_*.py'
+      - 'scripts/phase26_ticket_publication_guard.py'
+      - 'scripts/phase26_r3_zlib_adapter.sh'
+      - 'scripts/install-native-deps-ci.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  native-bytes:
+    if: github.actor == vars.CODEX_GITHUB_ACTOR && (github.event_name != 'pull_request' || startsWith(github.head_ref, 'codex/'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install existing build dependencies
+        run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - name: Pin the enrolled production toolchain
+        run: python3 scripts/phase26_production_toolchain.py install-ci build/stdlib-native-bytes-toolchain
+      - name: Build the current native compiler
+        run: make gust
+      - name: Build the exact public native package inputs
+        run: |
+          mkdir -p build/guards/stdlib_s26_1_package
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --retry 3 --max-time 90 https://zlib.net/zlib-1.3.2.tar.gz \
+            --output build/guards/stdlib_s26_1_package/zlib-1.3.2.tar.gz
+          bash scripts/phase26_r3_zlib_adapter.sh \
+            build/guards/stdlib_s26_1_package/zlib-1.3.2.tar.gz \
+            build/guards/stdlib_s26_1_package/zlib-build
+          python3 scripts/phase26_production_package.py \
+            build/guards/stdlib_s26_1_package/zlib-build/package \
+            build/gust-runtime-package.a \
+            compiler/experiments/cranelift/production/public-identity.json \
+            build/guards/stdlib_s26_1_package/candidate
+      - name: Bind only the enrolled public manifest and signature
+        run: |
+          cmp compiler/experiments/cranelift/production/manifest.txt \
+            build/guards/stdlib_s26_1_package/candidate/package/manifest.txt
+          cp compiler/experiments/cranelift/production/manifest.sig \
+            build/guards/stdlib_s26_1_package/candidate/package/manifest.sig
+      - name: Qualify all public native and source-negative cases offline
+        run: |
+          python3 scripts/stdlib_s26_1_native_bytes.py \
+            --package build/guards/stdlib_s26_1_package/candidate/package
+      - name: Retain public source, diagnostics and native executables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stdlib-s26-native-bytes
+          path: build/guards/stdlib_s26_1_public_qualification/
+          if-no-files-found: error
