@@ -24590,3 +24590,11 @@ guard-cranelift-phase26-ticket-composition:
     cargo test --locked --manifest-path compiler/experiments/cranelift/Cargo.toml ticket_result_tests
     python3 scripts/phase26_ticket_composition_guard.py
     python3 scripts/phase26_ticket_composition_guard.py --imported
+
+# Exact input-only local collection copy history.
+guard-cranelift-phase26-readonly-input-copy:
+    python3 scripts/phase26_readonly_input_copy_registration.py validate
+    python3 scripts/phase26_readonly_input_copy_registration.py inversions
+    cargo test --locked --manifest-path compiler/experiments/cranelift/Cargo.toml collection_provenance::tests
+    python3 scripts/phase26_readonly_input_copy_guard.py
+    python3 scripts/phase26_readonly_input_copy_guard.py --imported

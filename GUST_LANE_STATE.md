@@ -1,3 +1,16 @@
+## Active Cranelift — Phase26.1 read-only input copy (2026-10-23)
+
+Owner: existing compiler agent ea414019-6671-4c02-a629-b705e64769fb.
+Worktree: /home/gust/code/worktrees/gust/p26-scoped-ticket-publication;
+branch: codex/phase26-1r4-readonly-input-copy; base: 0b5e3ad5dc832779aa8c76ed5d54a3f235bcb953.
+PR612 merged with all150 eligible PR workflows and Trusted Actor successful.
+Next gate: qualify exact local byte-collection input copy history while retaining
+the old copied-alias Append initializer rejection and existing proof budget;
+then own pins, fixed point, independent reviews, CI and merge. Stdlib waits for
+checked merged full support. Phase26.1 remains OPEN for wrapper audit/acceptance,
+R5/R6 and Historical Full on exact final merged main. No live CI observer.
+Preserve startup symlink and actual checkout; all exec calls use explicit workdir.
+
 # Active Cranelift continuation — closed ticket composition (2026-10-23)
 
 Owner `ea414019-6671-4c02-a629-b705e64769fb`; explicit worktree
