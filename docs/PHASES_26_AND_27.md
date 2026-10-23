@@ -5,7 +5,10 @@ remain open. `TASK.md` now points to this plan as the active Cranelift roadmap.
 
 ## Status
 
-- [ ] Patch 26.1 — Gated Raw Pointers, Unsafe Blocks, and FFI
+- Patch 26.1 — Gated Raw Pointers, Unsafe Blocks, and FFI. First-release
+  acceptance is **OPEN** until the checked exact-final-main closure receipt
+  reports `phase26_1_first_release: DONE`; that receipt determines **DONE** for
+  this scope without a result-only commit moving the qualified head.
 - [ ] Patch 26.2 — Generalized Linear-Resource Enforcement
 - [ ] Patch 26.3 — Implicit Context
 - [ ] Patch 26.4 — One Spelling of Absence
@@ -205,13 +208,27 @@ before each own merge, and bootstrap validation when the patch requires it.
 | 5 — FFI-R5 | Run full compiler and adjacent native/resource/layout regressions, unchanged predecessor projections, native emitted-object fixed point, exact-head required CI and resolved independent reviews. | Cranelift, with merged wrapper evidence; every release claim names its actual owning jobs and artifacts. These checks also apply at the appropriate earlier patch boundaries. |
 | 6 — FFI-R6 | Merge all required release work and record supported profile, limits, reproducible integration, artifacts and reviews. The authoritative closure guard must assert these properties; a separately owned Historical Full must succeed on exact final merged main. | Cranelift; old closure availability or an earlier green main is insufficient. Planning alone closes no gate. |
 
-The next compiler work is the package/admission prerequisite and the byte-span
-implementation design, not another unconstrained proof-precision increment.
-These are proposed semantic changes to be implemented through their owning
-patches, not semantics added by this documentation change. Preserve 4-GiB
-compiler and 6-GiB owning-guard caps, ordinary shared-compute admission,
-query/certificate budgets and real file/database exclusions. Do not change a
-running frozen job or historical evidence.
+The compiler's current continuation is the first-release closure patch after
+separately merged package, byte-span, adapter and wrapper work. The owning
+implementation record is `compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md`; its
+source authority and targeted reachable-path map live under
+`compiler/phase26-release/`. `guard-cranelift-phase26-release-closure` requires
+the compiler/runtime suites, emitted-object fixed point, enrolled production
+qualification and all 16 public native cases plus three frontend rejections.
+The new guard does not replace any predecessor or adjacent owning workflow.
+
+The phase remains OPEN until the closure patch and safe wrapper have merged,
+all eligible exact-head checks and independent reviews have passed, and
+`scripts/phase26_release_closure.py historical` checks the owning qualification
+artifact and successful Historical Full against the same final merged main.
+Retain that final receipt outside the repository without moving the qualified
+head with a result-only commit. Only that checked result completes the
+first-release scope; the general model, named follow-ups and later phases stay
+OPEN. Earlier implementation or local results do not satisfy this condition.
+
+Preserve 4-GiB compiler and 6-GiB owning-guard caps, ordinary shared-compute
+admission, query/certificate budgets and real file/database exclusions. Do not
+change a running frozen job or historical evidence.
 
 #### E/F dependency decision
 
