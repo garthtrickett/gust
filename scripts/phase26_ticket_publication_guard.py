@@ -73,7 +73,7 @@ def cases(template):
 def rejections(template):
     yield "unrelated_recursive_index", (ROOT / "tests/e2e_recursive_branded_linked_list.gst").read_text(), (
         "expected_failure_stage=before_driver_discovery",
-        "reason_code=deferred_p13_parameter_argument_aggregate_parameter")
+        "reason_code=deferred_p13_parameter_argument_target_dependent_abi")
     yield "standalone_index_return", """type Cell[ctx] struct { value: int }
 func local_slot(ctx: &Arena) Index[Cell, ctx] {
     mut slot: Index[Cell, ctx] := os.ArenaAlloc(ctx);
@@ -81,7 +81,7 @@ func local_slot(ctx: &Arena) Index[Cell, ctx] {
 }
 func main() {}
 """, ("expected_failure_stage=before_driver_discovery",
-        "reason_code=deferred_p13_parameter_argument_aggregate_return")
+        "reason_code=deferred_p13_parameter_argument_target_dependent_abi")
     yield "wrong_arena", template.replace("    defer destination.Free();",
         "    defer destination.Free();\n    mut other := os.Arena.New();\n    defer other.Free();").replace(
             "destination.get_ref(copied)", "other.get_ref(copied)"), "[BrandMismatch] Arena.get_ref index brand"

@@ -48135,7 +48135,7 @@
         },
         {
           "path": "scripts/phase26_ticket_publication_guard.py",
-          "digest": "327010c5663f654f8b22b069dc4fc65625f65769de6fecb9e8667958fad3eb3d"
+          "digest": "9fa848229a80b71dcbe313aef37c414808114aed6f69ace618e1c9bf83646611"
         },
         {
           "path": "scripts/phase26_ticket_publication_registration.py",
