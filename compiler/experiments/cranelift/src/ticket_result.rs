@@ -20,6 +20,29 @@ fn local(program: &Program, index: usize, name: &str, ty: &str) -> bool {
         value.children.is_empty() && value.text == name && value.ty == ty)
 }
 
+// Error classification may compute a pure Int from its status parameter.
+// Success authority remains the exact Index parameter. Bound this walk even
+// when canonical input shares expression nodes or supplies a cycle.
+fn error_value(program: &Program, root: usize, parameter: &str) -> bool {
+    let mut pending = vec![root];
+    let mut seen = std::collections::HashSet::new();
+    while let Some(index) = pending.pop() {
+        if !seen.insert(index) || seen.len() > 4096 { return false; }
+        let Some(value) = program.nodes.get(index) else { return false; };
+        if value.ty != "Int" { return false; }
+        match value.kind.as_str() {
+            "IntegerLiteral" if value.children.is_empty() => {}
+            "LocalRead" if value.children.is_empty() && value.text == parameter => {}
+            "BinaryOperation" if value.children.len() == 2 &&
+                matches!(value.text.as_str(), "+" | "-") => {
+                pending.extend(value.children.iter().copied());
+            }
+            _ => return false,
+        }
+    }
+    true
+}
+
 fn layout<'a>(program: &'a Program, ty: &str, brand: &str) -> Result<&'a Layout, Box<dyn Error>> {
     let name = struct_type_name(ty).ok_or_else(|| invalid("ticket payload is not a struct"))?;
     let mut matches = program.layouts.iter().filter(|value|
@@ -154,7 +177,11 @@ impl TicketResult {
         if selection.text != variant.name || selection.ty != variant.payload_type ||
             selection.children.len() != 1 ||
             !local(program, selection.children[0], &declaration.text, &self.result_type) ||
-            !local(program, payload_write.children[1], &function.parameters[1].0, &variant.field_type) {
+            !(if success {
+                local(program, payload_write.children[1], &function.parameters[1].0, &variant.field_type)
+            } else {
+                error_value(program, payload_write.children[1], &function.parameters[1].0)
+            }) {
             return Err(invalid("ticket constructor publishes another value or variant"));
         }
         let exit = node(program, body.children[2], "Return")?;

@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import phase26_ticket_composition_registration as successor
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "a695662da8805d89ac7b592227231a7fef98ec2a"
@@ -74,6 +75,7 @@ def identity(registry):
     return row
 
 def prior_digest(registry, path, live):
+    live = successor.prior_digest(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
@@ -84,13 +86,14 @@ def prior_digest(registry, path, live):
     # prior_digest runs it again. Admit only that exact frozen ticket coordinate;
     # the physical file must still match this successor, even on a repeated pass.
     admitted.update(item["previous_digest"] for item in ticket["changed_files"] if item["path"] == path)
-    require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
+    require(successor.prior_digest(registry, path, sha((ROOT / path).read_bytes())) == pin["current_digest"] and
         pin["previous_digest"] == sha(base_bytes(path)) and
         live in admitted,
         f"R4 changed file drifted: {path} (import successor)")
     return pin["previous_digest"]
 
 def prior_bytes(registry, path, live):
+    live = successor.prior_bytes(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     prior_digest(registry, path, sha(live))
@@ -131,6 +134,7 @@ def operational_projection(kind, current):
     return current
 
 def project(registry, kind, current):
+    current = successor.project(registry, kind, current)
     if not record(registry):
         return current
     row = identity(registry)
@@ -146,11 +150,12 @@ def project(registry, kind, current):
     return copy.deepcopy(baseline()["projections"][kind])
 
 def project_registry(registry):
-    result = copy.deepcopy(registry)
+    result = successor.project_registry(registry)
     result.get("phase26_activation_audit", {}).pop(KEY, None)
     return result
 
 def prior_render_digest(registry, live):
+    live = successor.prior_render_digest(registry, live)
     if not record(registry):
         return live
     require(live == identity(registry)["spelling_render_current_digest"],
@@ -159,6 +164,8 @@ def prior_render_digest(registry, live):
     return old["phase26_activation_audit"]["scoped_ticket_publication_successor_v1"]["spelling_render_current_digest"]
 
 def workflow_predecessor(text):
+    if successor.record(json.loads(REGISTRY.read_text())):
+        text = successor.workflow_predecessor(text)
     require(text.count(STEP) == 1, "import owning CI step drifted")
     return text.replace(STEP, "", 1)
 
@@ -186,13 +193,13 @@ def validate():
     for pin in row["changed_files"]:
         prior_digest(registry, pin["path"], sha((ROOT / pin["path"]).read_bytes()))
     for pin in row["added_files"]:
-        require(pin["digest"] == sha((ROOT / pin["path"]).read_bytes()), "import added file drifted: " + pin["path"])
+        require(pin["digest"] == successor.prior_digest(registry, pin["path"], sha((ROOT / pin["path"]).read_bytes())), "import added file drifted: " + pin["path"])
     import phase26_ticket_publication_registration as ticket
     old = base_bytes(".github/workflows/pr-fast.yml").decode()
-    require(old.count(ticket.STEP) == 1 and (ROOT / ".github/workflows/pr-fast.yml").read_text() ==
+    require(old.count(ticket.STEP) == 1 and successor.prior_bytes(registry, ".github/workflows/pr-fast.yml", (ROOT / ".github/workflows/pr-fast.yml").read_bytes()).decode() ==
         old.replace(ticket.STEP, ticket.STEP + STEP, 1), "import workflow changed predecessor commands or budgets")
-    require((ROOT / "justfile").read_bytes() == base_bytes("justfile") + RECIPE.encode(), "import owning recipe drifted")
-    levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
+    require(successor.prior_bytes(registry, "justfile", (ROOT / "justfile").read_bytes()) == base_bytes("justfile") + RECIPE.encode(), "import owning recipe drifted")
+    levels = json.loads(successor.prior_bytes(registry, "scripts/cranelift_test_levels.json", (ROOT / "scripts/cranelift_test_levels.json").read_bytes()))
     require(levels["guards"].pop(GUARD, None) == 2 and levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")),
         "import owning test level drifted")
     projections = current_projections()
