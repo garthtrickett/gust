@@ -31,6 +31,10 @@ fn pure_scalar(program: &Program, index: usize,
         "ExplicitCast" => node.children.len() == 1 &&
             matches!(node.ty.as_str(), "Int" | "Byte" | "Bool") &&
             pure_scalar(program, node.children[0], immutable),
+        "BinaryOperation" => node.ty == "Int" && node.children.len() == 2 &&
+            matches!(node.text.as_str(), "+" | "-") &&
+            pure_scalar(program, node.children[0], immutable) &&
+            pure_scalar(program, node.children[1], immutable),
         _ => false,
     }
 }
@@ -264,6 +268,7 @@ fn call_actuals(program: &Program, call: &Node, target: &Function,
 
 fn check_caller(program: &Program, caller: &Function,
     scoped: &HashMap<String, (usize, bool)>, allowed: &mut HashSet<usize>,
+    results: &HashMap<usize, &crate::ticket_result::TicketResult>,
     facts: &DirectCallFacts, budget: &mut WorkBudget)
     -> Result<usize, Box<dyn Error>> {
     if caller.is_extern || !caller.parameters.is_empty() {
@@ -280,6 +285,7 @@ fn check_caller(program: &Program, caller: &Function,
     let mut deferred = HashSet::new();
     let mut storages: HashMap<String, Storage> = HashMap::new();
     let mut immutable = HashMap::new();
+    let mut tagged = HashMap::new();
     let mut calls = 0usize;
     let mut returned = false;
     for (position, index) in body.children.iter().enumerate() {
@@ -314,6 +320,25 @@ fn check_caller(program: &Program, caller: &Function,
                     pure_scalar(program, value, &immutable) {
                     immutable.insert(statement.text.clone(), statement.ty.clone());
                     continue;
+                }
+                if program.nodes[value].kind == "Call" {
+                    let call = &program.nodes[value];
+                    if let Some((target_index, shared_brand)) = scoped.get(&call.second_text) {
+                        if let Some(contract) = results.get(target_index) {
+                            if statement.ty != contract.result_type {
+                                return Err(invalid("collection caller changes its tagged result type"));
+                            }
+                            let target = &program.functions[*target_index];
+                            call_actuals(program, call, target, &arenas, &storages,
+                                &immutable, facts, *shared_brand, budget)?;
+                            let (arena_position, _) = scoped_formals(program, target)?;
+                            let arena = address_of_local(program, call.children[arena_position + 1], "Arena")
+                                .ok_or_else(|| invalid("ticket result loses its actual Arena"))?;
+                            tagged.insert(statement.text.clone(), (*contract, arena));
+                            calls += 1;
+                            continue;
+                        }
+                    }
                 }
                 return Err(invalid("collection caller local has an unproved initializer"));
             }
@@ -350,6 +375,15 @@ fn check_caller(program: &Program, caller: &Function,
                 } else {
                     return Err(invalid("collection caller has an unproved statement effect"));
                 }
+            }
+            "EnumMatch" if position + 1 == body.children.len() && caller.result_type == "Int" => {
+                let subject = child(program, statement, 0).ok_or_else(|| invalid("ticket match has no subject"))?;
+                let (contract, arena) = tagged.get(&subject.text).ok_or_else(|| invalid(
+                    "ticket match subject lacks a scoped publication"))?;
+                if !arenas.contains(arena) { return Err(invalid("ticket result Arena is not live")); }
+                budget.charge(crate::ticket_result_use::validate(program, *index, contract,
+                    &subject.text, arena, &immutable, &declared, allowed)?)?;
+                returned = true;
             }
             "Return" if statement.children.len() == 1 &&
                 position + 1 == body.children.len() => {
@@ -388,8 +422,12 @@ pub(crate) fn validate(program: &Program, scoped_proofs: &HashMap<usize, ScopedP
     let mut budget = WorkBudget::new();
     let facts = DirectCallFacts::new(program, &mut budget)?;
     let mut scoped = HashMap::new();
+    let mut results = HashMap::new();
     let mut allowed = HashSet::new();
     for proof in scoped_proofs.values() {
+        if let Some(result) = &proof.ticket_result {
+            results.insert(proof.function_index, result);
+        }
         let target = &program.functions[proof.function_index];
         let shared_brand = proof.input_collection_brand == proof.output_collection_brand;
         if scoped.insert(target.qualified_name.clone(),
@@ -499,7 +537,7 @@ pub(crate) fn validate(program: &Program, scoped_proofs: &HashMap<usize, ScopedP
     }
     for index in callers {
         check_caller(program, &program.functions[index], &scoped, &mut allowed,
-            &facts, &mut budget)?;
+            &results, &facts, &mut budget)?;
     }
     if allowed != *intrinsic_ids {
         return Err(invalid("collection intrinsic lacks complete caller and scoped coverage"));

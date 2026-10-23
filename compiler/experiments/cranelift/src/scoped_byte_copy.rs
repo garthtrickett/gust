@@ -12,6 +12,9 @@ use crate::full_program::{byte_span_contract, inline_call_name, is_inline_call,
     resolve_native_vector_layout, resolve_collection_intrinsic,
     Function, Node, Program, ScopedAnchor,
     ScopedBinding, ScopedByteCopyCandidate};
+use crate::ticket_result::TicketResult;
+
+type TaggedExit<'a> = Option<(&'a TicketResult, &'a str)>;
 
 fn invalid(message: &str) -> Box<dyn Error> {
     Box::new(IoError::new(ErrorKind::InvalidData, message.to_string()))
@@ -30,6 +33,7 @@ pub(crate) struct ScopedProof {
     pub(crate) collection_operations: HashSet<usize>,
     pub(crate) input_collection_brand: String,
     pub(crate) output_collection_brand: String,
+    pub(crate) ticket_result: Option<TicketResult>,
 }
 
 impl ScopedProof {
@@ -186,7 +190,7 @@ fn one(program: &Program, index: usize) -> bool {
 }
 
 fn prefill_capacity_exit(program: &Program, index: usize, capacity: &str,
-    relation: &str, threshold: i32) -> bool {
+    relation: &str, threshold: i32, tagged: TaggedExit<'_>) -> bool {
     let Some(branch) = program.nodes.get(index) else { return false; };
     if branch.kind != "Branch" || branch.children.len() != 2 { return false; }
     let Some(test) = program.nodes.get(branch.children[0]) else { return false; };
@@ -200,7 +204,11 @@ fn prefill_capacity_exit(program: &Program, index: usize, capacity: &str,
     if body.kind != "Block" || body.children.len() != 1 { return false; }
     let Some(exit) = program.nodes.get(body.children[0]) else { return false; };
     if exit.kind != "Return" || exit.children.len() != 1 { return false; }
-    program.nodes.get(exit.children[0]).is_some_and(|error| {
+    let error_index = if let Some((result, arena)) = tagged {
+        let Ok(argument) = result.error_argument(program, exit.children[0], arena) else { return false; };
+        argument
+    } else { exit.children[0] };
+    program.nodes.get(error_index).is_some_and(|error| {
         if error.kind == "IntegerLiteral" && error.ty == "Int" &&
             error.children.is_empty() && error.integer < 0 {
             return true;
@@ -307,7 +315,7 @@ fn exact_cleanup(program: &Program, index: usize, owner: &str,
 
 fn owner_return(program: &Program, index: usize, owner: &str,
     owner_type: &str, destructor: &str, cleanups: &mut HashSet<usize>,
-    output: &str, error_return: bool) -> Result<(), Box<dyn Error>> {
+    output: &str, error_return: bool, tagged: TaggedExit<'_>) -> Result<(), Box<dyn Error>> {
     let result = node(program, index, "Return")?;
     if result.children.len() != 2 || !exact_cleanup(program, result.children[1],
         owner, owner_type, destructor) || !cleanups.insert(result.children[1]) {
@@ -315,7 +323,11 @@ fn owner_return(program: &Program, index: usize, owner: &str,
     }
     // The value is evaluated before cleanup. Error paths may not publish a
     // partially filled destination; a success value may own the fresh output.
-    let mut stack = vec![result.children[0]];
+    let value = if let Some((ticket, arena)) = tagged {
+        if !error_return { return Err(invalid("ticket success must follow normal cleanup")); }
+        ticket.error_argument(program, result.children[0], arena)?
+    } else { result.children[0] };
+    let mut stack = vec![value];
     while let Some(index) = stack.pop() {
         let value = &program.nodes[index];
         let pure = match value.kind.as_str() {
@@ -351,7 +363,7 @@ fn owner_return(program: &Program, index: usize, owner: &str,
 
 fn failure_branch(program: &Program, index: usize, status: &str, owner: &str,
     owner_type: &str, destructor: &str, cleanups: &mut HashSet<usize>,
-    output: &str) -> Result<(), Box<dyn Error>> {
+    output: &str, tagged: TaggedExit<'_>) -> Result<(), Box<dyn Error>> {
     let branch = node(program, index, "Branch")?;
     if branch.children.len() != 2 { return Err(invalid("scoped status branch has an else arm")); }
     let comparison = node(program, branch.children[0], "BinaryOperation")?;
@@ -366,7 +378,7 @@ fn failure_branch(program: &Program, index: usize, status: &str, owner: &str,
         return Err(invalid("scoped status branch does not terminate"));
     }
     owner_return(program, block.children[0], owner, owner_type, destructor,
-        cleanups, output, true)
+        cleanups, output, true, tagged)
 }
 
 pub(crate) fn validate(program: &Program) -> Result<HashMap<usize, ScopedProof>, Box<dyn Error>> {
@@ -489,6 +501,7 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         ty.starts_with("Reference(Arena,")) {
         return Err(invalid("scoped output intrinsic uses an unbound Arena"));
     }
+    let output_arena = program.nodes[create.children[0]].text.as_str();
     for index in [candidate.prefill_loop, candidate.input_loop, candidate.output_loop] {
         node(program, index, "Loop")?;
         if !tree.contains(index) { return Err(invalid("scoped byte-copy loop is outside body")); }
@@ -545,8 +558,15 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         native_pos < output_pos && output_pos + 1 == block.children.len() - 1) {
         return Err(invalid("scoped byte-copy stages are out of order or lack a final Return"));
     }
-    let final_return = block.children[output_pos + 1];
-    node(program, final_return, "Return")?;
+    let terminal = block.children[output_pos + 1];
+    let normal_cleanup = program.nodes[terminal].kind == "ScopeCleanup";
+    let ticket_result = if normal_cleanup {
+        Some(TicketResult::resolve(program, &function.result_type,
+            &candidate.output_backing.ty,
+            &create.collection_intrinsic.as_ref().unwrap().brand)?)
+    } else { None };
+    let tagged = ticket_result.as_ref().map(|result| (result, output_arena));
+    if !normal_cleanup { node(program, terminal, "Return")?; }
     let body_block = node(program, body, "Block")?;
     if tree.parent.get(&candidate.scope) != Some(&body) ||
         tree.parent.get(&candidate.prefill_loop) != Some(&body) {
@@ -555,9 +575,14 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
     let prefill_pos = position(body_block, candidate.prefill_loop)?;
     let scope_pos = position(body_block, candidate.scope)?;
     if prefill_pos + 2 != scope_pos ||
-        scope_pos + 1 != body_block.children.len() {
+        scope_pos + (if normal_cleanup { 4 } else { 1 }) != body_block.children.len() {
         return Err(invalid("scoped byte-copy prefill/Clear does not precede activation"));
     }
+    let final_return = if let Some(result) = &ticket_result {
+        result.publication(program, &body_block.children[scope_pos + 1..],
+            output_arena, output_backing, &candidate.output_backing.ty)?;
+        *body_block.children.last().unwrap()
+    } else { terminal };
     let clear_statement = node(program, body_block.children[prefill_pos + 1], "Evaluate")?;
     if clear_statement.children.len() != 1 { return Err(invalid(
         "scoped output Clear has no unique call")); }
@@ -638,7 +663,7 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
     }
     failure_branch(program, input_body.children[1], &write_status.text,
         &candidate.owner_name, &owner_type, &contract.destructor, &mut cleanups,
-        output_backing)?;
+        output_backing, tagged)?;
     let native_function = selected(program, native)?;
     let spans = byte_span_contract(native_function)?;
     let native_plan = native.isolated_call_plan.as_ref().ok_or_else(|| invalid(
@@ -709,7 +734,7 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         if failure.children.len() != 1 { return Err(invalid(
             "scoped native result failure does not terminate")); }
         owner_return(program, failure.children[0], &candidate.owner_name,
-            &owner_type, &contract.destructor, &mut cleanups, output_backing, true)?;
+            &owner_type, &contract.destructor, &mut cleanups, output_backing, true, tagged)?;
     }
     if position(block, candidate.accept_call).is_ok() {
         return Err(invalid("scoped AcceptResult must be bound by a unique status declaration"));
@@ -729,7 +754,7 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
     failure_branch(program, *block.children.get(native_pos + 4).ok_or_else(||
         invalid("scoped AcceptResult lacks a checked status branch"))?,
         &accept_declaration.text, &candidate.owner_name, &owner_type,
-        &contract.destructor, &mut cleanups, output_backing)?;
+        &contract.destructor, &mut cleanups, output_backing, tagged)?;
     if native_pos + 6 != output_pos {
         return Err(invalid("scoped output loop does not follow accepted result"));
     }
@@ -775,7 +800,7 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
     }
     failure_branch(program, output_body.children[2], &read_status.text,
         &candidate.owner_name, &owner_type, &contract.destructor,
-        &mut cleanups, output_backing)?;
+        &mut cleanups, output_backing, tagged)?;
     let publish = node(program, output_body.children[3], "Evaluate")?;
     if publish.children.len() != 1 { return Err(invalid(
         "scoped output byte is not published by one checked operation")); }
@@ -792,14 +817,23 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         same_collection_identity(create, operation)) {
         return Err(invalid("scoped output operations change layout or brand"));
     }
-    owner_return(program, final_return, &candidate.owner_name,
-        &owner_type, &contract.destructor, &mut cleanups, output_backing, false)?;
+    if normal_cleanup {
+        let cleanup = node(program, terminal, "ScopeCleanup")?;
+        if cleanup.children.len() != 1 || !exact_cleanup(program, cleanup.children[0],
+            &candidate.owner_name, &owner_type, &contract.destructor) ||
+            !cleanups.insert(cleanup.children[0]) {
+            return Err(invalid("scoped normal exit lacks one exact owner cleanup"));
+        }
+    } else {
+        owner_return(program, final_return, &candidate.owner_name,
+            &owner_type, &contract.destructor, &mut cleanups, output_backing, false, None)?;
+    }
     let mut allowed_result_reads = HashSet::from([moved.children[0]]);
     let mut allowed_direct = HashSet::from([
         candidate.result_declaration, candidate.guard, candidate.input_loop,
         candidate.native_result_declaration, negative_branch, overcap_branch,
         accept_declaration_index, block.children[native_pos + 4],
-        candidate.output_loop, final_return,
+        candidate.output_loop, terminal,
     ]);
     let mut code_name = None;
     for child in &block.children[result_pos + 1..guard_pos] {
@@ -821,9 +855,12 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         allowed_result_reads.insert(selection.children[0]);
     }
     let failure_return = &program.nodes[failure.children[0]];
+    let failure_value = if let Some((result, arena)) = tagged {
+        result.error_argument(program, failure_return.children[0], arena)?
+    } else { failure_return.children[0] };
     if failure_return.children.len() != 1 ||
         !code_name.is_some_and(|name|
-            local(program, failure_return.children[0], name, "Int")) {
+            local(program, failure_value, name, "Int")) {
         return Err(invalid("scoped failed Guard has an effectful or unrelated return"));
     }
     // Existing diagnostic fixtures carry an unrelated scalar defer to reach
@@ -878,9 +915,9 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
     let prefix_start = if parameter_capacity {
         if body_block.children.len() < 2 ||
             !prefill_capacity_exit(program, body_block.children[0],
-                output_capacity, "<", 0) ||
+                output_capacity, "<", 0, tagged) ||
             !prefill_capacity_exit(program, body_block.children[1],
-                output_capacity, ">", 1_073_741_824) {
+                output_capacity, ">", 1_073_741_824, tagged) {
             return Err(invalid(
                 "scoped caller capacity lacks dominating range-error exits"));
         }
@@ -1001,6 +1038,8 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         if value.kind == "Call" && value.second_integer == 0 {
             if value.children.iter().any(|child| program.nodes[*child].kind == "LocalRead" &&
                 protected.contains(&program.nodes[*child].text.as_str())) &&
+                !tagged.is_some_and(|(result, arena)|
+                    result.error_argument(program, *index, arena).is_ok()) &&
                 !(value.text == "len" && value.second_text == "len" &&
                     value.children.len() == 2 && (
                         (local(program, value.children[1], output_backing,
@@ -1064,6 +1103,7 @@ fn validate_one(program: &Program, function_index: usize, function: &Function,
         owner_type, destructor: contract.destructor.clone(), cleanups,
         operations, collection_operations, input_collection_brand,
         output_collection_brand,
+        ticket_result,
     })
 }
 

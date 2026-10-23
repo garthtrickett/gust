@@ -24569,3 +24569,10 @@ guard-cranelift-phase26-production-trust:
     python3 scripts/phase26_production_registration.py validate
     python3 scripts/phase26_production_registration.py inversions
     python3 scripts/phase26_production_guard.py
+
+# Generic completed-output publication after exact region cleanup.
+guard-cranelift-phase26-ticket-publication:
+    python3 scripts/phase26_ticket_publication_registration.py validate
+    python3 scripts/phase26_ticket_publication_registration.py inversions
+    cargo test --locked --manifest-path compiler/experiments/cranelift/Cargo.toml ticket_result_tests
+    python3 scripts/phase26_ticket_publication_guard.py

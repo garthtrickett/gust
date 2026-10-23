@@ -14,6 +14,7 @@ import gzip
 from functools import lru_cache
 import sys
 from pathlib import Path
+import phase26_ticket_publication_registration as ticket
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "c6916d3ede29d407f35e63fe222fcc8e01a80150"
@@ -65,7 +66,12 @@ def baseline():
 
 def base_bytes(path):
     return base64.b64decode(baseline()[path], validate=True)
-def raw_digest(path): return sha((ROOT / path).read_bytes())
+def raw_digest(path):
+    registry = json.loads(REGISTRY.read_text())
+    return ticket.prior_digest(registry, path, sha((ROOT / path).read_bytes()))
+
+def live_bytes(path):
+    return ticket.prior_bytes(json.loads(REGISTRY.read_text()), path, (ROOT / path).read_bytes())
 def record(registry): return registry.get("phase26_activation_audit", {}).get(KEY)
 
 def identity(registry):
@@ -79,6 +85,7 @@ def identity(registry):
     return row
 
 def prior_digest(registry, path, live):
+    live = ticket.prior_digest(registry, path, live)
     if not record(registry): return live
     row = identity(registry)
     if path == STATE:
@@ -93,6 +100,7 @@ def prior_digest(registry, path, live):
     return pin["previous_digest"]
 
 def prior_bytes(registry, path, live):
+    live = ticket.prior_bytes(registry, path, live)
     if not record(registry): return live
     prior_digest(registry, path, sha(live))
     return base_bytes(path) if path in CHANGED else live
@@ -109,6 +117,7 @@ def old_text(path):
                 deprecation_action=action, removal_phase=removal, falsifier=falsifier)
 
 def project(registry, kind, current):
+    current = ticket.project(registry, kind, current)
     if not record(registry): return current
     row = identity(registry)
     if kind == "text":
@@ -136,11 +145,12 @@ def project(registry, kind, current):
     return copy.deepcopy(previous)
 
 def project_registry(registry):
-    result = copy.deepcopy(registry)
+    result = ticket.project_registry(registry)
     result.get("phase26_activation_audit", {}).pop(KEY, None)
     return result
 
 def prior_render_digest(registry, live):
+    live = ticket.prior_render_digest(registry, live)
     if not record(registry): return live
     row = identity(registry)
     require(row["spelling_render_current_digest"] == live, "R4 current spelling review is stale or missing (production successor)")
@@ -239,6 +249,8 @@ def expected_justfile():
     return text.replace(before, after, 1).replace('needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]', 'needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position, phase26-value-evidence]')
 
 def check_workflow(text):
+    if ticket.record(json.loads(REGISTRY.read_text())):
+        text = ticket.workflow_predecessor(text)
     require(text == expected_workflow(), "production owning CI step, toolchain or evidence obligation drifted")
 
 def build_record(previous):
@@ -277,12 +289,12 @@ def validate():
                 "production required parallel evidence dependency guard drifted")
     production_policy(registry)
     check_workflow((ROOT / ".github/workflows/pr-fast.yml").read_text())
-    require((ROOT / "justfile").read_text() == expected_justfile() +
+    require(live_bytes("justfile").decode() == expected_justfile() +
             "\n# Operator-enrolled production signing and exact offline static package profile.\n" +
             GUARD + ":\n    python3 scripts/phase26_production_registration.py validate\n"
             "    python3 scripts/phase26_production_registration.py inversions\n"
             "    python3 scripts/phase26_production_guard.py\n", "production owning recipe drifted")
-    levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
+    levels = json.loads(live_bytes("scripts/cranelift_test_levels.json"))
     require(levels["guards"].pop(GUARD, None) == 2 and
             levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")),
             "production test level or predecessor levels drifted")
@@ -338,7 +350,9 @@ def inversions():
         kind = "r4_text" if name == "text" else name
         rejected("substituted " + kind, lambda kind=kind: project(registry, kind, None),
                  "live projection drifted")
-    workflow = expected_workflow()
+    # Mutate the live workflow, including any checked successor step, so the
+    # predecessor assertion is reached through the same normalization as CI.
+    workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     for command in ["just " + GUARD,
                     "python3 scripts/phase26_production_toolchain.py install-ci build/production-build-toolchain",
                     "python3 scripts/phase26_production_toolchain.py install-ci build/production-test-toolchain",

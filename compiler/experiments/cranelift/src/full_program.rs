@@ -197,7 +197,7 @@ fn quoted_type_name(value: &str, prefix: &str) -> Option<String> {
         .map(|(name, _)| name.to_string())
 }
 
-fn struct_type_name(value: &str) -> Option<String> {
+pub(crate) fn struct_type_name(value: &str) -> Option<String> {
     quoted_type_name(value, "Struct(\"")
 }
 
