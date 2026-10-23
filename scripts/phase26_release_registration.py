@@ -22,7 +22,7 @@ CHANGED = ("justfile", "scripts/cranelift_test_levels.json",
     "scripts/phase26_readonly_input_copy_registration.py", "docs/PHASES_26_AND_27.md")
 ADDED = ("scripts/phase26_release_registration.py", BASELINE,
     "scripts/phase26_release_closure.py", "scripts/phase26_release_regression.py",
-    "scripts/phase26_release_ci.py",
+    "scripts/phase26_release_ci.py", "scripts/phase26_release_bounded.py",
     "compiler/phase26-release/release.json", "compiler/phase26-release/reachable-audit.json",
     "compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md", ".github/workflows/phase26-release-closure.yml")
 WORKFLOW = ".github/workflows/phase26-release-closure.yml"
@@ -31,9 +31,9 @@ RECIPE = ("\n# First-release source authority, actual production/public integrat
     "    python3 scripts/phase26_release_registration.py inversions\n"
     "    python3 scripts/phase26_release_closure.py validate\n"
     "    python3 scripts/phase26_release_closure.py inversions\n"
-    "    python3 scripts/phase26_release_regression.py\n"
-    "    python3 scripts/phase26_production_guard.py\n"
-    "    python3 scripts/stdlib_s26_1_native_bytes.py --package build/guards/phase26_production_trust/candidate/package\n"
+    "    python3 scripts/phase26_release_bounded.py python3 scripts/phase26_release_regression.py\n"
+    "    python3 scripts/phase26_release_bounded.py python3 scripts/phase26_production_guard.py\n"
+    "    python3 scripts/phase26_release_bounded.py python3 scripts/stdlib_s26_1_native_bytes.py --package build/guards/phase26_production_trust/candidate/package\n"
     "    python3 scripts/phase26_release_closure.py qualify build/guards/stdlib_s26_1_public_qualification build/guards/phase26_production_trust build/guards/phase26_release_regression build/guards/phase26_release_qualification.json\n")
 
 def require(ok, message):
@@ -184,7 +184,8 @@ def build_record():
         spelling_render_current_digest=sha(spelling.render(spelling.load_authority(), sites, spelling.manifest_summary(sites)).encode()))
 
 def workflow_identity(text):
-    require(text.count("run: just " + GUARD) == 1 and
+    require(text.count("run: python3 scripts/phase26_release_bounded.py just " + GUARD) == 1 and
+        text.count("run: python3 scripts/phase26_release_bounded.py make gust") == 1 and
         "timeout-minutes: 60" in text and "contents: read" in text and
         "fetch-depth: 0" in text and "if: false" not in text and
         "github.actor == vars.CODEX_GITHUB_ACTOR" in text and
@@ -332,9 +333,9 @@ def inversions():
         "release closure changed frozen predecessor"), "release closure changed frozen predecessor")
     workflow = (ROOT / WORKFLOW).read_text()
     for label, changed in (
-        ("omitted owning command", workflow.replace("run: just " + GUARD, "run: true", 1)),
-        ("duplicated owning command", workflow.replace("run: just " + GUARD,
-            "run: just " + GUARD + "\n        run: just " + GUARD, 1)),
+        ("omitted owning command", workflow.replace("run: python3 scripts/phase26_release_bounded.py just " + GUARD, "run: true", 1)),
+        ("duplicated owning command", workflow.replace("run: python3 scripts/phase26_release_bounded.py just " + GUARD,
+            "run: python3 scripts/phase26_release_bounded.py just " + GUARD + "\n        run: python3 scripts/phase26_release_bounded.py just " + GUARD, 1)),
         ("disabled job", workflow.replace("    if: github.actor", "    if: false # github.actor", 1)),
         ("raised deadline", workflow.replace("timeout-minutes: 60", "timeout-minutes: 61", 1)),
         ("write permission", workflow.replace("contents: read", "contents: write", 1)),
@@ -342,6 +343,7 @@ def inversions():
         ("missing failure artifacts", workflow.replace("if: always()", "if: success()", 1)),
         ("missing toolchain pin", workflow.replace("phase26_production_toolchain.py install-ci",
             "unreviewed_toolchain.py install-ci", 1)),
+        ("unbounded compiler build", workflow.replace("run: python3 scripts/phase26_release_bounded.py make gust", "run: make gust", 1)),
         ("missing emitted objects", workflow.replace("            build/native-fp/\n", "", 1)),
         ("missing linked stage", workflow.replace("            build/native-stage2\n", "", 1)),
     ):

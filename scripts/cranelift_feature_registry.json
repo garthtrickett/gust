@@ -84219,7 +84219,7 @@
         {
           "path": "justfile",
           "previous_digest": "52c29911d94ac5252a1297321e331fe860a4dc1c8ad2e13bf8a407997d0a715c",
-          "current_digest": "c4b13bcb0af03a3277bca8d042818c6ce7144f74878921abab137dff0c76e504"
+          "current_digest": "b2f5f4478d476706e513539cc796365b2c4c54cd534ce04b1c8e722e0dd9f34b"
         },
         {
           "path": "scripts/cranelift_test_levels.json",
@@ -84240,7 +84240,7 @@
       "added_files": [
         {
           "path": "scripts/phase26_release_registration.py",
-          "digest": "f660fea0c23a5d72d01a472d435a16af26977758e849b2d3c4e50aaea6d588bf"
+          "digest": "660546e57babd5d5b39ddfc8c15a883e098a5830d29993a80e703a0a9763a209"
         },
         {
           "path": "compiler/phase26-release/predecessor-baseline.json.gz",
@@ -84248,43 +84248,47 @@
         },
         {
           "path": "scripts/phase26_release_closure.py",
-          "digest": "afd8fdbf3c44e61fbc6a6395ed7ea76d6adbbf8eaa0bcb51188bd85fb3f6a6ac"
+          "digest": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56"
         },
         {
           "path": "scripts/phase26_release_regression.py",
-          "digest": "ade163a723acedae7409722841261091a19bde5aac831b074141c50f065b9899"
+          "digest": "2e1224aaf982a74403cf6fe7edeb1ca9a40824e7560c6bd3ec63a0ec4817c630"
         },
         {
           "path": "scripts/phase26_release_ci.py",
           "digest": "78d6c22f9ee79735ab130843f28aeb7f70f5ff72e9e3b45f7c43b321082f99ff"
         },
         {
+          "path": "scripts/phase26_release_bounded.py",
+          "digest": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e"
+        },
+        {
           "path": "compiler/phase26-release/release.json",
-          "digest": "8e6116c730389e58b0b868b2ba5b3a13f44d7da80dda29d8d6a30a98266495c2"
+          "digest": "eb21a83a1e6c649fad0fad9bce7df6a45c16184dcb8b5753f3d545d5671cc118"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
-          "digest": "4ad72d4c790a55bb23e9d8f91088448a70c39032a2bab13330d3ef26ef02063b"
+          "digest": "48da8007bda3cc3474a3cd8533c5d27755557177ede551eb79c8027ebadeb134"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md",
-          "digest": "78617d2019306364d5037432a947c27fb733ab3aa23bf7ab76d718f6a3aacf98"
+          "digest": "f6a147cfb9f38857428b39067d9ef25c4be2503c6de97fba93b661685781fcfa"
         },
         {
           "path": ".github/workflows/phase26-release-closure.yml",
-          "digest": "8488833588eaea046abc416cf601f3e4b3006f91ba84f43263d77cf6bd98294d"
+          "digest": "333d2e3e13b7ecba412826682d08d796626f44ee76843cdae9b87f7999276a9e"
         }
       ],
-      "text_owned_digest": "25d2151aab478084d7fe996a81c09e3f6e4e7d06b098d1c46b9e46f4d201e84f",
+      "text_owned_digest": "f0655dfa326a1f5fbf65865cb2bb026444c797499e9d4e954985a0e924ead44a",
       "projections": {
-        "r4_text": "adba69b0eed7721b58cef6aee491f590d364d242315f78d0169ecef6bfdd3a0a",
+        "r4_text": "985e47ecc06fb82ffaf4d905d1d3b5e31eaad4c82085ab926c33ffa29833aed7",
         "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
         "filename": "96f3433a10f5c471c4b0bce8f229ea8394760ead5096f0adb7157bdac5487130",
-        "r3_record": "c451b20dd3eb3e5c5717b1456d90bf8a7d8eb9708d2823dc66d5c43d61c6a991",
+        "r3_record": "9891325697f8d751fa987641356d3576a5c1ccb285786e72e4e52f0903a636fc",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "f13dde9fe278b5b4e5a821ddbd2e31f5bcc5e6628edd3c17078cbd355f6050b1",
-        "text": "a73d83f5e18c3d8aff9ce9fc2815e2a78586b122d54eaa4b2116ea7f330b1ff1"
+        "r4_record": "a37bdb69aafacbad78e210e21e79c818608961189a7a84e982325e747f5c14ce",
+        "text": "51d442a2ecd41be3247a09c384b3ce34b7f0901579123470e32c21ae43fed702"
       },
       "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
     }

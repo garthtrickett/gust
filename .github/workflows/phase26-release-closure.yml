@@ -56,7 +56,7 @@ jobs:
       - name: Pin the enrolled production toolchain
         run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-release-toolchain
       - name: Build current native compiler
-        run: make gust
+        run: python3 scripts/phase26_release_bounded.py make gust
       - name: Reproduce exact public native package inputs
         run: |
           mkdir -p build/guards/phase26_r3_zlib_adapter
@@ -67,7 +67,7 @@ jobs:
             build/guards/phase26_r3_zlib_adapter/zlib-1.3.2.tar.gz \
             build/guards/phase26_r3_zlib_adapter/build
       - name: Qualify first-release compiler, runtime, fixed point, production and public interface
-        run: just guard-cranelift-phase26-release-closure
+        run: python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-release-closure
       - name: Retain exact-source qualification and failure evidence
         if: always()
         uses: actions/upload-artifact@v4

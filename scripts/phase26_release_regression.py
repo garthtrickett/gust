@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+from phase26_release_bounded import effective_memory_cap
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "build/guards/phase26_release_regression"
@@ -35,12 +36,14 @@ def main():
     if ROOT / "build/guards" not in output.parents:
         raise SystemExit("release regression output must be a new owned build/guards directory")
     output.mkdir(parents=True, exist_ok=False)
+    memory_cap = effective_memory_cap()
     before = source_manifest()
     rows = []
     environment = dict(os.environ, CARGO_BUILD_JOBS="2")
     for number, command in enumerate(COMMANDS):
         log = output / f"command-{number}.log"
         print("RUN " + " ".join(command), flush=True)
+        assert effective_memory_cap() == memory_cap, "release compiler memory cap changed"
         start = time.time()
         # Each log grows while the owning tracked job is live.
         with log.open("wb") as stream:
@@ -57,7 +60,8 @@ def main():
         raise SystemExit("release compiler/runtime/stdlib sources changed during regression")
     (output / "result.json").write_text(json.dumps(dict(
         status="PASS compiler runtime and emitted-object fixed point",
-        source_before=before, source_after=after, commands=rows), indent=2) + "\n")
+        source_before=before, source_after=after, commands=rows,
+        memory_cap_bytes=memory_cap, memory_cap_bytes_after=effective_memory_cap()), indent=2) + "\n")
     print("PHASE26_RELEASE_REGRESSION_PASS", flush=True)
 
 

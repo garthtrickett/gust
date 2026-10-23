@@ -52,6 +52,13 @@ package with the enrolled public toolchain and invokes:
 just guard-cranelift-phase26-release-closure
 ```
 
+The new workflow launches both `make gust` and the whole owning recipe in a
+real cgroup capped at 4 GiB and two CPUs, within the 6 GiB owning maximum.
+The launcher verifies the effective ancestral memory limit inside the scope;
+the regression runner refuses unbounded execution and records its unchanged
+actual limit. Local reproduction uses the same bounded `work`/systemd scope.
+No repository permissions, secrets, CI variables or test deadlines change.
+
 The recipe requires additive registration and refusal inversions, the full
 Rust compiler suite (78 ordinary passes and 15 existing ignored integration
 or diagnostic tests), the three call-region runtime tests, the unchanged native

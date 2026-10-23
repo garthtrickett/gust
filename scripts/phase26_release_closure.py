@@ -329,6 +329,10 @@ def qualification(public_dir, production_dir, regression_dir, output):
     require(regression.get("status") == "PASS compiler runtime and emitted-object fixed point" and
             regression.get("source_before") == regression.get("source_after") == source_manifest(),
             "compiler/runtime regression source binding differs")
+    memory_cap = regression.get("memory_cap_bytes")
+    require(type(memory_cap) is int and 0 < memory_cap <= 4 * 1024 ** 3 and
+            regression.get("memory_cap_bytes_after") == memory_cap,
+            "release compiler regression lacks an unchanged effective 4 GiB cap")
     commands = regression.get("commands", [])
     require([row.get("command") for row in commands] == COMMANDS and
             all(row.get("exit") == 0 and (ROOT / row["log"]).is_file() and

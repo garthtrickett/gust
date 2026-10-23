@@ -4,7 +4,7 @@
   "general_model": "OPEN; not the 63-cell completion map",
   "source_pins": {
     ".github/workflows/cranelift-historical-full.yml": "fc035fb057fef36711abe6d37379bc23e1975592e72c91cc33d3d8a423c3f0da",
-    ".github/workflows/phase26-release-closure.yml": "8488833588eaea046abc416cf601f3e4b3006f91ba84f43263d77cf6bd98294d",
+    ".github/workflows/phase26-release-closure.yml": "333d2e3e13b7ecba412826682d08d796626f44ee76843cdae9b87f7999276a9e",
     ".github/workflows/stdlib-s26-native-bytes.yml": "e7091cbec685c8d704b62ca4392bc98b1690c9ae261a0d6b533c6be72cf25d22",
     "Makefile": "d0d930c100aa85455e8abebdde19eb606d9fad22aa9b7a26ad9fd8ca5bcac2d2",
     "compiler/ast.gst": "ecb66cdae7da18996eac67fa852c209dd3cd11ff75d62fdebb69d1c16043fea9",
@@ -2564,9 +2564,9 @@
     "scripts/phase26_relational_zero_evidence.sh": "bf6484b3ad5c4340fa4734081f342453a824936873f9e8542afd13e45a6310d2",
     "scripts/phase26_relational_zero_registration.py": "5decdc243d32739f003ad6200fa979d44921822dbcee21d5d74aa166450a3da7",
     "scripts/phase26_release_ci.py": "78d6c22f9ee79735ab130843f28aeb7f70f5ff72e9e3b45f7c43b321082f99ff",
-    "scripts/phase26_release_closure.py": "afd8fdbf3c44e61fbc6a6395ed7ea76d6adbbf8eaa0bcb51188bd85fb3f6a6ac",
-    "scripts/phase26_release_registration.py": "f660fea0c23a5d72d01a472d435a16af26977758e849b2d3c4e50aaea6d588bf",
-    "scripts/phase26_release_regression.py": "ade163a723acedae7409722841261091a19bde5aac831b074141c50f065b9899",
+    "scripts/phase26_release_closure.py": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56",
+    "scripts/phase26_release_registration.py": "660546e57babd5d5b39ddfc8c15a883e098a5830d29993a80e703a0a9763a209",
+    "scripts/phase26_release_regression.py": "2e1224aaf982a74403cf6fe7edeb1ca9a40824e7560c6bd3ec63a0ec4817c630",
     "scripts/phase26_safe_reference_call.sh": "83920ecb425b560dbf3158b3667630150a9a908829245c70299fcbd594664d86",
     "scripts/phase26_safe_reference_call_registration.py": "0276410c7ce60c4979bd1d22708d2adbb2f2418b94beaac7d644fb59dab4968b",
     "scripts/phase26_take_struct_alias_evidence.sh": "40ef200a9931d54fc5a32b3c1ac1b33002dce26f087eb86f4e4b62c0a2dcc2c6",
@@ -2597,7 +2597,8 @@
     "tests/stdlib_s26_1_native_bytes.gst": "ef9a5e32e1e2e505153b893d2a1419542f9213b1397d4fd8efa3e51c6e68c65f",
     "tests/stdlib_s26_1_output_escape_rejected.gst": "bad9e675fddda4c0a7a8e7049588afc36016d5eced5f4c5d511a56f8a5dfdb91",
     "tests/stdlib_s26_1_roundtrip.gst": "4bb557603db847b7e4f5b7a44b86a7ed02bf11f9ffb94bd3a98bd518d99a4c20",
-    "tests/stdlib_s26_1_wrong_arena.gst": "e88b3177bd4784d3957dea2fa3ce135be90c0b5a6fcbad375dbc8dfe0790a791"
+    "tests/stdlib_s26_1_wrong_arena.gst": "e88b3177bd4784d3957dea2fa3ce135be90c0b5a6fcbad375dbc8dfe0790a791",
+    "scripts/phase26_release_bounded.py": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e"
   },
   "origin_dispositions": {
     "safe": "scalar inputs and pure classified errors",
