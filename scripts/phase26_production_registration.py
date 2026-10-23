@@ -350,7 +350,9 @@ def inversions():
         kind = "r4_text" if name == "text" else name
         rejected("substituted " + kind, lambda kind=kind: project(registry, kind, None),
                  "live projection drifted")
-    workflow = expected_workflow()
+    # Mutate the live workflow, including any checked successor step, so the
+    # predecessor assertion is reached through the same normalization as CI.
+    workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     for command in ["just " + GUARD,
                     "python3 scripts/phase26_production_toolchain.py install-ci build/production-build-toolchain",
                     "python3 scripts/phase26_production_toolchain.py install-ci build/production-test-toolchain",

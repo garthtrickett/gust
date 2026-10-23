@@ -95,6 +95,17 @@ def prior_bytes(registry, path, live):
 def project(registry, kind, current):
     if not record(registry):
         return current
+    if kind == "text":
+        require(isinstance(current, list), "R4 text live projection drifted (ticket successor)")
+        owned = set(CHANGED + ADDED)
+        subset = [row for row in current if row["path"] in owned]
+        require(fingerprint(subset) == identity(registry)["text_owned_digest"],
+            "R4 text live projection drifted (ticket successor)")
+        # Preserve foreign mutations for the predecessor's own checks. Only
+        # this successor's changed/added rows may be normalized away.
+        previous = [row for row in baseline()["projections"][kind] if row["path"] in owned]
+        foreign = [row for row in current if row["path"] not in owned]
+        return sorted(copy.deepcopy(foreign + previous), key=lambda row: row["path"])
     require(fingerprint(current) == identity(registry)["projections"][kind],
         f"R4 {kind} live projection drifted (ticket successor)")
     return copy.deepcopy(baseline()["projections"][kind])
@@ -128,10 +139,12 @@ def current_projections():
 def build_record():
     import phase24_semantic_spelling_inventory as spelling
     sites = spelling.source_sites()
+    projections = current_projections()
     return dict(predecessor_main=BASE, owner="cranelift", guard=GUARD, phase26_1_status="OPEN",
         changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)), current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
         added_files=[dict(path=p, digest=sha((ROOT / p).read_bytes())) for p in ADDED],
-        projections={key: fingerprint(value) for key, value in current_projections().items()},
+        text_owned_digest=fingerprint([row for row in projections["text"] if row["path"] in CHANGED + ADDED]),
+        projections={key: fingerprint(value) for key, value in projections.items()},
         spelling_render_current_digest=sha(spelling.render(spelling.load_authority(), sites, spelling.manifest_summary(sites)).encode()))
 
 def validate():
@@ -185,6 +198,22 @@ def inversions():
         "ticket changed frozen predecessor or foreign registry rows"), "ticket changed frozen predecessor")
     for kind in identity(registry)["projections"]:
         rejected("changed " + kind, lambda kind=kind: project(registry, kind, "substituted"), f"R4 {kind} live projection drifted")
+    import phase26_r3_zlib_adapter_registration as r3
+    raw = r3.raw_text_surfaces()
+    owned = next(row for row in raw if row["path"] in CHANGED + ADDED)
+    for label, changed in [
+        ("substituted owned text", [dict(row, digest="0" * 64) if row == owned else row for row in raw]),
+        ("omitted owned text", [row for row in raw if row != owned]),
+        ("duplicated owned text", raw + [owned]),
+    ]:
+        rejected(label, lambda changed=changed: project(registry, "text", changed), "R4 text live projection drifted")
+    foreign = next(row for row in raw if row["path"] not in CHANGED + ADDED)
+    changed = [dict(row, digest="0" * 64) if row == foreign else row for row in raw]
+    forwarded = project(registry, "text", changed)
+    require(next(row for row in forwarded if row["path"] == foreign["path"])["digest"] == "0" * 64,
+        "ticket projection hid foreign text substitution")
+    require(sum(row["path"] == foreign["path"] for row in project(registry, "text", raw + [foreign])) == 2,
+        "ticket projection hid foreign text duplication")
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     rejected("omitted owning CI step", lambda: workflow_predecessor(workflow.replace(STEP, "", 1)), "ticket owning CI step")
     rejected("conditional owning CI step", lambda: workflow_predecessor(workflow.replace(

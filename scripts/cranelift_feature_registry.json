@@ -48080,7 +48080,7 @@
         {
           "path": "scripts/phase26_production_registration.py",
           "previous_digest": "17785e6511aaf295b66a2d8c222fb9f81de5a3c36e9414e3a5a70a9b19da01e0",
-          "current_digest": "b452173f7d3e91a196b6f2a241159a268da9edc51c4b863f47f20d33e4ac5753"
+          "current_digest": "aa9dcae656c83a8fb08be97e440a9562505f851808e95d1682f4817713bfcaeb"
         },
         {
           "path": "compiler/mir_native_backend_parameter_argument_source.gst",
@@ -48139,7 +48139,7 @@
         },
         {
           "path": "scripts/phase26_ticket_publication_registration.py",
-          "digest": "90f82679252c8c434ce592c101783b732efc9be3c07c4bc1517c9ebb5927cce8"
+          "digest": "77a26ccbcb073c8cdfeb198a368849df7c5eeb965a7b083bdaed1b677139f782"
         },
         {
           "path": "compiler/experiments/cranelift/ticket-publication/predecessor-baseline.json.gz",
@@ -48150,6 +48150,7 @@
           "digest": "2dec7a12df33edfd820ab152fd16c123c0868fccbfbc3165a6082429cffbca25"
         }
       ],
+      "text_owned_digest": "bc45fde5a86a39b0d3762a094023b63cfd4ffb6dada95acae5d863aa5fc76d03",
       "projections": {
         "r4_text": "46fa31d66f7f71c9bb7691ddf2adbfa300a86f9507be425061c0b0dd23364ece",
         "spelling": "1ee16d28debc6eabd82dfab8db6dc8870c226cad1a5f190aab3f12e17dbc0b17",
@@ -48158,7 +48159,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "ab023b24f1e64dbbccce2c4407bfd4945e7af4989d8d463df0224df43efd0763",
         "r4_record": "d8332f3c0074c4f335f2aad871871e4f57593c1d133ed9f1f97e9f2ebbb3d972",
-        "text": "03ebac3804d6459e98c30c1e2e5278551adff705610cbc9b3b03005ce815d584"
+        "text": "af3ec52458529c8ac0d66e61dea931c7a8882768129f4cc0c9b1277a00e28e0b"
       },
       "spelling_render_current_digest": "f6632bee629b22e73ca6c40005357f53feb9e4e3b7787d65d6292b7c659a29c3"
     },
