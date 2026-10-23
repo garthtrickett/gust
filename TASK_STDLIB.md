@@ -1851,3 +1851,55 @@ predicate behavior with explicit no-fallback execution. Phase S2 delivers byte
 predicates only. It does not package Gust source modules for installed users,
 provide Unicode character operations, migrate collection `Option` APIs, or add
 file, socket, or networking resources. Those remain separate handoffs.
+
+
+## Phase S26.1 — First-release native byte wrapper
+
+**Activation:** Explicit operator approval on 2026-10-23, recorded at
+`/home/gust/phase26-recovery/phase26-release-activation-20261023/operator-activation.json`.
+This supersedes older awaiting-activation records for this bounded Stdlib work.
+It does not activate compiler, trust enrollment, or future resource admission.
+
+### Status
+
+- [x] Patch S26.1 — Safe native byte wrapper and public-interface qualification — DONE
+
+One coherent library patch owns the FFI-R4 wrapper/public-interface obligations
+and supplies its FFI-R5 regression contribution. Base is merged compiler support
+PR607 (`8a904cb29f59ecff35094c18332d1c028e854832`) and OD21 decision PR608
+(`c6916d3ede29d407f35e63fe222fcc8e01a80150`). The checked compiler handoff
+SHA256 is `3faad72cb941809a355ed75d9630d9e722e7478a09e16505acd2d70396ae9907`.
+Subsequent merged prerequisites are PR609 production trust, PR610 ticket
+publication, PR611 imported declarations, PR612 pure failure/nested composition,
+and PR613 read-only input copies. Final acceptance starts from merged
+`981caef41195601430c6dcaec0e06b2ca7ddb30f`; its checked handoff SHA256 is
+`fb62f1b4b24c26bd29d92ac7f544f30e9613be5add263a85f1ea00c168cb71bf`.
+
+Purpose: compose existing checked byte Vector, explicit output arena, native
+marshalling and tagged enum mechanisms into compression/decompression APIs.
+Success publishes `Index[std.Vector[byte, ctx], ctx]` only after completed
+copy-out and native temporary cleanup. Failure carries classified existing
+adapter errors and no usable ticket. No native pointer becomes arena authority.
+
+Exit gate: public-interface roundtrip with actual pinned zlib, empty and
+incompressible input, bounded/zero destination, corrupt data, invalid levels,
+classified failures and no partial publication; output brand/lifetime rejection;
+return/move/access and copying/alias tests; targeted reachable Vector reads,
+growth, arena writes, allocation and cleanup audit. Public qualification uses the
+enrolled production profile; compiler TEST proofs remain supplementary. Preserve process-level
+allocator exhaustion and checked-collection trap limits. Any missing generic
+compiler support uses the seven-point coordination report, never a workaround.
+A merged DONE row requires local focused checks, exact-head authoritative CI,
+resolved reviews and own PR merge. FFI-R5 compiler/bootstrap and R6 final-main closure
+remain Cranelift-owned; library completion alone closes no release gate.
+
+The delivered module is `src/stdlib/native_bytes.gst`; its public guard preserves
+16 native cases and 3 frontend negatives. Inputs carry independent input_ctx
+while result storage/tickets belong solely to explicit ctx. Both operations take
+a hard capacity up to the admitted 1 GiB profile limit. Classified errors carry
+no ticket; successful publication follows checked copy-out and native cleanup.
+The Stdlib workflow reproduces the exact signed public package and qualifies
+ordinary relative imports offline. The source/audit/reproduction limits are
+recorded in `docs/STDLIB_PHASE26_NATIVE_BYTES_AUDIT.md`. This status completes
+only the merged library patch; full Phase26.1 remains OPEN for compiler-owned
+final audit/R5/R6/final-main Historical qualification.

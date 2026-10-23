@@ -1,3 +1,25 @@
+# Active Stdlib lane — final S26.1 publication qualification
+
+Operator-activated S26.1 wrapper patch on codex/stdlib-phase26-safe-native-wrapper,
+based on independently fetched main981caef41195601430c6dcaec0e06b2ca7ddb30f.
+All prior Stdlib source-only/standby terminals were invalidated by resumption.
+No unmerged compiler dependency is accepted; checked PR613 handoff SHA256 is
+fb62f1b4b24c26bd29d92ac7f544f30e9613be5add263a85f1ea00c168cb71bf.
+
+Fresh native build, public16+3 offline acceptance and all18 actual compiler
+validators/inversions passed on the unchanged rebased candidate. Final API/audit
+text now reflects merged support; exact final-byte checks are retained under
+/home/gust/phase26-recovery/stdlib-wrapper-20261023/publication-qualification-v2/.
+Next gates: final-byte checks, own draft PR/exact-head CI, resolved reviews,
+readiness and merge; checked handoff/terminal follows actual merge. A branch's
+DONE roadmap row is prospective until that merge satisfies the stated gate.
+Compiler owner retains final targeted wrapper audit, R5/R6 and final-main
+Historical qualification. No full Phase26.1 closure is claimed. OD23 resources
+remain excluded, no raw workaround or fixed/tmp reservation is introduced.
+No compiler-owned source, registry, guard or workflow is edited by this patch.
+
+---
+
 ## Active Cranelift — Phase26.1 read-only input copy (2026-10-23)
 
 Owner: existing compiler agent ea414019-6671-4c02-a629-b705e64769fb.
