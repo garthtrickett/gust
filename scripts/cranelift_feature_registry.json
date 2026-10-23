@@ -48056,6 +48056,78 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "readonly_input_copy_successor_v1": {
+      "predecessor_main": "0b5e3ad5dc832779aa8c76ed5d54a3f235bcb953",
+      "owner": "cranelift",
+      "guard": "guard-cranelift-phase26-readonly-input-copy",
+      "phase26_1_status": "OPEN",
+      "operational_state_excluded": "GUST_LANE_STATE.md",
+      "changed_files": [
+        {
+          "path": ".github/workflows/pr-fast.yml",
+          "previous_digest": "b8020ac72864fb0f57bb1e828f2962731de21c7851ce5ea6f7ca6d0aa96afdc6",
+          "current_digest": "c33e17ee3c5c60999986d106485e62cc94964f0edc931724beb045baf050cd0d"
+        },
+        {
+          "path": "justfile",
+          "previous_digest": "73716ee826d53c0c2cd98e226574c7837c50cc8791667eefee310f5e29ffaef7",
+          "current_digest": "52c29911d94ac5252a1297321e331fe860a4dc1c8ad2e13bf8a407997d0a715c"
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "d44721bb15c87df49b62dc9be7453e72b6107d8682e1fd808344a05b98d9233f",
+          "current_digest": "883af9023886297180487c39d9d42b62e52aab0fdf06cff41a336c3524e4ece6"
+        },
+        {
+          "path": "scripts/phase26_ticket_composition_registration.py",
+          "previous_digest": "629439a4c5c8b520eca846f790ecf8073a84b31fa4835f43cf5085efe02a93c0",
+          "current_digest": "59bdd51a02e9c190648b00951219ef34965bf70f415b44fb4e822acbcd371551"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/collection_provenance.rs",
+          "previous_digest": "0243ffc214ed9f0bf1de55a82d7b7c2efba03c4524ba604ea3a1271725d66d42",
+          "current_digest": "07d6d5fe1a0c7c9ad9d222c3a1d8451697fdfc9e3c3b02afd80666ad616cb740"
+        }
+      ],
+      "added_files": [
+        {
+          "path": "scripts/phase26_readonly_input_copy_registration.py",
+          "digest": "32a506dcc0675d48b994b3e6ebb91316b32fdcbb70f035eda7299c6d7dc6fba7"
+        },
+        {
+          "path": "compiler/experiments/cranelift/readonly-input-copy/predecessor-baseline.json.gz",
+          "digest": "068fb4b87c8c09f5934e68c654a8882f57e79fa685cc1c0d032855d83de4ef50"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_READONLY_INPUT_COPY.md",
+          "digest": "77b80b0a3a383cd52a40fdfe3d4954aeae388af8686464e7ca57a488c3de342f"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/testdata/scoped_readonly_input_copy_producer.canonical",
+          "digest": "d0237632f089c71231688a02a896cdd7bce87709710033c447c4f9f1aebb30fc"
+        },
+        {
+          "path": "scripts/phase26_readonly_input_copy_guard.py",
+          "digest": "720b16c34847faacf1b366979664d8e6ce45f66baee49a11a47ccba92bba1d48"
+        },
+        {
+          "path": "tests/cranelift/phase26_readonly_input_copy.gst",
+          "digest": "d4f54baa72d615c0093d7bd237d65892b51090f49c273bb5d3083db60efc5f8f"
+        }
+      ],
+      "text_owned_digest": "568d201f4ff20c10c0da26483aa7cf76ec9ad653ef3707a7ce0c16a035039ddc",
+      "projections": {
+        "r4_text": "76de1d484bb1499ae630ee2fbd657055494859f930b03110d0cf6feb4834cca6",
+        "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
+        "filename": "96f3433a10f5c471c4b0bce8f229ea8394760ead5096f0adb7157bdac5487130",
+        "r3_record": "687253a71d349b071c85c4cfd27204757163d6c4445ac1d008b7dbbfc8b6622f",
+        "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
+        "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
+        "r4_record": "af9e1dda3c658acf7dda27ec0755cfde6b8ae3ba61073afdfff15f50c2e3972f",
+        "text": "d377bc97d2c3d957318e2c22de997a60549dcf7404170d0fba9f49ae966043cf"
+      },
+      "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
+    },
     "closed_ticket_composition_successor_v1": {
       "predecessor_main": "8acaa88f30da775c018dde38eea3800bda66c783",
       "owner": "cranelift",

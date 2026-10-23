@@ -884,6 +884,18 @@ jobs:
             build/guards/phase26_ticket_composition/
             build/guards/phase26_ticket_composition_imported/
 
+      - name: Phase 26 read-only input copy qualification
+        run: just guard-cranelift-phase26-readonly-input-copy
+
+      - name: Retain read-only input copy evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase26-readonly-input-copy
+          path: |
+            build/guards/phase26_readonly_input_copy/
+            build/guards/phase26_readonly_input_copy_imported/
+
       - name: Phase 26 FFI position policy
         run: just guard-cranelift-phase26-ffi-position-policy
 

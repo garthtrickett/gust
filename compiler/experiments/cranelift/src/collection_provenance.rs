@@ -286,6 +286,29 @@ fn call_actuals(program: &Program, call: &Node, target: &Function,
 }
 
 
+// A copied header can supply an input borrow with the same live backing
+// history. It cannot acquire a second executable collection-operation history.
+// Keep this check at the declaration: the predecessor's copied-Append control
+// must still reject before any alias operation is admitted. The enclosing
+// closed caller check independently rejects assignments and arbitrary effects.
+fn copied_input_only(program: &Program, roots: &[usize], binding: &str,
+    budget: &mut WorkBudget) -> Result<bool, Box<dyn Error>> {
+    let mut pending = roots.to_vec();
+    let mut seen = HashSet::new();
+    while let Some(index) = pending.pop() {
+        budget.charge(1)?;
+        if !seen.insert(index) { continue; }
+        let value = program.nodes.get(index).ok_or_else(|| invalid(
+            "collection copied input use is out of bounds"))?;
+        if value.collection_intrinsic.is_some() && child(program, value, 0)
+            .is_some_and(|receiver| receiver.kind == "LocalRead" && receiver.text == binding) {
+            return Ok(false);
+        }
+        pending.extend(value.children.iter().copied());
+    }
+    Ok(true)
+}
+
 fn check_caller(program: &Program, caller: &Function,
     scoped: &HashMap<String, (usize, bool)>, allowed: &mut HashSet<usize>,
     results: &HashMap<usize, &crate::ticket_result::TicketResult>,
@@ -336,6 +359,21 @@ fn check_caller(program: &Program, caller: &Function,
                         brand: plan.brand.clone(), count: 0,
                     });
                     continue;
+                }
+                let source = &program.nodes[value];
+                if source.kind == "LocalRead" && source.children.is_empty() {
+                    if let Some(storage) = storages.get(&source.text).filter(|storage|
+                        storage.ty == source.ty && statement.ty == storage.ty &&
+                        arenas.contains(&storage.arena)) {
+                        budget.charge(storage.ty.len() + storage.layout.len() +
+                            storage.brand.len() + storage.arena.len() + 1)?;
+                        if copied_input_only(program, &body.children[position + 1..],
+                            &statement.text, budget)? {
+                            let copied = storage.clone();
+                            storages.insert(statement.text.clone(), copied);
+                            continue;
+                        }
+                    }
                 }
                 if matches!(statement.ty.as_str(), "Int" | "Byte" | "Bool") &&
                     pure_scalar(program, value, &immutable) {
@@ -1231,5 +1269,43 @@ mod tests {
             declaration_index);
         let error = crate::full_program::parse(&mutant).unwrap_err().to_string();
         assert!(error.contains("collection caller has an effectful scalar actual"), "{error}");
+    }
+
+    #[test]
+    fn actual_source_read_only_copy_keeps_created_input_history() {
+        let canonical = include_str!("testdata/scoped_readonly_input_copy_producer.canonical");
+        let (rows, body) = source_caller_body(canonical);
+        let copies: Vec<_> = body.iter().filter_map(|index| rows.get(index))
+            .filter(|row| row[1] == hex("LocalDeclare") && row[3] == hex("source_copy"))
+            .collect();
+        assert_eq!(copies.len(), 1, "the source must really copy its input");
+        assert_eq!(copies[0][11], "1");
+        let source = rows.get(&copies[0][12].parse::<usize>().unwrap()).unwrap();
+        assert_eq!((source[1], source[3]),
+            (hex("LocalRead").as_str(), hex("input").as_str()));
+        let program = crate::full_program::parse(canonical)
+            .expect("an exact read-only input copy retains its live Create history");
+        let proofs = crate::scoped_byte_copy::validate(&program).unwrap();
+        assert_eq!(proofs.len(), 2);
+    }
+
+    #[test]
+    fn copied_input_cannot_invent_a_created_storage_origin() {
+        let canonical = include_str!("testdata/scoped_readonly_input_copy_producer.canonical");
+        crate::full_program::parse(canonical).expect("actual source baseline must pass");
+        let (rows, body) = source_caller_body(canonical);
+        let copy = body.iter().filter_map(|index| rows.get(index))
+            .find(|row| row[1] == hex("LocalDeclare") && row[3] == hex("source_copy"))
+            .expect("actual source copy declaration");
+        let source = copy[12].parse::<usize>().unwrap();
+        assert_eq!(rows[&source][3], hex("input"));
+        for name in ["unknown_input", "destination"] {
+            let changed = changed_node(canonical, source, 3, &hex(name));
+            let error = crate::full_program::parse(&changed)
+                .expect_err("a copy cannot invent backing from a name or Arena")
+                .to_string();
+            assert!(error.contains("collection caller local has an unproved initializer"),
+                "REJECTED (different assertion): {error}");
+        }
     }
 }
