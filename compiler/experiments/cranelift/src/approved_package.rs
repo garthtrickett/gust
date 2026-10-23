@@ -2,8 +2,8 @@
 //!
 //! A package directory is untrusted input. Only `VerifiedPackage::admit` can
 //! produce link inputs, and the linker receives private copies of the bytes
-//! whose hashes were verified. The production key table remains empty until a
-//! release signing identity and revocation owner are designated.
+//! whose hashes were verified. Production trust is pinned to the operator-owned
+//! release identity and snapshot; package input cannot replace either.
 
 use std::collections::BTreeSet;
 use std::error::Error;
@@ -70,18 +70,10 @@ pub struct TrustSnapshot<'a> {
     pub withdrawn_digests: &'a [[u8; 32]],
 }
 
-// Deliberately no test or development key in production. The release signer,
-// snapshot epoch, and withdrawal owner are separate OPEN release decisions.
-pub const PRODUCTION_SNAPSHOT: TrustSnapshot<'static> = TrustSnapshot {
-    release: "unassigned",
-    release_epoch: 0,
-    issued_unix_seconds: 0,
-    expires_unix_seconds: 0,
-    minimum_package_epoch: 0,
-    keys: &[],
-    revoked_keys: &[],
-    withdrawn_digests: &[],
-};
+// Dedicated operator-provisioned identity; fixture keys remain cfg(test)-only.
+#[path = "production_trust.rs"]
+mod production_trust;
+pub const PRODUCTION_SNAPSHOT: TrustSnapshot<'static> = production_trust::SNAPSHOT;
 
 /// This registry is release data, not a lookup derived from a request path or
 /// an environment variable. The first release package is populated only after
@@ -92,7 +84,7 @@ pub struct RegisteredPackage {
     pub exports: &'static [&'static str],
 }
 
-pub const PRODUCTION_REGISTRY: &[RegisteredPackage] = &[];
+pub const PRODUCTION_REGISTRY: &[RegisteredPackage] = production_trust::REGISTRY;
 
 /// Versioned, exact-name projection of Phase 17 opening helper_inventory rows
 /// marked runtime_public_surface/exact_c_symbol, cross-checked with current
@@ -167,6 +159,16 @@ pub fn verify_foreign_coverage(
     }
     if requested_runtime != Some(worker_runtime) {
         return Err(reject("runtime archive differs from worker-owned package"));
+    }
+    if selected.id == production_trust::PACKAGE {
+        let manifest = parse_manifest(production_trust::MANIFEST)?;
+        let pin = manifest.artifacts.iter().find(|artifact|
+            artifact.name == "gust-runtime-package.a")
+            .ok_or_else(|| reject("production runtime pin absent"))?;
+        let bytes = fs::read(worker_runtime).map_err(|_| reject("production runtime absent"))?;
+        if <[u8; 32]>::from(Sha256::digest(bytes)) != pin.hash {
+            return Err(reject("production runtime differs from signed artifact"));
+        }
     }
     if other_externs.is_empty() {
         return Ok(());
@@ -600,6 +602,7 @@ fn verify_signature_at(
     snapshot: &TrustSnapshot<'_>,
     now_unix_seconds: u64,
 ) -> Result<[u8; 32], PackageError> {
+    production_trust::check_snapshot(snapshot)?;
     if snapshot.keys.is_empty()
         || snapshot.release == "unassigned"
         || snapshot.issued_unix_seconds == 0
@@ -851,9 +854,13 @@ pub struct VerifiedPackage {
     link_hashes: Vec<[u8; 32]>,
     definitions: BTreeSet<String>,
     manifest_digest: [u8; 32],
+    production_link: Option<production_trust::StaticLink>,
 }
 
 impl VerifiedPackage {
+    pub fn production_link(&self) -> Option<&production_trust::StaticLink> {
+        self.production_link.as_ref()
+    }
     pub fn package_id(&self) -> &str {
         &self.package_id
     }
@@ -870,6 +877,7 @@ impl VerifiedPackage {
         self.manifest_digest
     }
     pub fn recheck_staged_bytes(&self) -> Result<(), PackageError> {
+        if let Some(profile) = &self.production_link { profile.recheck()?; }
         for (path, expected) in self.link_inputs.iter().zip(&self.link_hashes) {
             let mut input = regular_file(path)?;
             let mut hash = Sha256::new();
@@ -909,6 +917,10 @@ impl VerifiedPackage {
             .read_to_end(&mut manifest_bytes)
             .map_err(|_| reject("manifest read"))?;
         let manifest = parse_manifest(&manifest_bytes)?;
+        let production = registry.id == production_trust::PACKAGE;
+        if production && manifest_bytes != production_trust::MANIFEST {
+            return Err(reject("production manifest differs from worker-pinned artifact set"));
+        }
         if manifest.package_id != registry.id {
             return Err(reject("package ID mismatch"));
         }
@@ -1000,7 +1012,11 @@ impl VerifiedPackage {
                     return Err(reject("signed exported symbol absent"));
                 }
             }
+            let production_link = if production {
+                Some(production_trust::StaticLink::stage(&stage)?)
+            } else { None };
             Ok(Self {
+                production_link,
                 package_id: manifest.package_id.clone(),
                 release: manifest.release.clone(),
                 staged_dir: stage.clone(),
@@ -2021,4 +2037,5 @@ mod tests {
     }
 
     include!("approved_zlib_tests.rs");
+    include!("production_trust_tests.rs");
 }

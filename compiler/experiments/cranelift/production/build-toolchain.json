@@ -1,0 +1,121 @@
+{
+  "format": "gust.production_build_toolchain.v1",
+  "ubuntu": "24.04",
+  "snapshot": "20261023T000000Z",
+  "rust_toolchain": "1.97.1",
+  "rustc_commit": "8bab26f4f",
+  "packages": [
+    {
+      "package": "libc6",
+      "version": "2.39-0ubuntu8.9",
+      "filename": "pool/main/g/glibc/libc6_2.39-0ubuntu8.9_amd64.deb",
+      "sha256": "ff5557d99b51f761c4b7c92368b9cc45565eda17df9bf9eb4b134d09825008be",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/glibc/libc6_2.39-0ubuntu8.9_amd64.deb"
+    },
+    {
+      "package": "libc6-dev",
+      "version": "2.39-0ubuntu8.9",
+      "filename": "pool/main/g/glibc/libc6-dev_2.39-0ubuntu8.9_amd64.deb",
+      "sha256": "e13d5fcc1b2a86f75bca8e0026a8e39f24fe97ca86e92be79991f8697eb1306f",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/glibc/libc6-dev_2.39-0ubuntu8.9_amd64.deb"
+    },
+    {
+      "package": "libc-dev-bin",
+      "version": "2.39-0ubuntu8.9",
+      "filename": "pool/main/g/glibc/libc-dev-bin_2.39-0ubuntu8.9_amd64.deb",
+      "sha256": "77db23aba4582d034d9a95e4818a16e7e51a2d4fb17a9204439688e288d67f4c",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/glibc/libc-dev-bin_2.39-0ubuntu8.9_amd64.deb"
+    },
+    {
+      "package": "gcc-13",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "filename": "pool/main/g/gcc-13/gcc-13_13.3.0-6ubuntu2~24.04.1_amd64.deb",
+      "sha256": "7438ff160b020a74970672189ecae25d0ca650de6d7f543f12a3134192cffbd9",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/gcc-13/gcc-13_13.3.0-6ubuntu2~24.04.1_amd64.deb"
+    },
+    {
+      "package": "gcc-13-x86-64-linux-gnu",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "filename": "pool/main/g/gcc-13/gcc-13-x86-64-linux-gnu_13.3.0-6ubuntu2~24.04.1_amd64.deb",
+      "sha256": "a134b0319a82d14581b3a14820d2832af4ec9778ed8b9b4ddaeecfb0555ec325",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/gcc-13/gcc-13-x86-64-linux-gnu_13.3.0-6ubuntu2~24.04.1_amd64.deb"
+    },
+    {
+      "package": "cpp-13",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "filename": "pool/main/g/gcc-13/cpp-13_13.3.0-6ubuntu2~24.04.1_amd64.deb",
+      "sha256": "c7535331fbb183c802c3bf4b6b210872dcc12d0421b3212b3c4b940f2c59ed3a",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/gcc-13/cpp-13_13.3.0-6ubuntu2~24.04.1_amd64.deb"
+    },
+    {
+      "package": "cpp-13-x86-64-linux-gnu",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "filename": "pool/main/g/gcc-13/cpp-13-x86-64-linux-gnu_13.3.0-6ubuntu2~24.04.1_amd64.deb",
+      "sha256": "2ca48bf0c2d6465bc39322899715a85d934b4d7442dd5586a7bebbe3ce0f806b",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/gcc-13/cpp-13-x86-64-linux-gnu_13.3.0-6ubuntu2~24.04.1_amd64.deb"
+    },
+    {
+      "package": "gcc-13-base",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "filename": "pool/main/g/gcc-13/gcc-13-base_13.3.0-6ubuntu2~24.04.1_amd64.deb",
+      "sha256": "e859aca26585bb91113a451f1e66bc0e5283cb08797d679aacc1d936ae6dff8e",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/gcc-13/gcc-13-base_13.3.0-6ubuntu2~24.04.1_amd64.deb"
+    },
+    {
+      "package": "libgcc-13-dev",
+      "version": "13.3.0-6ubuntu2~24.04.1",
+      "filename": "pool/main/g/gcc-13/libgcc-13-dev_13.3.0-6ubuntu2~24.04.1_amd64.deb",
+      "sha256": "cd689db2691edaa10f37329307292796bb599e722e0505c79e14caaa1fe9a93a",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/gcc-13/libgcc-13-dev_13.3.0-6ubuntu2~24.04.1_amd64.deb"
+    },
+    {
+      "package": "binutils",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/binutils_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "b3b5a84181a38fd191820b2cdcc1a3eeb1cd6333ad472f2092f96e81047e9c74",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/binutils_2.42-4ubuntu2.10_amd64.deb"
+    },
+    {
+      "package": "binutils-common",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/binutils-common_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "d136073f5e2153f3df11c1d08d66727b9466b28ff483f50085f14bbe3464b5ee",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/binutils-common_2.42-4ubuntu2.10_amd64.deb"
+    },
+    {
+      "package": "binutils-x86-64-linux-gnu",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/binutils-x86-64-linux-gnu_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "1e510a15f30208d39edcd840e48f26a77bbca7c417805eeccb1e3f7de198ef29",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/binutils-x86-64-linux-gnu_2.42-4ubuntu2.10_amd64.deb"
+    },
+    {
+      "package": "libbinutils",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/libbinutils_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "064dce00ce94e1fc2d33779cb0071088f4c8aac79e85345f2e78a020f7d14699",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/libbinutils_2.42-4ubuntu2.10_amd64.deb"
+    },
+    {
+      "package": "libctf0",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/libctf0_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "7ec86d697c3668503c85f308a6832f092075b5880ad002f22185264da0bd4645",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/libctf0_2.42-4ubuntu2.10_amd64.deb"
+    },
+    {
+      "package": "libctf-nobfd0",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/libctf-nobfd0_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "da352eb7fa6c4369d2a6c1e5e680f574eda2e38576563326b18d9e47e61c4078",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/libctf-nobfd0_2.42-4ubuntu2.10_amd64.deb"
+    },
+    {
+      "package": "libsframe1",
+      "version": "2.42-4ubuntu2.10",
+      "filename": "pool/main/b/binutils/libsframe1_2.42-4ubuntu2.10_amd64.deb",
+      "sha256": "72093fb456864db55f1352bfa5e952a94f7abaff64e71dff1fbf001db1984564",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/b/binutils/libsframe1_2.42-4ubuntu2.10_amd64.deb"
+    }
+  ]
+}

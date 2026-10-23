@@ -46,9 +46,7 @@ for case in compress decompress empty_decompress; do
     fi
     test "$status" -gt 0 && test "$status" -lt 128
     test ! -e "$case_dir/never-execute" && test ! -L "$case_dir/never-execute"
-    rg -F 'stage=canonical_mir_validation kind=invalid_canonical_mir' \
-        "$case_dir/compile.stderr" >/dev/null
-    rg -F 'byte-span Call requires exact signed approved-package admission' \
+    rg -F 'approved native package rejected: missing package' \
         "$case_dir/compile.stderr" >/dev/null
     python3 scripts/phase26_r3_source_projection.py "$case" \
         "$case_dir/keep/program.mir.bundle"

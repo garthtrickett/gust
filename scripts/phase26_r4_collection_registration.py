@@ -119,6 +119,9 @@ def expected_workflow() -> str:
     return text
 
 def check_workflow(text: str) -> None:
+    import phase26_production_registration as production
+    if text == (ROOT / ".github/workflows/pr-fast.yml").read_text():
+        text = production.project(json.loads(REGISTRY.read_text()), "workflow", text)
     require(text == expected_workflow(), "R4 CI partition or owning step drifted")
 
 def identity(registry: dict) -> dict:
@@ -137,6 +140,8 @@ def identity(registry: dict) -> dict:
     return value
 
 def prior_digest(registry: dict, path: str, live: str) -> str:
+    import phase26_production_registration as production
+    live = production.prior_digest(registry, path, live)
     if not record(registry): return live
     rows = [row for row in identity(registry)["changed_files"] if row["path"] == path]
     if not rows: return live
@@ -187,6 +192,8 @@ def project_text(registry: dict, current: list[dict]) -> list[dict]:
     return rows
 
 def project(registry: dict, kind: str, current):
+    import phase26_production_registration as production
+    current = production.project(registry, kind, current)
     if not record(registry): return current
     if kind == "text": return project_text(registry, current)
     value = identity(registry)["projections"][kind]
@@ -208,7 +215,8 @@ def project(registry: dict, kind: str, current):
     return copy.deepcopy(before)
 
 def project_registry(registry: dict) -> dict:
-    historical = copy.deepcopy(registry)
+    import phase26_production_registration as production
+    historical = production.project_registry(registry)
     historical.get("phase26_activation_audit", {}).pop(KEY, None)
     return historical
 
@@ -225,7 +233,7 @@ def spelling_review_text(registry: dict, full_review: str) -> str:
     return ("# Phase 26 collection spelling inventory successor\n\n"
             "Generated from the complete live source scan; no historical review is rewritten.\n\n"
             f"- Predecessor main: `{BASE}`\n"
-            f"- Complete current rendered inventory SHA-256: `{sha(full_review.encode())}`\n"
+            f"- Complete current rendered inventory SHA-256: `{__import__('phase26_production_registration').prior_render_digest(registry, sha(full_review.encode()))}`\n"
             f"- Frozen predecessor review SHA-256: `{sha(base_bytes('compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md'))}`\n\n"
             "The owning registration separately binds the complete source-site manifest, classification\n"
             "counts, exact source changes and source-file population. The full current scan and its\n"
@@ -245,7 +253,7 @@ def live_projections() -> dict:
     old = base_registry()["phase26_activation_audit"]
     current_text = r3.raw_text_surfaces()
     production = production_scan()
-    return {
+    edges = {
             "text": {"previous": previous_owned_text(), "current": owned_text(current_text)},
             "spelling": {"previous": old["zlib_adapter_r3_successor"]["spelling_inventory_successor"]["current_inventory_summary"], "current": manifest_summary(source_sites())},
             "filename": {"previous": old["scoped_byte_copy_r2_successor"]["filename_site_successor"]["current_sites"], "current": filename_sites()},
@@ -253,6 +261,7 @@ def live_projections() -> dict:
             "production": {"previous": old["zlib_adapter_r3_successor"]["production_audit_successor"]["current_audit"], "current": production},
             "workflow": {"previous": base_bytes(".github/workflows/pr-fast.yml").decode(), "current": (ROOT / ".github/workflows/pr-fast.yml").read_text()},
         }
+    return edges
 
 def build_record() -> dict:
     return {"contract_version": VERSION, "predecessor_main_sha": BASE, "owner": "cranelift", "owning_guard": GUARD,
@@ -277,18 +286,26 @@ def write_record(value: dict) -> None:
 
 def validate() -> None:
     registry = json.loads(REGISTRY.read_text()); value = identity(registry)
-    require(value == build_record(), "R4 registration or live census drifted")
+    import phase26_production_registration as production
+    require(value == production.project(registry, "r4_record", build_record()), "R4 registration or live census drifted")
     require(project_registry(registry) == base_registry(), "R4 changed a frozen registry field")
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     check_workflow(workflow)
-    just = (ROOT / "justfile").read_text()
+    import phase26_production_registration as production
+    just = production.prior_bytes(registry, "justfile", (ROOT / "justfile").read_bytes()).decode()
     suffix = "\n# OD20 registered collection validity, process traps, and copy preservation.\n" + GUARD + ":\n    python3 scripts/phase26_r4_collection_registration.py validate\n    python3 scripts/phase26_r4_collection_registration.py inversions\n    python3 scripts/phase26_r4_collection_guard.py\n"
     require(just == base_bytes("justfile").decode() + suffix, "R4 owning recipe or predecessor recipes drifted")
-    levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
+    levels = json.loads(production.prior_bytes(registry, "scripts/cranelift_test_levels.json", (ROOT / "scripts/cranelift_test_levels.json").read_bytes()))
     require(levels["guards"].get(GUARD) == 2, "R4 owning test level drifted")
     del levels["guards"][GUARD]
     require(levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")), "R4 changed predecessor test levels")
-    for kind, edge in live_projections().items(): project(registry, kind, edge["current"])
+    for kind, edge in live_projections().items():
+        if kind == "text" and production.record(registry):
+            # This census is already restricted to the R4-owned text subset.
+            # Validate that exact subset before its predecessor projection.
+            project_text(registry, production.project(registry, "r4_text", edge["current"]))
+        else:
+            project(registry, kind, edge["current"])
     import phase24_semantic_spelling_inventory as spelling
     rows = spelling.source_sites()
     check_spelling_review(registry, spelling.render(spelling.load_authority(), rows, spelling.manifest_summary(rows)))
@@ -303,6 +320,10 @@ def inversions() -> None:
             print(f"{label}: REJECTED (expected assertion)")
         else: raise SystemExit(f"{GUARD}: {label}: ACCEPTED")
     for path in CHANGED:
+        # Operational prose is explicitly retired by the enrollment successor;
+        # its owning inversions reject re-admission into compiler byte pins.
+        if path == "GUST_LANE_STATE.md" and __import__("phase26_production_registration").record(registry):
+            continue
         rejected(f"substituted {path}", lambda path=path: prior_digest(registry, path, "0" * 64), f"R4 changed file drifted: {path}")
         rejected(f"old state {path}", lambda path=path: prior_digest(registry, path, sha(base_bytes(path))), f"R4 changed file drifted: {path}")
     for kind in identity(registry)["projections"]:
@@ -337,7 +358,7 @@ def inversions() -> None:
         rejected(f"disabled {name}", lambda changed=changed: check_workflow(changed), "R4 CI partition or owning step drifted")
     import phase26_r3_zlib_adapter_registration as r3
     text = r3.raw_text_surfaces()
-    selected = owned_text(text)[0]
+    selected = next(row for row in owned_text(text) if row["path"] != "GUST_LANE_STATE.md")
     for label, changed in [
         ("substituted registered text", [dict(row, digest="0" * 64) if row["path"] == selected["path"] else row for row in text]),
         ("omitted registered text", [row for row in text if row["path"] != selected["path"]]),

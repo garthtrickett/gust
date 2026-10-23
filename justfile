@@ -24561,3 +24561,9 @@ guard-cranelift-phase26-collection-validity:
     python3 scripts/phase26_r4_collection_registration.py validate
     python3 scripts/phase26_r4_collection_registration.py inversions
     python3 scripts/phase26_r4_collection_guard.py
+
+# Operator-enrolled production signing and exact offline static package profile.
+guard-cranelift-phase26-production-trust:
+    python3 scripts/phase26_production_registration.py validate
+    python3 scripts/phase26_production_registration.py inversions
+    python3 scripts/phase26_production_guard.py
