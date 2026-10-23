@@ -27,6 +27,7 @@ CHANGED = (
     "scripts/phase26_r4_collection_registration.py",
     "scripts/phase26_r3_zlib_adapter_registration.py",
     "scripts/phase26_r3_zlib_adapter_guard.sh",
+    "scripts/cranelift_ci_family.py", "scripts/cranelift_test_levels.py",
 )
 ADDED = (
     "compiler/experiments/cranelift/src/production_trust.rs",
@@ -51,7 +52,7 @@ def require(ok, reason):
 def sha(raw): return hashlib.sha256(raw).hexdigest()
 def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
 BASELINE = "compiler/experiments/cranelift/production/predecessor-baseline.json.gz"
-BASELINE_SHA256 = "c34040c36e98be10e2ad3deee025477455c598fe735dbd9124369a16e33099bb"
+BASELINE_SHA256 = "dc24681e9e89afe49a579db4596c6fdf5afc88f63d68b22e080d12e0738ee732"
 
 def decode_baseline(raw):
     require(sha(raw) == BASELINE_SHA256, "production predecessor baseline bytes drifted")
@@ -205,7 +206,36 @@ def expected_workflow():
     for before, after in replacements:
         require(text.count(before) == 1, "production workflow predecessor obligation drifted")
         text = text.replace(before, after, 1)
-    return text
+    # Preserve every evidence command verbatim on an independent runner. The
+    # aggregate final gate must await both jobs; neither deadline is extended.
+    first = "      - name: Phase 26 local field zero evidence\n"
+    after = "      - name: Phase 26 packed borrowed repr C layout\n"
+    require(text.count(first) == text.count(after) == 1,
+            "production source evidence split anchors drifted")
+    start, end = text.index(first), text.index(after)
+    evidence = text[start:end]
+    text = text[:start] + text[end:]
+    ffi = text.index("  phase26-ffi-position:\n")
+    setup_start = text.index("    steps:\n", ffi)
+    setup_end = text.index("      - name: Pin existing production qualification dependencies\n", setup_start)
+    setup = text[setup_start:setup_end]
+    job = ("  phase26-value-evidence:\n"
+           "    name: Phase 26 source value evidence\n"
+           "    runs-on: ubuntu-24.04\n    timeout-minutes: 60\n    needs: build\n\n" + setup +
+           "      - name: Pin existing source evidence dependencies\n"
+           "        run: python3 scripts/phase26_production_toolchain.py install-ci build/production-source-evidence-toolchain\n\n" + evidence)
+    require(text.count("  final:\n") == 1, "production final gate anchor drifted")
+    text = text.replace("  final:\n", job + "  final:\n", 1)
+    needs = "    needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]"
+    require(text.count(needs) == 1, "production final prerequisites drifted")
+    return text.replace(needs, needs[:-1] + ", phase26-value-evidence]", 1)
+
+def expected_justfile():
+    text = base_bytes("justfile").decode()
+    before = '    if [ "$(rg -c -F \'bash scripts/install-just-ci.sh "$HOME/.local/bin"\' "$workflow")" != "6" ]; then\n      echo "PR Fast must install pinned just in its build, Level 1, static native, Phase 20 parity, Phase 26 FFI position, and manifest enforcement jobs."\n      exit 1\n    fi\n    phase26_ffi_job=$(sed -n \'/^  phase26-ffi-position:/,/^  final:/p\' "$workflow")\n    if [ "$(printf \'%s\\n\' "$phase26_ffi_job" | rg -c -F \'bash scripts/install-just-ci.sh "$HOME/.local/bin"\')" != "1" ]; then\n      echo "PR Fast Phase 26 FFI position job must install pinned just exactly once."\n      exit 1\n    fi\n\n'
+    after = '    if [ "$(rg -c -F \'bash scripts/install-just-ci.sh "$HOME/.local/bin"\' "$workflow")" != "7" ]; then\n      echo "PR Fast must install pinned just in its build, Level 1, static native, Phase 20 parity, Phase 26 FFI position, source value evidence, and manifest enforcement jobs."\n      exit 1\n    fi\n    for phase26_job in phase26-ffi-position phase26-value-evidence; do\n      phase26_steps=$(awk -v wanted="$phase26_job:" \'$0 == "  " wanted { active=1; next } active && /^  [a-zA-Z0-9_-]+:/ { exit } active { print }\' "$workflow")\n      if [ "$(printf \'%s\\n\' "$phase26_steps" | rg -c -F \'bash scripts/install-just-ci.sh "$HOME/.local/bin"\')" != "1" ]; then\n        echo "PR Fast $phase26_job must install pinned just exactly once."\n        exit 1\n      fi\n    done\n\n'
+    require(text.count(before) == 1, "production CI-surface predecessor obligation drifted")
+    return text.replace(before, after, 1).replace('needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]', 'needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position, phase26-value-evidence]')
 
 def check_workflow(text):
     require(text == expected_workflow(), "production owning CI step, toolchain or evidence obligation drifted")
@@ -237,9 +267,15 @@ def validate():
     check_files(registry)
     require(project_registry(registry) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
             "production changed predecessor registry")
+    for path in ("scripts/cranelift_ci_family.py", "scripts/cranelift_test_levels.py"):
+        before = base_bytes(path).decode()
+        old = "phase26-ffi-position]"
+        require(before.count(old) == 1 and (ROOT / path).read_text() ==
+                before.replace(old, "phase26-ffi-position, phase26-value-evidence]", 1),
+                "production required parallel evidence dependency guard drifted")
     production_policy(registry)
     check_workflow((ROOT / ".github/workflows/pr-fast.yml").read_text())
-    require((ROOT / "justfile").read_text() == base_bytes("justfile").decode() +
+    require((ROOT / "justfile").read_text() == expected_justfile() +
             "\n# Operator-enrolled production signing and exact offline static package profile.\n" +
             GUARD + ":\n    python3 scripts/phase26_production_registration.py validate\n"
             "    python3 scripts/phase26_production_registration.py inversions\n"
@@ -303,7 +339,8 @@ def inversions():
     workflow = expected_workflow()
     for command in ["just " + GUARD,
                     "python3 scripts/phase26_production_toolchain.py install-ci build/production-build-toolchain",
-                    "python3 scripts/phase26_production_toolchain.py install-ci build/production-test-toolchain"]:
+                    "python3 scripts/phase26_production_toolchain.py install-ci build/production-test-toolchain",
+                    "python3 scripts/phase26_production_toolchain.py install-ci build/production-source-evidence-toolchain"]:
         require(workflow.count("        run: " + command + "\n") == 1, "CI inversion mechanism absent")
         for replacement in ["", "        run: true\n"]:
             changed = workflow.replace("        run: " + command + "\n", replacement, 1)
@@ -313,6 +350,15 @@ def inversions():
     changed = workflow.replace("        run: just " + GUARD + "\n",
                                "        if: false\n        run: just " + GUARD + "\n", 1)
     rejected("disabled production qualification", lambda: check_workflow(changed), "production owning CI step")
+    for before, after in [
+        (", phase26-value-evidence]", "]"),
+        ("        run: just guard-cranelift-phase26-call-return-zero-evidence\n", ""),
+        ("    name: Phase 26 source value evidence\n    runs-on: ubuntu-24.04\n    timeout-minutes: 60",
+         "    name: Phase 26 source value evidence\n    runs-on: ubuntu-24.04\n    timeout-minutes: 61"),
+    ]:
+        require(workflow.count(before) == 1, "split evidence inversion mechanism absent")
+        rejected("split evidence obligation", lambda before=before, after=after:
+                 check_workflow(workflow.replace(before, after, 1)), "production owning CI step")
     print(f"{GUARD}: production source pins, foreign forwarding and operational retirement inversions PASS")
 
 if __name__ == "__main__":

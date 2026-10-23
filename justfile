@@ -84,15 +84,17 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "6" ]; then
-      echo "PR Fast must install pinned just in its build, Level 1, static native, Phase 20 parity, Phase 26 FFI position, and manifest enforcement jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "7" ]; then
+      echo "PR Fast must install pinned just in its build, Level 1, static native, Phase 20 parity, Phase 26 FFI position, source value evidence, and manifest enforcement jobs."
       exit 1
     fi
-    phase26_ffi_job=$(sed -n '/^  phase26-ffi-position:/,/^  final:/p' "$workflow")
-    if [ "$(printf '%s\n' "$phase26_ffi_job" | rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"')" != "1" ]; then
-      echo "PR Fast Phase 26 FFI position job must install pinned just exactly once."
-      exit 1
-    fi
+    for phase26_job in phase26-ffi-position phase26-value-evidence; do
+      phase26_steps=$(awk -v wanted="$phase26_job:" '$0 == "  " wanted { active=1; next } active && /^  [a-zA-Z0-9_-]+:/ { exit } active { print }' "$workflow")
+      if [ "$(printf '%s\n' "$phase26_steps" | rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"')" != "1" ]; then
+        echo "PR Fast $phase26_job must install pinned just exactly once."
+        exit 1
+      fi
+    done
 
     python3 "$family_runner" validate
     python3 "$family_runner" check-pr-workflow "$workflow"
@@ -235,7 +237,7 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase19-close'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
-      'needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]'
+      'needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position, phase26-value-evidence]'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
       'name: gust-build'
