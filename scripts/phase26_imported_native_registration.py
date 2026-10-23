@@ -77,9 +77,16 @@ def prior_digest(registry, path, live):
     if not record(registry) or path not in CHANGED:
         return live
     pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
+    admitted = {pin["current_digest"], pin["previous_digest"]}
+    predecessor = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))
+    ticket = predecessor["phase26_activation_audit"]["scoped_ticket_publication_successor_v1"]
+    # Production's raw_digest already runs the ticket projection before its
+    # prior_digest runs it again. Admit only that exact frozen ticket coordinate;
+    # the physical file must still match this successor, even on a repeated pass.
+    admitted.update(item["previous_digest"] for item in ticket["changed_files"] if item["path"] == path)
     require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
         pin["previous_digest"] == sha(base_bytes(path)) and
-        live in (pin["current_digest"], pin["previous_digest"]),
+        live in admitted,
         f"R4 changed file drifted: {path} (import successor)")
     return pin["previous_digest"]
 
@@ -151,6 +158,10 @@ def prior_render_digest(registry, live):
     old = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))
     return old["phase26_activation_audit"]["scoped_ticket_publication_successor_v1"]["spelling_render_current_digest"]
 
+def workflow_predecessor(text):
+    require(text.count(STEP) == 1, "import owning CI step drifted")
+    return text.replace(STEP, "", 1)
+
 def current_projections():
     import phase26_ticket_publication_registration as ticket
     return ticket.current_projections()
@@ -207,6 +218,7 @@ def inversions():
 
     # First prove the successor is loaded and its physical patch is pinned.
     original_read = Path.read_bytes
+    import phase26_ticket_publication_registration as ticket
     for pin in identity(registry)["changed_files"]:
         path = pin["path"]
         require(pin["current_digest"] != pin["previous_digest"], "import pin did not move: " + path)
@@ -217,6 +229,9 @@ def inversions():
         with patch.object(Path, "read_bytes", rolled_back):
             rejected("rolled back " + path,
                 lambda pin=pin: prior_digest(registry, pin["path"], pin["previous_digest"]), "R4 changed file drifted")
+        once = ticket.prior_digest(registry, path, pin["current_digest"])
+        require(ticket.prior_digest(registry, path, once) == once,
+            "repeated ticket projection changed its frozen coordinate: " + path)
 
     changed = copy.deepcopy(registry)
     changed["phase26_activation_audit"][KEY]["changed_files"].append(dict(path=STATE))
@@ -278,6 +293,14 @@ def inversions():
     rejected("foreign ticket mutation", lambda: require(
         project_registry(changed) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
         "import changed frozen predecessor"), "import changed frozen predecessor")
+    workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
+    for label, changed in (
+        ("omitted", workflow.replace(STEP, "", 1)),
+        ("duplicated", workflow.replace(STEP, STEP + STEP, 1)),
+        ("conditional", workflow.replace(STEP, STEP.replace("        run:", "        if: false\n        run:"), 1)),
+    ):
+        rejected(label + " import owning CI step", lambda changed=changed:
+            workflow_predecessor(changed), "import owning CI step drifted")
     print(GUARD + ": pin, operational retirement and protected projection inversions PASS")
 
 if __name__ == "__main__":

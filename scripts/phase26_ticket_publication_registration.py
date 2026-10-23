@@ -120,6 +120,8 @@ def project_registry(registry):
     return result
 
 def workflow_predecessor(text):
+    if successor.record(json.loads(REGISTRY.read_text())):
+        text = successor.workflow_predecessor(text)
     require(text.count(STEP) == 1, "ticket owning CI step drifted")
     return text.replace(STEP, "", 1)
 

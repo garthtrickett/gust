@@ -48081,7 +48081,7 @@
         {
           "path": "scripts/phase26_ticket_publication_registration.py",
           "previous_digest": "77a26ccbcb073c8cdfeb198a368849df7c5eeb965a7b083bdaed1b677139f782",
-          "current_digest": "7e3692e7afd59a27c8117edfa8b06c4234e4b8f02ce929c51f4c60c19293a22c"
+          "current_digest": "5bb68e9f2bd4f395e7df090b47bf71e74ee29f9d5a75f8622998856beced7673"
         },
         {
           "path": "scripts/phase26_ticket_publication_guard.py",
@@ -48102,7 +48102,7 @@
       "added_files": [
         {
           "path": "scripts/phase26_imported_native_registration.py",
-          "digest": "e1715f86c8e04ba206a295ee240a66a56008f7fd4ba9c434d78cab10aa7b0d99"
+          "digest": "91c2f545971d59165ae8124d85eeea6c7629f7470a47d9d147e3e894030f107e"
         },
         {
           "path": "compiler/experiments/cranelift/imported-native/predecessor-baseline.json.gz",
