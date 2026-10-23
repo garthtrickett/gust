@@ -48056,6 +48056,952 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "production_trust_successor_v1": {
+      "predecessor_main": "c6916d3ede29d407f35e63fe222fcc8e01a80150",
+      "owner": "cranelift",
+      "guard": "guard-cranelift-phase26-production-trust",
+      "phase26_1_status": "OPEN",
+      "operational_state_excluded": "GUST_LANE_STATE.md",
+      "changed_files": [
+        {
+          "path": ".github/workflows/pr-fast.yml",
+          "previous_digest": "311ea7dfac1df432b0b94bf7be46cc8ff6ed85c28ec40186df2588b18d76fcbf",
+          "current_digest": "aa14f432f624d86a9473810726864f98e9f356325b32a196ba1cf36dfab98569"
+        },
+        {
+          "path": "justfile",
+          "previous_digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745",
+          "current_digest": "4b7714f411108be8e889715a04da701de48bd2a4ed1e74abc1868779e7659b8d"
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d",
+          "current_digest": "b5b781ef2b50e3e0c07b316971fb334dc6a5f680933b1f7504fe54f69dd74d13"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "previous_digest": "c19dca4da036c62d207001dd7aa73f2cc673a3b4319d896f369928cc91375b82",
+          "current_digest": "30211112ad390b3f862b6a57acdd44f936ea93f2b1b8e6ced1254c99f97b3fc3"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/main.rs",
+          "previous_digest": "c2924e9ad9d7e4fafae176ee2c4f5713134b0f2cc47fa72b62e667acbdceff6a",
+          "current_digest": "a18bbb57464958fc86b18a2ec80ca2f3a8284f38a7d515b25a94c026709d21aa"
+        },
+        {
+          "path": "scripts/phase26_r4_collection_registration.py",
+          "previous_digest": "c4bffef4c543b954c850c8890135cc2ff813ca637e83674c818b0c938017b856",
+          "current_digest": "eaa3a9e3d93fdf81ae095cc22956dc936ce95d5fff39d0a6003348148550ca4e"
+        },
+        {
+          "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+          "previous_digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1",
+          "current_digest": "e1f84d83c6919b93429625eef5ce511f392b25dcd3e5fa0c6b564b11cf07207d"
+        },
+        {
+          "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
+          "previous_digest": "d85cdc28374adbd1b8578b2a81b109757c0b9be7337cf3522c99f2fee848fb45",
+          "current_digest": "19d0f2fd538d86672c781a9e65cf92761cd2c4a73ca83f9f96a659b1dfaf5c19"
+        },
+        {
+          "path": "scripts/cranelift_ci_family.py",
+          "previous_digest": "a3faa9c31f35d69533b8d449ded0e0943eac179c45808387fb8df30a59c9dce5",
+          "current_digest": "660874bbf416cf57f95132d6dd79f9718534f09eda7b91643030c11d496d6eba"
+        },
+        {
+          "path": "scripts/cranelift_test_levels.py",
+          "previous_digest": "0027cca4b0b56365e0169e73b4a3eab9a35df3251ae59059a2f2d1a0b24a1f87",
+          "current_digest": "1faad962c4af9bb18ac754634465d076fbe861498b0b475380ed52d37b25e33b"
+        },
+        {
+          "path": "scripts/phase26_ffi_position_registration.py",
+          "previous_digest": "d78b2a5a84226e8e632a195d934e177b40d65e969e964c509d5a0ac0747a8dc8",
+          "current_digest": "f8431c9d5deb2997b4258c37293fdb564bd63f49ef4fc19433572e0b80b60496"
+        }
+      ],
+      "added_files": [
+        {
+          "path": "compiler/experiments/cranelift/src/production_trust.rs",
+          "digest": "9de4a2ed0db9b585ca181c3d13b7aacd3898f7152af92a7db9483a94d2265434"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/production_trust_tests.rs",
+          "digest": "9e3fbaaf55a290ff7053f0af30e0ae70b05140f65c7113ae8513d9cc9a9e30d5"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/manifest.txt",
+          "digest": "eba10d837fcaaaca525359dbaed8f953493ce3407b8149ebea8e526d524e3ab1"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/manifest.sig",
+          "digest": "ca663c4013fa5e793652e0759ea7b9f79cd204c01a00c830cc6d168e42ab7d39"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/snapshot.json",
+          "digest": "810b6ca7660b7c3ad36ebf1c1bae4c03fea247e1f3a5e0dd867a079ebdca6c79"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/public-identity.json",
+          "digest": "5116cf043f6aa8b42a8018f14aa195722d738a1ab0ddc8d04db62c472aac8529"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/build-toolchain.json",
+          "digest": "abcf7a69825dc7ca0b63cdd65bf438e7bc561968446a87445f87e2a12dbe6286"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/predecessor-baseline.json.gz",
+          "digest": "f016d9fc2ec83952cf20cf2091894c2fe5dd85e06be4e1442286cfbeb0426cab"
+        },
+        {
+          "path": "scripts/phase26_production_package.py",
+          "digest": "5dc03141dd57ffd6d54c6d29e3554f4e7ff4b7008d52212fc093064c72792c50"
+        },
+        {
+          "path": "scripts/phase26_production_toolchain.py",
+          "digest": "9078c812536450808d1ab85fd84fcd2728e5fa62b44678c1320e5571480f9dd6"
+        },
+        {
+          "path": "scripts/phase26_production_registration.py",
+          "digest": "17785e6511aaf295b66a2d8c222fb9f81de5a3c36e9414e3a5a70a9b19da01e0"
+        },
+        {
+          "path": "scripts/phase26_production_guard.py",
+          "digest": "a51e58316508411c8882d9d77c1cbebc38e1019274301d285e3eb8e7b354f55a"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_PRODUCTION_TRUST.md",
+          "digest": "2fd9fb382f424856d5d952343cec7ada0d8b64b14ede8894156bad6ca263e74d"
+        }
+      ],
+      "text_current_digest": "2d2805b0889e88a43603828188111aeb6658dce56da1805f414eb39bb0f77f7b",
+      "spelling_render_current_digest": "e7410ecf2870586786d597b5ff302bad8d1b26d57a07d64ec28164af215b2fa0",
+      "projections": {
+        "r4_text": {
+          "previous": [
+            {
+              "path": ".github/workflows/pr-fast.yml",
+              "digest": "311ea7dfac1df432b0b94bf7be46cc8ff6ed85c28ec40186df2588b18d76fcbf",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 8,
+                "generated_c_contract": 1
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "GUST_LANE_STATE.md",
+              "digest": "7f394ded9b1efd9bc4cb7e520986645e4fc7426fc29ab45b681c88f1ae0794d6",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 3,
+                "generated_c_contract": 2
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "compiler/experiments/cranelift/src/full_program.rs",
+              "digest": "39b78c209146749ffcfd048abbd07392d1a17b73339ec9ac546995cdbc5a0355",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 1,
+                "generated_c_contract": 0
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "compiler/mir_native_backend_full_program_source.gst",
+              "digest": "f335e94139a1db75a8ed9617e2a8d88a6a2714ee44217526f45534ce0805c86e",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 0,
+                "generated_c_contract": 1
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "compiler/typechecker.gst",
+              "digest": "55c873b917efcce279abaf2446b1fb881b2f332cc9d2e4d01db485ee3cc7c416",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 0,
+                "generated_c_contract": 1
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "justfile",
+              "digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745",
+              "match_counts": {
+                "explicit_backend_spelling": 1,
+                "mir_to_c_name": 729,
+                "generated_c_contract": 9
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "scripts/cranelift_test_levels.json",
+              "digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 30,
+                "generated_c_contract": 0
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "scripts/phase26_r2_scoped_copy_registration.py",
+              "digest": "e400c729e4b4f7a5deb89be05c19d9e706901ec3433d3090f116719e24f30bb7",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 1,
+                "generated_c_contract": 0
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+              "digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 2,
+                "generated_c_contract": 1
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            {
+              "path": "scripts/phase26_r4_collection_registration.py",
+              "digest": "c4bffef4c543b954c850c8890135cc2ff813ca637e83674c818b0c938017b856",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 1,
+                "generated_c_contract": 1
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            }
+          ],
+          "current_digest": "1b2e20c151dca9b9a0e90b91fe47a20df884e7a48f881890c6960fcddf0c6939"
+        },
+        "spelling": {
+          "previous": {
+            "source_file_count": 2376,
+            "site_count": 1551,
+            "semantic_site_count": 816,
+            "semantic_manifest_digest": "181b948315c2bcbfe6c2657e8359b0c1b2042e3aa19e82f01d76e2b156306ab0",
+            "classification_counts": {
+              "semantic_or_intrinsic_recognition": 816,
+              "diagnostic": 27,
+              "serialization": 1,
+              "mangling_or_generated_name": 9,
+              "comment": 2,
+              "fixture_or_evidence": 688,
+              "non_decision_comparison": 8
+            },
+            "partition_manifest_digests": {
+              "diagnostic": "3fa4a6191cf94499ce6d6bcd6152ab6674e4da5b5b466817ed9488889fc11af2",
+              "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+              "mangling_or_generated_name": "a73c25edbbbecac2399b5e381566d896407e9df72266aaafbfd669f459ab3adb",
+              "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+              "fixture_or_evidence": "5bfea2676478bc69f9387706d938546b59cb08f9924e7156250910864e5afc81",
+              "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+            },
+            "complete_manifest_digest": "8a549db300a4e9ab62b60a9888d9f8227e2c05da95d43d37202adbb6b73a7dc6",
+            "unknown_site_count": 0
+          },
+          "current_digest": "a4ee992c2cc68fff1cf61e35266baed2507987209d7f70b6e1b0b76894a6a80b"
+        },
+        "filename": {
+          "previous": [
+            {
+              "id": "var_declaration_stack_classification",
+              "path": "compiler/typechecker.gst",
+              "line": 16186,
+              "selector": "test_tcs_",
+              "selector_occurrence": 1,
+              "statement_context": "statement_var_declaration",
+              "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+            },
+            {
+              "id": "assignment_hazard_and_view_invalidation",
+              "path": "compiler/typechecker.gst",
+              "line": 16530,
+              "selector": "test_index_",
+              "selector_occurrence": 1,
+              "statement_context": "statement_assignment",
+              "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+            },
+            {
+              "id": "guard_payload_stack_classification",
+              "path": "compiler/typechecker.gst",
+              "line": 17611,
+              "selector": "test_tcs_",
+              "selector_occurrence": 2,
+              "statement_context": "statement_guard_payload_binding",
+              "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+            }
+          ],
+          "current_digest": "96f3433a10f5c471c4b0bce8f229ea8394760ead5096f0adb7157bdac5487130"
+        },
+        "r3_record": {
+          "previous": {
+            "contract_version": "phase26_1r3_zlib_adapter_successor_v1",
+            "predecessor_main_sha": "c0aaf4f94e5f33daf8b65fa9235226b3bd685bb3",
+            "owner": "cranelift",
+            "status": "test_profile_real_zlib_under_qualification",
+            "owning_level2_guard": "guard-cranelift-phase26-zlib-adapter",
+            "target": "x86_64-unknown-linux-gnu",
+            "zlib_version": "1.3.2",
+            "zlib_source_archive_digest": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+            "production_signing_roots": [],
+            "public_safe_wrapper_status": "open",
+            "partial_extra_or_substituted_authority": "rejected",
+            "new_file_hashes": [
+              {
+                "path": "compiler/experiments/cranelift/ffi-zlib/README.md",
+                "digest": "aad2331aac1c9ccc1c1d1cdc56275ae9aba5b797659c0e25c30051ea6b678ed4"
+              },
+              {
+                "path": "compiler/experiments/cranelift/ffi-zlib/gust_zlib_adapter.c",
+                "digest": "657a799c76e19435b709af4129d057da3ac9671b4926ca9fcd45e06e85e758d0"
+              },
+              {
+                "path": "compiler/experiments/cranelift/ffi-zlib/gust_zlib_adapter.h",
+                "digest": "a13dadbf48dc72b85197653070fcd8fa164604079a52d7fcb7ed0b8d876b462f"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/approved_zlib_tests.rs",
+                "digest": "a75e786d020a76a07d9d990421dd9f8df256222cd63189c5046d00608e736b03"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/testdata/phase26_r3_zlib_compress.canonical",
+                "digest": "5d05bdbdec5e4fd7553e53d5e5f845a1a283a086ac49bd0f6a21c9cb147044a0"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/testdata/phase26_r3_zlib_decompress.canonical",
+                "digest": "83939d4676919870d6f1aeb4c1cba43aa9ab6ea47286ca34f442bd3bea1ba580"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/testdata/phase26_r3_zlib_empty_decompress.canonical",
+                "digest": "a25394ac38973b9c6679cdd9f96a82f6f53fb4a0911f99617db9eb3cca4687b9"
+              },
+              {
+                "path": "scripts/phase26_r3_source_projection.py",
+                "digest": "70a2c088b3feb094f0d7de21596f0afe46993a9611a18b29627581a744c5301b"
+              },
+              {
+                "path": "scripts/phase26_r3_zlib_adapter.sh",
+                "digest": "781b90f7b5da2206dd9ee15f9b13a30016b8bf2fd1be2e7e0b1f3349bb921d8b"
+              },
+              {
+                "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
+                "digest": "d85cdc28374adbd1b8578b2a81b109757c0b9be7337cf3522c99f2fee848fb45"
+              },
+              {
+                "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+                "digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1"
+              },
+              {
+                "path": "tests/cranelift/phase26_r3_zlib_compress.gst",
+                "digest": "5b38ba672dfce67641cf1e4c69c30cb9272d05faacc909773f5e053d0574dcd9"
+              },
+              {
+                "path": "tests/cranelift/phase26_r3_zlib_decompress.gst",
+                "digest": "14f55909493b17104d5b808b769c7a75cfe07190c14e6c67064a0b8e1ff91a4b"
+              },
+              {
+                "path": "tests/cranelift/phase26_r3_zlib_empty_decompress.gst",
+                "digest": "872154a73ef83f5c41a0edba88a262ea41f64825254d18e2a977a94f5d58a10f"
+              },
+              {
+                "path": "tests/phase26_r3_zlib_adapter.c",
+                "digest": "6c578c7b0e248f6e46c6238bb6f6aad61d9acc00a22cc799a7b069c966b615e3"
+              }
+            ],
+            "changed_file_hashes": [
+              {
+                "path": ".github/workflows/pr-fast.yml",
+                "previous_digest": "e4eee0df7d9ad19a08def562fc0528fdbeecbf53f42321d8024a78e38037514e",
+                "current_digest": "311ea7dfac1df432b0b94bf7be46cc8ff6ed85c28ec40186df2588b18d76fcbf"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/approved_package.rs",
+                "previous_digest": "ee19e46e880b956b428ac5d2116d2d1e05f37fe3143c488b6a98f5b061ff5d0b",
+                "current_digest": "c19dca4da036c62d207001dd7aa73f2cc673a3b4319d896f369928cc91375b82"
+              },
+              {
+                "path": "justfile",
+                "previous_digest": "dadf41242051554525ad833a3430c8f439be31b5b32dd8a3dccf4fd335a662b8",
+                "current_digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745"
+              },
+              {
+                "path": "scripts/cranelift_test_levels.json",
+                "previous_digest": "6bfeccf33b5daa989b73e2bdd18d37a3a684a6e5452ce46e34ac79a4186bddb9",
+                "current_digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d"
+              },
+              {
+                "path": "scripts/phase23_production_release_audit.py",
+                "previous_digest": "f4844bdf73a16599588ffaf04a6bc4f6728368af33f63e9a77b092a2769478b0",
+                "current_digest": "4de9a09d53b9c8e6a72a701bc400036f1e0dbfc0a0fdbcccbcb84d1784f1483c"
+              },
+              {
+                "path": "scripts/phase24_cr15_stdlib_guard_transition.py",
+                "previous_digest": "3974aa814daf1260b97b63c045517b94152fac0521ce6f6d76257125f907ec24",
+                "current_digest": "5c1a803214694c6c94bd694ba3789c5b16145e30b3b54d830b3a42f2eedc0a95"
+              },
+              {
+                "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+                "previous_digest": "1fd83c81ffa475ff11e603421391af46497485f2ed2099c1fdc0703f2f67a583",
+                "current_digest": "a396fbcae5b377790f7798688ef6865d1a3514b748af22365c12c0190cf7f685"
+              },
+              {
+                "path": "scripts/phase26_r2_scoped_copy_registration.py",
+                "previous_digest": "df7d93dd0ff31a1730cfd7b0e6702b969a6727c4efafa18a97e4781d2060470b",
+                "current_digest": "e400c729e4b4f7a5deb89be05c19d9e706901ec3433d3090f116719e24f30bb7"
+              }
+            ],
+            "phase22_invocation_successor": {
+              "added_rows": [
+                {
+                  "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
+                  "line": 38,
+                  "recipe": "none",
+                  "compiler_token": "./gust",
+                  "selection": "explicit_cranelift",
+                  "consumer_class": "already_explicit_or_parser_probe",
+                  "owner": "cranelift",
+                  "expected_artifact": "selected_backend_contract",
+                  "expected_transition": "preserve_explicit_selection",
+                  "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+                  "command": "if GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$PWD/build/gust-native-backend\" GUST_NATIVE_KEEP_OBJECTS=\"$PWD/$case_dir/keep\" ./gust --backend cranelift -o \"$case_dir/never-execute\" \"$source\" > \"$case_dir/compile.stdout\" 2> \"$case_dir/compile.stderr\"; then"
+                }
+              ],
+              "partial_extra_or_substituted_invocation": "rejected"
+            },
+            "phase23_text_surface_successor": {
+              "changed_rows": [
+                {
+                  "path": ".github/workflows/pr-fast.yml",
+                  "previous_row": {
+                    "path": ".github/workflows/pr-fast.yml",
+                    "digest": "e4eee0df7d9ad19a08def562fc0528fdbeecbf53f42321d8024a78e38037514e",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 8,
+                      "generated_c_contract": 1
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  },
+                  "current_row": {
+                    "path": ".github/workflows/pr-fast.yml",
+                    "digest": "311ea7dfac1df432b0b94bf7be46cc8ff6ed85c28ec40186df2588b18d76fcbf",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 8,
+                      "generated_c_contract": 1
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  }
+                },
+                {
+                  "path": "justfile",
+                  "previous_row": {
+                    "path": "justfile",
+                    "digest": "dadf41242051554525ad833a3430c8f439be31b5b32dd8a3dccf4fd335a662b8",
+                    "match_counts": {
+                      "explicit_backend_spelling": 1,
+                      "mir_to_c_name": 729,
+                      "generated_c_contract": 9
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  },
+                  "current_row": {
+                    "path": "justfile",
+                    "digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745",
+                    "match_counts": {
+                      "explicit_backend_spelling": 1,
+                      "mir_to_c_name": 729,
+                      "generated_c_contract": 9
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  }
+                },
+                {
+                  "path": "scripts/cranelift_test_levels.json",
+                  "previous_row": {
+                    "path": "scripts/cranelift_test_levels.json",
+                    "digest": "6bfeccf33b5daa989b73e2bdd18d37a3a684a6e5452ce46e34ac79a4186bddb9",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 30,
+                      "generated_c_contract": 0
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  },
+                  "current_row": {
+                    "path": "scripts/cranelift_test_levels.json",
+                    "digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 30,
+                      "generated_c_contract": 0
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  }
+                },
+                {
+                  "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+                  "previous_row": {
+                    "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+                    "digest": "1fd83c81ffa475ff11e603421391af46497485f2ed2099c1fdc0703f2f67a583",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 2,
+                      "generated_c_contract": 1
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  },
+                  "current_row": {
+                    "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+                    "digest": "a396fbcae5b377790f7798688ef6865d1a3514b748af22365c12c0190cf7f685",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 2,
+                      "generated_c_contract": 1
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  }
+                },
+                {
+                  "path": "scripts/phase26_r2_scoped_copy_registration.py",
+                  "previous_row": {
+                    "path": "scripts/phase26_r2_scoped_copy_registration.py",
+                    "digest": "df7d93dd0ff31a1730cfd7b0e6702b969a6727c4efafa18a97e4781d2060470b",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 1,
+                      "generated_c_contract": 0
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  },
+                  "current_row": {
+                    "path": "scripts/phase26_r2_scoped_copy_registration.py",
+                    "digest": "e400c729e4b4f7a5deb89be05c19d9e706901ec3433d3090f116719e24f30bb7",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 1,
+                      "generated_c_contract": 0
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  }
+                }
+              ],
+              "added_rows": [
+                {
+                  "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+                  "current_row": {
+                    "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+                    "digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1",
+                    "match_counts": {
+                      "explicit_backend_spelling": 0,
+                      "mir_to_c_name": 2,
+                      "generated_c_contract": 1
+                    },
+                    "classification": "archive_candidate",
+                    "owner": "cranelift",
+                    "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                    "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                    "removal_phase": "24",
+                    "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+                  }
+                }
+              ],
+              "partial_extra_or_substituted_surface": "rejected"
+            },
+            "production_audit_successor": {
+              "previous_audit": {
+                "supported_surface_count": 6,
+                "supported_surface_manifest_digest": "13383d08d5a7b0decbc92eaf0d4c8e62cc73555f45d088976932d2dbdfd66ffe",
+                "repository_invocation_count": 256,
+                "repository_explicit_c_count": 2,
+                "phase25_bootstrap_explicit_c_count": 0,
+                "non_bootstrap_retained_test_surface_count": 2,
+                "supported_production_or_release_explicit_c_count": 0,
+                "active_non_bootstrap_live_c_lane_count": 0,
+                "active_non_bootstrap_live_c_owner": null,
+                "unknown_downstream_count": 0
+              },
+              "current_audit": {
+                "supported_surface_count": 6,
+                "supported_surface_manifest_digest": "13383d08d5a7b0decbc92eaf0d4c8e62cc73555f45d088976932d2dbdfd66ffe",
+                "repository_invocation_count": 257,
+                "repository_explicit_c_count": 2,
+                "phase25_bootstrap_explicit_c_count": 0,
+                "non_bootstrap_retained_test_surface_count": 2,
+                "supported_production_or_release_explicit_c_count": 0,
+                "active_non_bootstrap_live_c_lane_count": 0,
+                "active_non_bootstrap_live_c_owner": null,
+                "unknown_downstream_count": 0
+              },
+              "partial_extra_or_substituted_audit": "rejected"
+            },
+            "spelling_inventory_successor": {
+              "previous_inventory_summary": {
+                "source_file_count": 2372,
+                "site_count": 1543,
+                "semantic_site_count": 817,
+                "semantic_manifest_digest": "72f2711f357dc5fec7f013524eb6e3f11d06b29ec1f0713502972af720ba9b8f",
+                "classification_counts": {
+                  "semantic_or_intrinsic_recognition": 817,
+                  "diagnostic": 27,
+                  "serialization": 1,
+                  "mangling_or_generated_name": 9,
+                  "comment": 2,
+                  "fixture_or_evidence": 679,
+                  "non_decision_comparison": 8
+                },
+                "partition_manifest_digests": {
+                  "diagnostic": "697bda26a5b9dc7457f8e89475f881531626da2d9d267961d86c8fd6ffad4d34",
+                  "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+                  "mangling_or_generated_name": "28db616a74a014830120ab386ec107cc33c50042eceb00864566b8d97a999c2a",
+                  "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+                  "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+                  "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+                },
+                "complete_manifest_digest": "95afda2f585a778fbb9fffa3b0515f3394eee16b8e1cfd40056d0b42cfb2f205",
+                "unknown_site_count": 0
+              },
+              "current_inventory_summary": {
+                "source_file_count": 2376,
+                "site_count": 1551,
+                "semantic_site_count": 816,
+                "semantic_manifest_digest": "181b948315c2bcbfe6c2657e8359b0c1b2042e3aa19e82f01d76e2b156306ab0",
+                "classification_counts": {
+                  "semantic_or_intrinsic_recognition": 816,
+                  "diagnostic": 27,
+                  "serialization": 1,
+                  "mangling_or_generated_name": 9,
+                  "comment": 2,
+                  "fixture_or_evidence": 688,
+                  "non_decision_comparison": 8
+                },
+                "partition_manifest_digests": {
+                  "diagnostic": "3fa4a6191cf94499ce6d6bcd6152ab6674e4da5b5b466817ed9488889fc11af2",
+                  "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+                  "mangling_or_generated_name": "a73c25edbbbecac2399b5e381566d896407e9df72266aaafbfd669f459ab3adb",
+                  "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+                  "fixture_or_evidence": "5bfea2676478bc69f9387706d938546b59cb08f9924e7156250910864e5afc81",
+                  "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+                },
+                "complete_manifest_digest": "8a549db300a4e9ab62b60a9888d9f8227e2c05da95d43d37202adbb6b73a7dc6",
+                "unknown_site_count": 0
+              },
+              "partial_extra_or_substituted_inventory": "rejected"
+            }
+          },
+          "current_digest": "8a65e13fdd7736b4a96d13421fd50ca880758fbf0036cf53bec471dca83bc6ea"
+        },
+        "production": {
+          "previous": {
+            "supported_surface_count": 6,
+            "supported_surface_manifest_digest": "13383d08d5a7b0decbc92eaf0d4c8e62cc73555f45d088976932d2dbdfd66ffe",
+            "repository_invocation_count": 257,
+            "repository_explicit_c_count": 2,
+            "phase25_bootstrap_explicit_c_count": 0,
+            "non_bootstrap_retained_test_surface_count": 2,
+            "supported_production_or_release_explicit_c_count": 0,
+            "active_non_bootstrap_live_c_lane_count": 0,
+            "active_non_bootstrap_live_c_owner": null,
+            "unknown_downstream_count": 0
+          },
+          "current_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73"
+        },
+        "workflow": {
+          "previous": "name: PR Fast\n\non:\n  pull_request:\n  push:\n    branches:\n      - \"main\"\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}\n  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}\n\njobs:\n  build:\n    if: >-\n      (github.event_name == 'push' && github.ref_name == 'main') ||\n      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&\n      startsWith(github.ref_name, 'codex/') &&\n      vars.CODEX_GITHUB_ACTOR != '' &&\n      github.actor == vars.CODEX_GITHUB_ACTOR) ||\n      (github.event_name == 'pull_request' &&\n      startsWith(github.head_ref, 'codex/') &&\n      vars.CODEX_GITHUB_ACTOR != '' &&\n      github.actor == vars.CODEX_GITHUB_ACTOR)\n    name: build Gust and CI surface\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Cache cargo registry and build outputs\n        uses: actions/cache@v4\n        with:\n          # Only cargo target dirs and the registry. Never build/guards itself:\n          # those dirs hold witnesses, mutation requests, and .output sentinels,\n          # and restoring stale ones could manufacture a false pass.\n          path: |\n            ~/.cargo/registry/index\n            ~/.cargo/registry/cache\n            ~/.cargo/git/db\n            compiler/experiments/cranelift/target\n            build/guards/*/cargo-target\n          key: cargo-${{ runner.os }}-${{ github.workflow }}-${{ hashFiles('compiler/experiments/cranelift/Cargo.lock') }}\n          restore-keys: |\n            cargo-${{ runner.os }}-${{ github.workflow }}-\n      - name: Install guard tools\n        run: |\n          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep\n          bash scripts/install-just-ci.sh \"$HOME/.local/bin\"\n          echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Diff check\n        run: git diff --check\n\n      - name: PR fast CI surface guard\n        run: just guard-pr-fast-ci-surface\n\n      # The frozen oracle compares each of its 253 vectors against the digest of\n      # the source fixture it was captured from, and a vector is only sound if\n      # that source has not moved. Until this step existed, the only workflow\n      # that ran the check was paths-filtered on the vector manifest and the\n      # tooling -- not on a single one of the 253 fixtures -- so editing a\n      # fixture triggered nothing that checked its digest. Placed here rather\n      # than appended: it is pure digest comparison, measured at 2.0-2.4s, so it\n      # fails fast ahead of the build rather than after it.\n      - name: Frozen oracle contract\n        run: just guard-cranelift-phase24-frozen-oracle-contract\n\n      - name: Build Gust\n        run: make gust\n\n      - name: Bind Phase 26 R2 build source and tools\n        run: python3 scripts/phase26_r2_tool_binding.py record\n\n      - name: Upload Gust build outputs\n        uses: actions/upload-artifact@v4\n        with:\n          name: gust-build\n          path: |\n            ./gust\n            build/\n          if-no-files-found: error\n\n\n  manifest:\n    # Deliberately ungated and build-independent. Every other job in this\n    # workflow needs `build`, and `build` is restricted to the trusted Codex\n    # actor on codex/** for cost and untrusted-fork reasons (AGENTS.md, the\n    # `codex/` prefix section; CI_THROUGHPUT.md, runner table). That gate is\n    # correct for a 60-minute compile. It was not correct for the text-surface\n    # manifest: when the gate is false the whole workflow skips, and a skipped\n    # job reads as a pass, so the manifest guards stopped enforcing without\n    # ever reporting that they had. The guards below are pure Python and need\n    # no build, so they run for every actor on every branch; the final step\n    # then states, as a failure rather than a silence, whether the gated\n    # guards ran at all. `codex-trusted-ci.yml` already fails rather than\n    # skips on this same condition -- this makes PR Fast agree with it.\n    name: text-surface manifest enforcement\n    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    needs: build\n    if: always()\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Install guard tools\n        run: |\n          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep\n          bash scripts/install-just-ci.sh \"$HOME/.local/bin\"\n          echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Build-independent manifest guards\n        run: just guard-pr-fast-manifest-enforcement\n\n      - name: Report whether the gated guard jobs ran\n        env:\n          BUILD_RESULT: ${{ needs.build.result }}\n          HEAD_REF: ${{ github.head_ref || github.ref_name }}\n          ACTOR: ${{ github.actor }}\n          EXPECTED_ACTOR: ${{ vars.CODEX_GITHUB_ACTOR }}\n        run: |\n          set -euo pipefail\n          case \"$BUILD_RESULT\" in\n            success)\n              echo \"build ran: the gated guard jobs in this workflow are live.\"\n              exit 0\n              ;;\n            failure|cancelled)\n              echo \"build reported '$BUILD_RESULT'. That job carries its own\"\n              echo \"red; this one only reports the gate, so it does not add a\"\n              echo \"second failure for the same cause.\"\n              exit 0\n              ;;\n          esac\n          echo \"The build job was skipped, so Level 1 contracts, the guard\"\n          echo \"shards, the Phase 20 parity job and the final diff check did\"\n          echo \"not run. They did not pass -- nothing evaluated them.\"\n          echo\n          echo \"  head ref        : $HEAD_REF\"\n          echo \"  actor           : $ACTOR\"\n          echo \"  expected actor  : ${EXPECTED_ACTOR:-<unset>}\"\n          echo\n          echo \"The gate needs a codex/ branch prefix, a non-empty\"\n          echo \"CODEX_GITHUB_ACTOR repository variable, and an exact actor\"\n          echo \"match. Whichever of those is false above is why.\"\n          echo\n          echo \"The manifest guards in this job ran regardless and passed.\"\n          echo \"Everything else in PR Fast is unverified on this run.\"\n          exit 1\n\n  level1:\n    name: Level 1 contracts\n    runs-on: ubuntu-latest\n    # Measured 2026-09-20 across six runs: this job does 41-43 minutes of\n    # work. At 45 it has a 4% margin and has now been killed mid-step at\n    # 45m14s twice, on \"Phase 23 closure\", with nothing wrong. It is the\n    # largest job here and was the only one under 60 -- build, guard,\n    # phase20-nested-brand-annotation and final all already use 60.\n    # Raising a timeout weakens no check: the same guards run and must\n    # still pass. It only stops the job dying with work left to do.\n    #\n    # 2026-09-22: the same thing happened again at the new wall, four times,\n    # at 60m22s and 60m23s. The job has NOT grown -- three runs measured the\n    # same day all report 169 steps:\n    #\n    #   main          12:28:48Z -> 13:07:51Z   39m03s  success\n    #   25.9 branch   09:37:49Z -> 10:36:35Z   58m46s  success\n    #   25.10a (#468) 14:45:49Z -> cancelled   60m22s  125 of 169 steps\n    #\n    # Identical work, a 1.5x spread. So this is runner contention, not a\n    # regression and not step growth, and a wall set at ~1.4x the median gets\n    # hit whenever a runner is slow. 90 is ~2.2x the median, which covers the\n    # observed tail and still catches a job that has genuinely hung rather\n    # than letting it burn the full six hours.\n    timeout-minutes: 120\n    needs: build\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Install guard tools\n        run: |\n          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep\n          bash scripts/install-just-ci.sh \"$HOME/.local/bin\"\n          echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Download Gust build outputs\n        uses: actions/download-artifact@v4\n        with:\n          name: gust-build\n          path: .\n\n      - name: Restore executable bit\n        run: chmod +x ./gust 2>/dev/null || true\n\n      - name: Phase 12.5 consolidation closure\n        run: just guard-cranelift-phase12-5-close\n\n      - name: Phase 13 scoped closure\n        run: just guard-cranelift-phase13-close\n\n      - name: Phase 14 opening inventory\n        run: just guard-cranelift-phase14-opening-contract\n\n      - name: Phase 14 layout authority\n        run: just guard-cranelift-phase14-layout-authority-contract\n\n      - name: Phase 14 declared targets and primitive layouts\n        run: just guard-cranelift-phase14-target-and-primitive-contract\n\n      - name: Phase 14 signed unsigned and width conversions\n        run: just guard-cranelift-phase14-integer-conversion-contract\n\n      - name: Phase 14 bounded typed pointers and nullability\n        run: just guard-cranelift-phase14-pointer-contract\n\n      - name: Phase 14 deterministic stack slots and addressable locals\n        run: just guard-cranelift-phase14-stack-slot-contract\n\n      - name: Phase 14 typed loads stores and memory access\n        run: just guard-cranelift-phase14-memory-access-contract\n\n      - name: Phase 14 strings and string views\n        run: just guard-cranelift-phase14-string-view-contract\n      - name: Phase 14 arrays and slices\n        run: just guard-cranelift-phase14-array-slice-contract\n      - name: Phase 14 declaration-order structs\n        run: just guard-cranelift-phase14-struct-contract\n      - name: Phase 14 enums and tagged unions\n        run: just guard-cranelift-phase14-enum-contract\n      - name: Phase 14 aggregate transport across blocks\n        run: just guard-cranelift-phase14-aggregate-contract\n\n      - name: Phase 14 type layout and memory model closure\n        run: just guard-cranelift-phase14-close\n\n      - name: Phase 15 resource and lifetime opening\n        run: just guard-cranelift-phase15-opening-contract\n\n      - name: Phase 16 function ABI and aggregate call opening\n        run: just guard-cranelift-phase16-opening-contract\n\n      - name: Phase 16 compiler-owned function ABI authority\n        run: just guard-cranelift-phase16-abi-authority-contract\n\n      - name: Phase 16 canonical call MIR\n        run: just guard-cranelift-phase16-call-mir-contract\n\n      - name: Phase 16 aggregate parameter classification\n        run: just guard-cranelift-phase16-aggregate-parameter-contract\n\n      - name: Phase 16 aggregate return classification\n        run: just guard-cranelift-phase16-aggregate-return-contract\n\n      - name: Phase 16 direct-call agreement\n        run: just guard-cranelift-phase16-direct-call-agreement-contract\n\n      - name: Phase 16 typed indirect calls\n        run: just guard-cranelift-phase16-typed-indirect-call-contract\n\n      - name: Phase 16 fat-pointer and selected trait-object call ABI\n        run: just guard-cranelift-phase16-fat-pointer-abi-contract\n\n      - name: Phase 16 unsized value ABI\n        run: just guard-cranelift-phase16-unsized-abi-contract\n\n      - name: Phase 16 bounded dynamic stack plans\n        run: just guard-cranelift-phase16-dynamic-stack-contract\n\n      - name: Phase 16 resource-bearing aggregate call ABI\n        run: just guard-cranelift-phase16-resource-aggregate-abi-contract\n\n      - name: Phase 16 selected cross-module ABI\n        run: just guard-cranelift-phase16-cross-module-abi-contract\n\n      - name: Phase 16 ABI metadata request validation\n        run: just guard-cranelift-phase16-abi-metadata-contract\n\n      - name: Phase 16 cross-feature ABI composition\n        run: just guard-cranelift-phase16-composition-contract\n\n      - name: Phase 16 function ABI and aggregate call closure\n        run: just guard-cranelift-phase16-close\n\n      - name: Phase 17 native runtime boundary opening\n        run: just guard-cranelift-phase17-opening-contract\n\n      - name: Phase 17 compiler-owned runtime boundary authority\n        run: just guard-cranelift-phase17-runtime-authority-contract\n\n      - name: Phase 17 runtime ABI and symbol versioning\n        run: just guard-cranelift-phase17-runtime-symbol-version-contract\n\n      - name: Phase 17 canonical MIR runtime requirements\n        run: just guard-cranelift-phase17-runtime-requirement-contract\n\n      - name: Phase 17 explicit runtime packages and target selection\n        run: just guard-cranelift-phase17-runtime-package-contract\n\n      - name: Phase 17 stable runtime-library imports\n        run: just guard-cranelift-phase17-runtime-import-contract\n\n      - name: Phase 17 Rust runtime components\n        run: just guard-cranelift-phase17-rust-runtime-contract\n\n      - name: Phase 17 explicit retained C runtime objects\n        run: just guard-cranelift-phase17-retained-c-runtime-contract\n\n      - name: Phase 17 pure Gust runtime modules\n        run: just guard-cranelift-phase17-gust-runtime-contract\n\n      - name: Phase 17 generated C shim elimination\n        run: just guard-cranelift-phase17-shim-elimination-contract\n\n      - name: Phase 17 allocation string and core memory audit\n        run: just guard-cranelift-phase17-memory-runtime-contract\n\n      - name: Phase 17 io filesystem and resource audit\n        run: just guard-cranelift-phase17-io-runtime-contract\n\n      - name: Phase 17 threading and synchronization audit\n        run: just guard-cranelift-phase17-thread-runtime-contract\n\n      - name: Phase 17 runtime availability and diagnostics\n        run: just guard-cranelift-phase17-availability-contract\n\n      - name: Phase 17 native runtime boundary closure\n        run: just guard-cranelift-phase17-close\n\n      - name: Phase 18 target object and linker opening\n        run: just guard-cranelift-phase18-opening-contract\n\n      - name: Phase 18 compiler-owned target authority\n        run: just guard-cranelift-phase18-target-authority-contract\n\n      - name: Phase 18 complete target support tuple\n        run: just guard-cranelift-phase18-target-support-contract\n\n      - name: Phase 18 object format and section binding\n        run: just guard-cranelift-phase18-object-format-contract\n\n      - name: Phase 18 relocation model and validation\n        run: just guard-cranelift-phase18-relocation-contract\n\n      - name: Phase 18 target-specific ABI selection\n        run: just guard-cranelift-phase18-target-abi-contract\n\n      - name: Phase 18 target-specific runtime package selection\n        run: just guard-cranelift-phase18-target-package-contract\n\n      - name: Phase 18 linker discovery and invocation policy\n        run: just guard-cranelift-phase18-linker-policy-contract\n\n      - name: Phase 18 static and dynamic link modes\n        run: just guard-cranelift-phase18-link-mode-contract\n\n      - name: Phase 18 cross-compilation and host target separation\n        run: just guard-cranelift-phase18-cross-compilation-contract\n\n      - name: Phase 18 unsupported target diagnostics\n        run: just guard-cranelift-phase18-target-diagnostic-contract\n\n      - name: Phase 18 symbol and relocation inspection\n        run: just guard-cranelift-phase18-object-inspection-contract\n\n      - name: Phase 18 debug information strategy\n        run: just guard-cranelift-phase18-debug-info-contract\n\n      - name: Phase 18 source location preservation\n        run: just guard-cranelift-phase18-source-location-contract\n\n      - name: Phase 18 optimisation level policy\n        run: just guard-cranelift-phase18-optimisation-level-contract\n\n      - name: Phase 18 reproducible output\n        run: just guard-cranelift-phase18-reproducibility-contract\n\n      - name: Phase 18 artifact publication plan\n        run: just guard-cranelift-phase18-publication-contract\n\n      - name: Phase 18 cross-target composition\n        run: just guard-cranelift-phase18-composition-contract\n\n      - name: Phase 18 deferral audit and rejection reachability\n        run: just guard-cranelift-phase18-deferral-audit\n\n      - name: Phase 18 target object and linker closure\n        run: just guard-cranelift-phase18-close\n\n      - name: Phase 19 brand identity and value representation opening\n        run: just guard-cranelift-phase19-opening-contract\n\n      - name: Phase 20 opening evidence and qualification authority\n        run: just guard-cranelift-phase20-opening-contract\n\n      - name: Phase 20 canonical brand matching\n        run: just guard-cranelift-phase20-brand-matching-contract\n\n      - name: Phase 20 nested brand annotation\n        run: just guard-cranelift-phase20-nested-brand-annotation-contract\n\n      - name: Phase 20 exact branded boundary\n        run: just guard-cranelift-phase20-exact-brand-boundary-contract\n\n      - name: Phase 20 contextual generic constructor\n        run: just guard-cranelift-phase20-contextual-generic-constructor-contract\n\n      - name: Phase 20 arena lifecycle observation authority\n        run: just guard-cranelift-phase20-arena-lifecycle-contract\n\n      - name: Phase 20 Arena.Free receiver invalidation\n        run: just guard-cranelift-phase20-arena-free-contract\n\n      - name: Phase 20 inert resource declaration surface\n        run: just guard-cranelift-phase20-inert-resource-surface-contract\n\n      - name: Phase 20 resource declaration migration\n        run: just guard-cranelift-phase20-resource-declaration-migration-contract\n\n      - name: Phase 20 resource declaration enforcement\n        run: just guard-cranelift-phase20-resource-enforcement-contract\n\n      - name: Phase 20 resource acquisition obligations\n        run: just guard-cranelift-phase20-resource-acquisition-contract\n\n      - name: Phase 20 generic resource scope cleanup\n        run: just guard-cranelift-phase20-resource-scope-cleanup-contract\n\n      - name: Phase 19 identifier-spelling decision inventory\n        run: just guard-cranelift-phase19-spelling-inventory\n\n      - name: Phase 19 compiler-owned brand identity authority\n        run: just guard-cranelift-phase19-brand-authority-contract\n\n      - name: Phase 19 canonical branded type naming\n        run: just guard-cranelift-phase19-type-naming-contract\n\n      - name: Phase 19 type-derived container and arena classification\n        run: just guard-cranelift-phase19-classification-contract\n\n      - name: Phase 19 type-derived argument and index representation\n        run: just guard-cranelift-phase19-representation-contract\n\n      - name: Phase 19 self-hosted spelling-rule convergence\n        run: just guard-cranelift-phase19-rule-convergence\n\n      - name: Phase 19 retired Rust prototype absence\n        run: just guard-cranelift-phase19-retired-prototype-absent\n\n      - name: Phase 19 self-hosted name-list removal\n        run: just guard-cranelift-phase19-gust-name-list-removed\n\n      - name: Phase 19 bootstrap seed convergence\n        run: just guard-cranelift-phase19-seed-convergence\n\n      - name: Phase 20 bootstrap seed convergence\n        run: just guard-cranelift-phase20-seed-convergence\n\n      - name: Phase 20 whole-program corpus and observable contract\n        run: just guard-cranelift-phase20-whole-program-corpus-contract\n\n      - name: Phase 20 stdlib and runtime component selection\n        run: just guard-cranelift-phase20-stdlib-runtime-contract\n\n      - name: Phase 20 generated-MIR and scale authority\n        run: just guard-cranelift-phase20-generated-mir-scale-contract\n\n      - name: Phase 20 generic guard prerequisites\n        run: just guard-cranelift-phase20-generic-guard-prerequisites-contract\n\n      - name: Phase 20 inert resource-rooted access authority\n        run: just guard-cranelift-phase20-resource-rooted-access-contract\n\n      - name: Phase 20 explicit-unsafe Mutex primitive migration\n        run: just guard-cranelift-phase20-unsafe-mutex-migration-contract\n\n      - name: Phase 20 protected-access liveness enforcement\n        run: just guard-cranelift-phase20-protected-access-liveness-contract\n\n      - name: Phase 20 protected-access seed convergence\n        run: just guard-cranelift-phase20-protected-access-seed-convergence\n\n      - name: Phase 20 post-prerequisite seed convergence\n        run: just guard-cranelift-phase20-post-prerequisite-seed-convergence\n\n      - name: Phase 20 long-lived and concurrent resource authority\n        run: just guard-cranelift-phase20-long-lived-concurrent-contract\n\n      - name: Phase 20 cross-feature qualification authority\n        run: just guard-cranelift-phase20-cross-feature-qualification-contract\n\n      - name: Phase 20 semantic foundations and qualification closure\n        run: just guard-cranelift-phase20-close\n\n      - name: Phase 21 roadmap and OD-8 design authority\n        run: just guard-cranelift-phase21-roadmap\n\n      - name: Phase 21 opening evidence authority\n        run: just guard-cranelift-phase21-opening-contract\n\n      - name: Phase 21 inert scoped-query semantic records\n        run: just guard-cranelift-phase21-inert-scoped-query-records-contract\n\n      - name: Phase 21 typed-query no-op surface\n        run: just guard-cranelift-phase21-typed-query-noop-surface-contract\n\n      - name: Phase 21 trusted Scope provenance\n        run: just guard-cranelift-phase21-trusted-scope-provenance-contract\n\n      - name: Phase 21 per-root join and nested-query obligations\n        run: just guard-cranelift-phase21-per-root-obligations-contract\n\n      - name: Phase 21 explicit cross-tenant capability boundary\n        run: just guard-cranelift-phase21-cross-tenant-capability-contract\n\n      - name: Phase 21 OD-8 adversarial soundness verdict\n        run: just guard-cranelift-phase21-od8-adversarial-verdict-contract\n\n      - name: Phase 21 tenant-scope bootstrap seed convergence\n        run: just guard-cranelift-phase21-tenant-scope-seed-convergence\n\n      - name: Phase 21 residue migration authority\n        run: just guard-cranelift-phase21-residue-migration-authority-contract\n\n      - name: Phase 21 collection and string native source migration\n        run: just guard-cranelift-phase21-collection-string-native-source-contract\n\n      - name: Phase 21 filesystem and allocation native source migration\n        run: just guard-cranelift-phase21-filesystem-allocation-native-source-contract\n\n      - name: Phase 21 resource and synchronization native source migration\n        run: just guard-cranelift-phase21-resource-sync-native-source-contract\n\n      - name: Phase 21 compiler support-library native qualification\n        run: just guard-cranelift-phase21-compiler-support-native-qualification-contract\n\n      - name: Phase 21 selected compiler-module native qualification\n        run: just guard-cranelift-phase21-selected-compiler-module-qualification-contract\n\n      - name: Phase 21 native-feature bootstrap seed convergence\n        run: just guard-cranelift-phase21-native-feature-seed-convergence\n\n      - name: Phase 21 full-compiler native qualification\n        run: just guard-cranelift-phase21-full-compiler-native-qualification-contract\n\n      - name: Phase 21 Cranelift-built compiler program compilation\n        run: just guard-cranelift-phase21-cranelift-built-compiler-programs-contract\n\n      - name: Phase 21 native compiler allocation scaling authority\n        run: just guard-cranelift-phase21-native-compiler-allocation-scaling-contract\n      - name: Phase 21 scheduler main-result completion authority\n        run: just guard-cranelift-phase21-scheduler-main-result-contract\n\n      - name: Phase 21 complete native guard suite authority\n        run: just guard-cranelift-phase21-complete-guard-suite-contract\n\n      - name: Phase 21 tenant-scope and Cranelift self-hosting closure\n        run: just guard-cranelift-phase21-close\n\n      - name: Phase 22 default-route opening authority\n        run: just guard-cranelift-phase22-opening-contract\n\n      - name: Phase 22 explicit C migration authority\n        run: just guard-cranelift-phase22-explicit-c-migration-contract\n\n      - name: Phase 22 native implicit-output authority\n        run: just guard-cranelift-phase22-native-implicit-output-contract\n\n      - name: Phase 22 default-native package authority\n        run: just guard-cranelift-phase22-default-native-package-contract\n\n      - name: Phase 22 pre-flip default cohort authority\n        run: just guard-cranelift-phase22-preflip-default-cohort-contract\n\n      - name: Phase 22 default Cranelift route authority\n        run: just guard-cranelift-phase22-default-route-flip-contract\n\n      - name: Phase 22 default-route bootstrap seed convergence\n        run: just guard-cranelift-phase22-default-route-seed-convergence\n\n      - name: Phase 22 post-flip delivery and rollback qualification\n        run: just guard-cranelift-phase22-postflip-qualification-contract\n\n      - name: Phase 22 Historical route successor correction\n        run: just guard-cranelift-phase22-historical-route-successor-contract\n\n      - name: Phase 22 one-time default-native stability qualification\n        run: just guard-cranelift-phase22-stability-qualification-contract\n\n      - name: Phase 22 default-backend transition closure\n        run: just guard-cranelift-phase22-close\n\n      - name: Phase 23 assurance and issue-health opening\n        run: just guard-cranelift-phase23-issue-health-opening-contract\n\n      - name: Phase 24 CR-15 inert opening authority\n        run: just guard-cranelift-phase24-cr15-opening-contract\n\n      - name: Phase 24 CR-15 protected-Resource derivation\n        run: just guard-cranelift-phase24-cr15-derivation-contract\n\n      - name: Phase 24 CR-15 cross-path qualification\n        run: just guard-cranelift-phase24-cr15-qualification-contract\n\n      - name: Phase 24 CR-15 closure and Stdlib handoff\n        run: just guard-cranelift-phase24-cr15-close\n\n      - name: Phase 24 filename-selected behaviour characterization\n        run: just guard-cranelift-phase24-filename-behavior-characterization-contract\n\n      - name: Phase 24 compiler-recognized semantic spelling inventory\n        run: just guard-cranelift-phase24-semantic-spelling-inventory-contract\n\n      - name: Phase 24 generic implicit linear-Resource transfer\n        run: just guard-cranelift-phase24-resource-implicit-transfer-contract\n\n      - name: Phase 24 MIR identity format ledger seal\n        run: just guard-cranelift-phase24-identity-format-ledger-contract\n\n      - name: Phase 23 MIR evidence-owner repair\n        run: just guard-cranelift-phase23-mir-evidence-owner-contract\n\n      - name: Phase 23 resource-acquisition parity evidence repair\n        run: just guard-cranelift-phase23-resource-acquisition-parity-contract\n\n      - name: Phase 23 structured guard/defer native admission\n        run: just guard-cranelift-phase23-structured-guard-defer-native-admission-contract\n\n      - name: Phase 23 report-only assurance authority\n        run: just guard-cranelift-phase23-assurance-phase-a-contract\n\n      - name: Phase 23 deterministic report-only assurance evaluator\n        run: just guard-cranelift-phase23-assurance-phase-b-contract\n\n      - name: Phase 23 same-scope declaration diagnostic\n        run: just guard-cranelift-phase23-same-scope-declaration-contract\n\n      - name: Phase 23 MIR-to-C deprecation opening inventory\n        run: just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract\n\n      - name: Phase 23 frozen MIR-to-C feature surface\n        run: just guard-cranelift-phase23-mir-to-c-frozen-surface-contract\n\n      - name: Phase 23 focused live MIR-to-C lane\n        run: just guard-cranelift-phase23-mir-to-c-focused-live-contract\n\n      - name: Phase 23 archived MIR-to-C reference corpus\n        run: just guard-cranelift-phase23-mir-to-c-archived-corpus-contract\n\n      - name: Phase 23 production and release route audit\n        run: just guard-cranelift-phase23-production-release-audit-contract\n\n      - name: Phase 23 cross-feature qualification and residue audit\n        run: just guard-cranelift-phase23-cross-feature-qualification-contract\n\n      - name: Phase 23 exact-main Historical Full qualification\n        run: just guard-cranelift-phase23-historical-full-qualification-contract\n\n      - name: Phase 23 closure\n        run: just guard-cranelift-phase23-close\n\n      - name: Phase 19 cross-feature composition\n        run: just guard-cranelift-phase19-composition-contract\n\n      - name: Phase 19 brand identity and value representation closure\n        run: just guard-cranelift-phase19-close\n\n      - name: Phase 17 cross-feature runtime composition\n        run: just guard-cranelift-phase17-composition-contract\n\n  guard:\n    name: guard / ${{ matrix.shard }}\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    needs: build\n\n    strategy:\n      fail-fast: false\n      matrix:\n        shard:\n          - routed-return-int\n          - native-compiler-qualification\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Install guard tools\n        run: |\n          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep\n          bash scripts/install-just-ci.sh \"$HOME/.local/bin\"\n          echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Download Gust build outputs\n        uses: actions/download-artifact@v4\n        with:\n          name: gust-build\n          path: .\n\n      - name: Restore executable bit\n        run: chmod +x ./gust 2>/dev/null || true\n\n      - name: Run PR fast shard\n        if: matrix.shard == 'routed-return-int'\n        run: just guard-pr-fast-shard \"${{ matrix.shard }}\"\n\n      - name: Prepare native compiler qualification package\n        if: matrix.shard == 'native-compiler-qualification'\n        run: |\n          chmod +x ./gust build/gust-native-backend\n          install -d build/phase10-package/bin\n          install -m 0755 gust build/phase10-package/bin/gust\n          install -m 0755 build/gust-native-backend build/phase10-package/bin/gust-native-backend\n          install -m 0644 build/gust-runtime-package.a build/phase10-package/bin/gust-runtime-package.a\n          test -x build/phase10-package/bin/gust\n          test -x build/phase10-package/bin/gust-native-backend\n\n      - name: Phase 21 native rebuild reproducibility authority\n        if: matrix.shard == 'native-compiler-qualification'\n        run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract\n\n      - name: Full-program bundle validation smoke\n        if: matrix.shard == 'native-compiler-qualification'\n        run: just guard-mir-native-full-program-bundle-validation-smoke\n\n  phase20-nested-brand-annotation:\n    name: Phase 20 nested brand annotation parity\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    needs: build\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Install guard tools\n        run: |\n          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep\n          bash scripts/install-just-ci.sh \"$HOME/.local/bin\"\n          echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Download Gust build outputs\n        uses: actions/download-artifact@v4\n        with:\n          name: gust-build\n          path: .\n\n      - name: Restore executable bit\n        run: chmod +x ./gust 2>/dev/null || true\n\n      - name: Phase 20 nested brand annotation parity\n        run: just guard-cranelift-phase20-nested-brand-annotation-parity\n\n      - name: Phase 20 exact branded boundary parity\n        run: just guard-cranelift-phase20-exact-brand-boundary-parity\n\n      - name: Phase 20 contextual generic constructor parity\n        run: just guard-cranelift-phase20-contextual-generic-constructor-parity\n\n      - name: Phase 20 Arena.Free receiver invalidation parity\n        run: just guard-cranelift-phase20-arena-free-parity\n\n      - name: Phase 20 whole-program initial corpus parity\n        run: just guard-cranelift-phase20-whole-program-corpus-parity\n\n      - name: Phase 20 stdlib and runtime component differential\n        run: just guard-cranelift-phase20-stdlib-runtime-parity\n\n      - name: Phase 20 deterministic generated-MIR samples\n        run: just guard-cranelift-phase20-generated-mir-sample-parity\n\n      - name: Phase 20 generic guard prerequisites parity\n        run: just guard-cranelift-phase20-generic-guard-prerequisites-parity\n\n      - name: Phase 20 inert resource-rooted access authority parity\n        run: just guard-cranelift-phase20-resource-rooted-access-parity\n\n      - name: Phase 20 explicit-unsafe Mutex primitive migration parity\n        run: just guard-cranelift-phase20-unsafe-mutex-migration-parity\n\n      - name: Phase 20 protected-access liveness enforcement parity\n        run: just guard-cranelift-phase20-protected-access-liveness-parity\n\n      - name: Phase 20 long-lived and concurrent resource smoke\n        run: just guard-cranelift-phase20-long-lived-concurrent-smoke\n\n      - name: Phase 20 mixed cross-feature qualification\n        run: just guard-cranelift-phase20-cross-feature-qualification-parity\n\n  phase26-ffi-position:\n    name: Phase 26 FFI position policy\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    needs: build\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Install guard tools\n        run: |\n          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gdb\n          bash scripts/install-just-ci.sh \"$HOME/.local/bin\"\n          echo \"$HOME/.local/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Download Gust build outputs\n        uses: actions/download-artifact@v4\n        with:\n          name: gust-build\n          path: .\n\n      - name: Restore executable bit\n        run: chmod +x ./gust 2>/dev/null || true\n\n      - name: Restore Phase 26 R2 native worker executable bit\n        run: chmod +x build/gust-native-backend\n\n      - name: Phase 26 approved signed package and linker boundary\n        run: just guard-cranelift-phase26-approved-package\n\n      - name: Phase 26 scoped signed byte-copy runtime\n        run: just guard-cranelift-phase26-scoped-byte-copy\n\n      - name: Phase 26 pinned zlib adapter and signed test-profile link\n        run: just guard-cranelift-phase26-zlib-adapter\n\n      - name: Phase 26 checked collection validity and copy preservation\n        run: just guard-cranelift-phase26-collection-validity\n\n      - name: Phase 26 FFI position policy\n        run: just guard-cranelift-phase26-ffi-position-policy\n\n      - name: Phase 26 borrowed repr C layout\n        run: just guard-cranelift-phase26-ffi-repr-c-layout\n\n      - name: Phase 26 borrowed repr C raw pointer write\n        run: just guard-cranelift-phase26-ffi-repr-c-write\n\n      - name: Phase 26 unowned raw pointer return\n        run: just guard-cranelift-phase26-ffi-raw-return\n\n      - name: Phase 26 integer represented enum ABI\n        run: just guard-cranelift-phase26-ffi-repr-int\n\n      - name: Phase 26 owned native pointer return and release\n        run: just guard-cranelift-phase26-ffi-owned-return\n\n      - name: Phase 26 owned native argument transfer\n        run: just guard-cranelift-phase26-ffi-transfer-owned\n\n      - name: Phase 26 generic isolated C pointer call\n        run: just guard-cranelift-phase26-ffi-generic-isolated\n\n      - name: Phase 26 generic direct C pointer call\n        run: just guard-cranelift-phase26-ffi-generic-direct\n\n      - name: Phase 26 native-owned retained lease\n        run: just guard-cranelift-phase26-ffi-retained-lease\n\n      - name: Phase 26 synchronous C callback\n        run: just guard-cranelift-phase26-ffi-callback-sync\n\n      - name: Phase 26 explicit native error status\n        run: just guard-cranelift-phase26-ffi-native-error-status\n\n      - name: Phase 26 composed borrow positions and native error status\n        run: just guard-cranelift-phase26-ffi-policy-vector-status\n\n      - name: Phase 26 raw cast provenance\n        run: just guard-cranelift-phase26-raw-cast-provenance\n\n      - name: Phase 26 isolated repr C read\n        run: just guard-cranelift-phase26-ffi-isolated-read\n\n      - name: Phase 26 isolated repr C raw pointer write\n        run: just guard-cranelift-phase26-ffi-isolated-write\n\n      - name: Phase 26 Reference return escape\n        run: just guard-cranelift-phase26-reference-return-escape\n\n      - name: Phase 26 safe-call Reference provenance\n        run: just guard-cranelift-phase26-safe-reference-call\n\n      - name: Phase 26 borrowed Reference index element\n        run: just guard-cranelift-phase26-reference-index-element\n\n      - name: Phase 26 raw null safe boundary\n        run: just guard-cranelift-phase26-raw-null-safe-boundary\n\n      - name: Phase 26 computed-zero raw null boundary\n        run: just guard-cranelift-phase26-computed-zero-raw-null\n\n      - name: Phase 26 local field zero evidence\n        run: just guard-cranelift-phase26-field-zero-evidence\n\n      - name: Phase 26 nested local field zero evidence\n        run: just guard-cranelift-phase26-nested-field-zero-evidence\n\n      - name: Phase 26 arithmetic zero evidence\n        run: just guard-cranelift-phase26-arithmetic-zero-evidence\n\n      - name: Phase 26 division zero evidence\n        run: just guard-cranelift-phase26-division-zero-evidence\n\n      - name: Phase 26 match arm zero evidence\n        run: just guard-cranelift-phase26-match-zero-evidence\n\n      - name: Phase 26 take zero evidence\n        run: just guard-cranelift-phase26-take-zero-evidence\n\n      - name: Phase 26 local Struct Take-alias evidence\n        run: just guard-cranelift-phase26-take-struct-alias-evidence\n\n      - name: Phase 26 cast narrowing zero evidence\n        run: just guard-cranelift-phase26-cast-narrowing-zero-evidence\n\n      - name: Phase 26 Bool literal zero evidence\n        run: just guard-cranelift-phase26-bool-literal-zero-evidence\n\n      - name: Phase 26 logical result zero evidence\n        run: just guard-cranelift-phase26-logical-zero-evidence\n\n      - name: Phase 26 equality result zero evidence\n        run: just guard-cranelift-phase26-equality-zero-evidence\n\n      - name: Phase 26 relational result zero evidence\n        run: just guard-cranelift-phase26-relational-zero-evidence\n\n      - name: Phase 26 explicit brand prerequisite\n        run: just guard-cranelift-phase26-explicit-brand\n\n      - name: Phase 26 Empty raw-pointer zero evidence\n        run: just guard-cranelift-phase26-empty-raw-zero-evidence\n\n      - name: Phase 26 direct-call return zero evidence\n        run: just guard-cranelift-phase26-call-return-zero-evidence\n\n      - name: Phase 26 packed borrowed repr C layout\n        run: just guard-cranelift-phase26-ffi-packed-layout\n\n      - name: Phase 26 packed raw pointer write\n        run: just guard-cranelift-phase26-ffi-packed-write\n\n      - name: Phase 26 packed isolated read\n        run: just guard-cranelift-phase26-ffi-packed-isolated-read\n      - name: Phase 26 packed isolated write\n        run: just guard-cranelift-phase26-ffi-packed-isolated-write\n\n  final:\n    name: final diff check\n    runs-on: ubuntu-latest\n    timeout-minutes: 60\n    needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Diff check\n        run: git diff --check\n",
+          "current_digest": "a94c15c7c6bf549c08fb48a7749cca53ddc8ff048f44ed60783b2db96af4a1a5"
+        },
+        "r4_record": {
+          "previous": {
+            "contract_version": "phase26_1r4_collection_validity_v1",
+            "predecessor_main_sha": "6bca6cdde2a3966758fc3fb40e04fc3115e270ad",
+            "owner": "cranelift",
+            "owning_guard": "guard-cranelift-phase26-collection-validity",
+            "release_status": "capability_only_wrapper_and_release_open",
+            "failure_scope": "deterministic_process_native_trap_no_unwind",
+            "allocator_abi": "u32_offset_encoded_in_i32_exhaustion_aborts",
+            "new_i32_allocation_byte_ceiling": false,
+            "compiler_artifact_maximum_unchanged": 10616832,
+            "changed_files": [
+              {
+                "path": "GUST_LANE_STATE.md",
+                "previous_digest": "9673d6d9a844f770232a1fa7c33353a1ea5be8162961f16fd8b0c96bfdcdb5f3",
+                "current_digest": "7f394ded9b1efd9bc4cb7e520986645e4fc7426fc29ab45b681c88f1ae0794d6"
+              },
+              {
+                "path": ".github/workflows/pr-fast.yml",
+                "previous_digest": "3d76ad4fdd9c72c84d849bcade154dba567a2b71d39df8b687895569b4b43d1e",
+                "current_digest": "311ea7dfac1df432b0b94bf7be46cc8ff6ed85c28ec40186df2588b18d76fcbf"
+              },
+              {
+                "path": "justfile",
+                "previous_digest": "8fd0f5cf0ea8d3208e693cbabba1e515bbbde5f10a5d226c0c1a44849f4ebd09",
+                "current_digest": "6e6b97355529c823d375d06f9211bec9179ce6ba323bf87c77294f2712446745"
+              },
+              {
+                "path": ".github/workflows/phase21-typed-query-noop-surface.yml",
+                "previous_digest": "3a3b119b05600872a253f9b1fb65c7c1ec19ae69ba0e74927b7b1b26fb3a548d",
+                "current_digest": "1f797966b4e4f1590e046f42f8b737dd4256f46e5972a65a77bded9daec2435d"
+              },
+              {
+                "path": "scripts/cranelift_test_levels.json",
+                "previous_digest": "8858693afd3e647b9e330b5906488436639b644ae052e3a66d41d17258945613",
+                "current_digest": "2ec4b7f37d7a3731327c16c3e38e7aa54f42c58f94deac4fc25b2597ccd3b73d"
+              },
+              {
+                "path": "compiler/typechecker.gst",
+                "previous_digest": "ab588402efc7e0314bed2832255b3a31fc1c2fc1dec12ec83be11b072f09f303",
+                "current_digest": "55c873b917efcce279abaf2446b1fb881b2f332cc9d2e4d01db485ee3cc7c416"
+              },
+              {
+                "path": "compiler/mir_native_backend_full_program_source.gst",
+                "previous_digest": "09dd7ba0eff20eafdfdcb0b5fbe4142e03692fc8694a46b8a6e6176956676f17",
+                "current_digest": "f335e94139a1db75a8ed9617e2a8d88a6a2714ee44217526f45534ce0805c86e"
+              },
+              {
+                "path": "compiler/mir_native_backend_generic_source.gst",
+                "previous_digest": "17bf1312308c4aefb2e650f5d71ce38766fcd398b0baa003d0fbfd44f96d8baa",
+                "current_digest": "1fa0e85e59442697cecc857c230e014bbfaa716ed4010dcfa039409975b017b8"
+              },
+              {
+                "path": "compiler/mir_native_backend_collection_string_source.gst",
+                "previous_digest": "bc5b0ca69dfcb4a64549e0dd1982798cf107c9a3897c49f27fecccea0ade9e50",
+                "current_digest": "2e597ffcef333bde6222f89ad64c07b6148fefb0c7f720429c39a1a2ecbe4f8e"
+              },
+              {
+                "path": "compiler/mir_native_backend_filesystem_allocation_source.gst",
+                "previous_digest": "23c4dcff254659ed41b1119081fcceb9bf81943bbc4b1dbc31db775292ec2a49",
+                "current_digest": "ed74a0f64ea1ab21375b70cde937b521a38f6949e021f3ca424899097c0fd35a"
+              },
+              {
+                "path": "compiler/mir_native_backend_module_import_source.gst",
+                "previous_digest": "93814859d82d0f602ddbf93d3bd70b68893a962b18e58cfcf207614bb5dfb680",
+                "current_digest": "a6aff090e3157cf878cc857d551ea46431149e1ec6e37e3024f750ddb1903f47"
+              },
+              {
+                "path": "compiler/mir_native_backend_resource_sync_source.gst",
+                "previous_digest": "14456b2736d8a9e0b180cfe0bd8812cbb26cb68f90a68f8c952aa27c8a5d9426",
+                "current_digest": "219c516808fbee0d67458784be04637ca8a95e55f2135d52779ad7364b7c8ba3"
+              },
+              {
+                "path": "compiler/mir_native_backend_structured_cfg_source.gst",
+                "previous_digest": "0608a7521be3c15ef7bfe333f7a7539dc4651be4c2551a17960e87dad273c6f7",
+                "current_digest": "d0d56a62e997a185eefd7896d64924d7473bff950530ce57d6de8dbbbafdbaec"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/full_program.rs",
+                "previous_digest": "39db63a2c674a141ffdafd03fa706b1bbb83885a08f45ac9aeb673be742f0dbc",
+                "current_digest": "39b78c209146749ffcfd048abbd07392d1a17b73339ec9ac546995cdbc5a0355"
+              },
+              {
+                "path": "scripts/phase26_r2_scoped_copy_registration.py",
+                "previous_digest": "e2f916e4afb79dde326440715784935d2c8813205ebb6777d468b7d402bbede1",
+                "current_digest": "e400c729e4b4f7a5deb89be05c19d9e706901ec3433d3090f116719e24f30bb7"
+              },
+              {
+                "path": "scripts/phase26_r2_scoped_copy.sh",
+                "previous_digest": "e44afec286e48e47c8b7693e7fd70c191c2d124ec356fb5af76d2d31e44095fe",
+                "current_digest": "8a2069c6b335019eb64c3703ec338c13aef360d4260eff4cb20106b5fba7d3c7"
+              },
+              {
+                "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+                "previous_digest": "8898c4b3226970b829afb244a91618b56af57c1a8f0ebca8931a69b51e1581b6",
+                "current_digest": "919d51cd9b758adef8568fbae0b51d22866bbb2294b8b36a6f45d8ec0e672ff1"
+              },
+              {
+                "path": "scripts/phase24_semantic_spelling_inventory.py",
+                "previous_digest": "3cf8778c08cddab9270c45f5344ee186f3ad319219ac2b3e2d26c778b246805f",
+                "current_digest": "af5c00103aa89beb49a81d82d3572de8abb1c95630a736ba00ee99336f741b8e"
+              }
+            ],
+            "added_files": [
+              {
+                "path": "compiler/experiments/cranelift/src/checked_collection.rs",
+                "digest": "dfbb4757252a55fdd06240644d7190a5d62fec8150f97a62ddad6e6953a78eb1"
+              },
+              {
+                "path": "compiler/experiments/cranelift/src/checked_collection_tests.rs",
+                "digest": "4b725b5e5a7a080bf8c23e7464934f9af3b10fd9f23b24c22ce4e9eece6330f3"
+              },
+              {
+                "path": "compiler/typechecker_phase26_collection_authority_test_entry.gst",
+                "digest": "823efc319533e1fd40f1b4af678ec9f41afa4a81e0b32a6c913850bf74a0fb2f"
+              },
+              {
+                "path": "compiler/CRANELIFT_PHASE26_COLLECTION_SPELLING_INVENTORY.md",
+                "digest": "e9e8b0aae1a82b0cef59e376bdf420c660b299c07323d06b03042c67940ebe7d"
+              },
+              {
+                "path": "compiler/CRANELIFT_PHASE26_COLLECTION_VALIDITY.md",
+                "digest": "0345d2718b947999e5168f10e892afbac22a12ff273702b1f5f1c90ed367ee47"
+              },
+              {
+                "path": "scripts/phase26_r4_collection_registration.py",
+                "digest": "c4bffef4c543b954c850c8890135cc2ff813ca637e83674c818b0c938017b856"
+              },
+              {
+                "path": "scripts/phase26_r4_collection_guard.py",
+                "digest": "910d9e17648a4f64796278d8503dff69072f15aa08daa116c4586249e7006250"
+              },
+              {
+                "path": "scripts/phase26_r4_frontend_rejection.py",
+                "digest": "eb8e2270e5788eabc754b6214164656d2a7b02e59869510a680a9dc5053ed0c0"
+              },
+              {
+                "path": "tests/cranelift/phase26_r4_default_collection_rejected.gst",
+                "digest": "ef701acfd9455248c331404b9083ae891fb709f234fe307cb6369a8a7d95d402"
+              },
+              {
+                "path": "tests/cranelift/phase26_r4_inferred_scalar.gst",
+                "digest": "d163a0f0fc7e8b2f25c1e4545bfa80f0ccf2607bceee5239f1d7ce24e9081f47"
+              },
+              {
+                "path": "tests/cranelift/phase26_r4_metadata_reference_rejected.gst",
+                "digest": "8801b707b7dcff69fa5734621871c6a58ccd5c9ccb893367b3d845bb903c2787"
+              },
+              {
+                "path": "tests/cranelift/phase26_r4_metadata_write_rejected.gst",
+                "digest": "52ea7b40dded2381236a3837a66765d2fb45f9a34af69a87382a3dfbffa7bab9"
+              }
+            ],
+            "projections": {
+              "text": {
+                "previous_digest": "0e899ad5e180bdd002248fe724f01b1105b660d279b3b4778869048b1745761e",
+                "current_digest": "bba6dfb4ed94f3e7c64f93b58c6c4b210a2baecf001e5320789af582ba923c2d"
+              },
+              "spelling": {
+                "previous_digest": "9555267c6ce3cf080a8848417764a882cc71cd520f91ac15bea874920040284d",
+                "current_digest": "6042e9eaea9e4cd55a10a9d7fc19d4e070616f00e066b5929e40acb0e47737ed"
+              },
+              "filename": {
+                "previous_digest": "25ba49db7f444dccdfe9550d8d91adf524900f141eba223b5c1f3b8298502f9c",
+                "current_digest": "96f3433a10f5c471c4b0bce8f229ea8394760ead5096f0adb7157bdac5487130"
+              },
+              "r3_record": {
+                "previous_digest": "abb8846b7be0a2c671a1b66ee9fa5a5f0481d9b12c6766909b7aee61a9157b90",
+                "current_digest": "5350b768b579a5a74327135f1121c7ddd06fb15dd902880fc7f13bdc14b3c464"
+              },
+              "production": {
+                "previous_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
+                "current_digest": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73"
+              },
+              "workflow": {
+                "previous_digest": "b51fee12bebebbf9f6010a2db8e9a95c8e4cb056577f6902c122b110113dff8c",
+                "current_digest": "65c8f76ecd1de25e32425d1e76208f985441d11bb23c2ad46a8d51d0d8f10f41"
+              }
+            }
+          },
+          "current_digest": "0b4ad1633e065231cd1cfc554c5694c53d3aeda72de7cf8f962bab4a66bac4f5"
+        }
+      }
+    },
     "collection_validity_r4_successor": {
       "contract_version": "phase26_1r4_collection_validity_v1",
       "predecessor_main_sha": "6bca6cdde2a3966758fc3fb40e04fc3115e270ad",

@@ -348,8 +348,7 @@ def validate() -> None:
             (ROOT / "justfile").read_text() and
             "guard-cranelift-phase26-zlib-adapter" in
             (ROOT / ".github/workflows/pr-fast.yml").read_text() and
-            "PRODUCTION_REGISTRY: &[RegisteredPackage] = &[]" in
-            (ROOT / "compiler/experiments/cranelift/src/approved_package.rs").read_text(),
+            __import__("phase26_production_registration").production_policy(registry),
             "R3 owning gate or production default-deny omitted")
     print(f"{GUARD}: exact additive registration ok")
 

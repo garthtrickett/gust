@@ -122,7 +122,7 @@ def main() -> None:
     require(workflow.count("phase26-ffi-position:") == 1 and
             workflow.count(f"just {GUARD}") == 1 and
             "needs: [guard, level1, phase20-nested-brand-annotation, "
-            "phase26-ffi-position]" in workflow,
+            "phase26-ffi-position, phase26-value-evidence]" in workflow,
             "PR Fast does not own the selected Level 2 gate")
     require("GUST_TEST_MIR_TO_C_UNAVAILABLE=1" in guard and
             "--backend cranelift" in guard and

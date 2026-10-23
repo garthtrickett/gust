@@ -188,7 +188,7 @@ def check_pr_workflow(policy: dict) -> None:
     )
     require(
         "needs: [guard, level1, phase20-nested-brand-annotation, "
-        "phase26-ffi-position]" in text,
+        "phase26-ffi-position, phase26-value-evidence]" in text,
         "PR Fast final job must depend only on Level 1 and Level 2 jobs",
     )
     require_direct_levels(policy, text, {1, 2}, "PR Fast")

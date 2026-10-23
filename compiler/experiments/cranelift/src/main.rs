@@ -33851,7 +33851,15 @@ fn run_compiler_mir_link_request(
         CompilerMirPipelineFailureKind::OutputNotWritable,
     )?;
 
-    let mut command = Command::new(&request.linker_driver);
+    let production_link = request.approved_package.as_ref()
+        .and_then(|package| package.production_link());
+    let mut command = if let Some(profile) = production_link {
+        profile.recheck()?;
+        let mut command = Command::new("/usr/bin/ld");
+        command.args(["-static", "--build-id=none", "-m", "elf_x86_64"]);
+        command.args(profile.prefix());
+        command
+    } else { Command::new(&request.linker_driver) };
     if request.approved_package.is_some() {
         command.env_clear();
         command.env("PATH", "/usr/bin:/bin");
@@ -33875,7 +33883,9 @@ fn run_compiler_mir_link_request(
         package.recheck_staged_bytes()?;
         link_inputs.extend(package.link_inputs().iter().cloned());
     }
-    if let Some(runtime_package) = request.runtime_package.as_deref() {
+    if let Some(profile) = production_link {
+        link_inputs.push(profile.runtime());
+    } else if let Some(runtime_package) = request.runtime_package.as_deref() {
         link_inputs.push(runtime_package.to_path_buf());
     }
     for link_input in &link_inputs {
@@ -33891,6 +33901,7 @@ fn run_compiler_mir_link_request(
     for library in &request.additional_libraries {
         command.arg(format!("-l{library}"));
     }
+    if let Some(profile) = production_link { command.args(profile.suffix()); }
     command.arg("-o").arg(&temp_path);
     for trailing in &request.trailing_linker_args {
         command.arg(trailing);
@@ -33991,6 +34002,12 @@ fn run_compiler_mir_link_request(
                 CompilerMirPipelineFailureKind::OutputNotWritable,
                 "linker produced an empty temporary executable",
             ));
+        }
+        if let Some(profile) = production_link {
+            if let Err(error) = profile.verify_executable(&temp_path) {
+                let _ = remove_compiler_mir_link_temp(&temp_path);
+                return Err(error.into());
+            }
         }
         if let Err(error) = fs::rename(&temp_path, &request.output_path) {
             let _ = remove_compiler_mir_link_temp(&temp_path);

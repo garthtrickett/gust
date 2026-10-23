@@ -27,7 +27,7 @@ jobs:
       vars.CODEX_GITHUB_ACTOR != '' &&
       github.actor == vars.CODEX_GITHUB_ACTOR)
     name: build Gust and CI surface
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -70,6 +70,9 @@ jobs:
       # fails fast ahead of the build rather than after it.
       - name: Frozen oracle contract
         run: just guard-cranelift-phase24-frozen-oracle-contract
+
+      - name: Pin existing production build dependencies
+        run: python3 scripts/phase26_production_toolchain.py install-ci build/production-build-toolchain
 
       - name: Build Gust
         run: make gust
@@ -797,7 +800,7 @@ jobs:
 
   phase26-ffi-position:
     name: Phase 26 FFI position policy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build
 
@@ -823,6 +826,9 @@ jobs:
       - name: Restore Phase 26 R2 native worker executable bit
         run: chmod +x build/gust-native-backend
 
+      - name: Pin existing production qualification dependencies
+        run: python3 scripts/phase26_production_toolchain.py install-ci build/production-test-toolchain
+
       - name: Phase 26 approved signed package and linker boundary
         run: just guard-cranelift-phase26-approved-package
 
@@ -831,6 +837,17 @@ jobs:
 
       - name: Phase 26 pinned zlib adapter and signed test-profile link
         run: just guard-cranelift-phase26-zlib-adapter
+
+      - name: Phase 26 enrolled production package offline qualification
+        run: just guard-cranelift-phase26-production-trust
+
+      - name: Retain production qualification candidate and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase26-production-qualification
+          path: build/guards/phase26_production_trust/
+          if-no-files-found: error
 
       - name: Phase 26 checked collection validity and copy preservation
         run: just guard-cranelift-phase26-collection-validity
@@ -898,6 +915,48 @@ jobs:
       - name: Phase 26 computed-zero raw null boundary
         run: just guard-cranelift-phase26-computed-zero-raw-null
 
+      - name: Phase 26 packed borrowed repr C layout
+        run: just guard-cranelift-phase26-ffi-packed-layout
+
+      - name: Phase 26 packed raw pointer write
+        run: just guard-cranelift-phase26-ffi-packed-write
+
+      - name: Phase 26 packed isolated read
+        run: just guard-cranelift-phase26-ffi-packed-isolated-read
+      - name: Phase 26 packed isolated write
+        run: just guard-cranelift-phase26-ffi-packed-isolated-write
+
+  phase26-value-evidence:
+    name: Phase 26 source value evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install guard tools
+        run: |
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gdb
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Download Gust build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: gust-build
+          path: .
+
+      - name: Restore executable bit
+        run: chmod +x ./gust 2>/dev/null || true
+
+      - name: Restore Phase 26 R2 native worker executable bit
+        run: chmod +x build/gust-native-backend
+
+      - name: Pin existing source evidence dependencies
+        run: python3 scripts/phase26_production_toolchain.py install-ci build/production-source-evidence-toolchain
+
       - name: Phase 26 local field zero evidence
         run: just guard-cranelift-phase26-field-zero-evidence
 
@@ -943,22 +1002,11 @@ jobs:
       - name: Phase 26 direct-call return zero evidence
         run: just guard-cranelift-phase26-call-return-zero-evidence
 
-      - name: Phase 26 packed borrowed repr C layout
-        run: just guard-cranelift-phase26-ffi-packed-layout
-
-      - name: Phase 26 packed raw pointer write
-        run: just guard-cranelift-phase26-ffi-packed-write
-
-      - name: Phase 26 packed isolated read
-        run: just guard-cranelift-phase26-ffi-packed-isolated-read
-      - name: Phase 26 packed isolated write
-        run: just guard-cranelift-phase26-ffi-packed-isolated-write
-
   final:
     name: final diff check
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]
+    needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position, phase26-value-evidence]
 
     steps:
       - name: Checkout

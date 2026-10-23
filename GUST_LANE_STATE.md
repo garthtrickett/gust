@@ -1,3 +1,34 @@
+# Active Cranelift lane — production trust activation, 2026-10-23
+
+Owner `ea414019-6671-4c02-a629-b705e64769fb`; worktree
+`/home/gust/code/worktrees/gust/p26-production-trust`; branch
+`codex/phase26-1r3-production-trust`; activation base `c6916d3e`.
+This is a new explicitly approved activation. Earlier terminal records below
+are historical. Prior frozen PR607 evidence is unchanged.
+
+Next gate: reviewed production identity/package enrollment and exact-head owning
+qualification, followed by the generic post-cleanup ticket prerequisite and checked
+merged handoff to the separately activated Stdlib owner. Local enrolled-signature,
+freshness, real zlib execution/deterministic static linking, artifact-negative
+matrix and source-produced ticket rejection checks have passed. These are local
+capability evidence; no release closure or public-wrapper acceptance is claimed.
+
+Operator approval and public signing receipts live under
+`/home/gust/phase26-recovery/phase26-release-activation-20261023/`.
+Private signing bytes are never read or stored by this lane. Initial epochs are
+release/minimum/key 1/1/1–1; actual seven-day times are worker-pinned public data.
+Renewal/rotation/revocation/withdrawal require reviewed newer worker epochs.
+No independent snapshot-update protocol or package/environment trust input exists.
+
+The source-produced ticket probe independently rejects at normal ScopeCleanup
+where the existing proof expects Return; generic capability correction remains
+pending. The direct large-Vector enum restriction stays in force. OD23 remains
+OPEN; no resource witness was executed and transfer clearing is unchanged.
+R4 merged wrapper/audit, R5 regressions/fixed point and R6 final-main Historical
+remain OPEN. This state is active, not terminal waiting.
+
+---
+
 # Gust Lane State — Cranelift Lane Terminal Record
 
 ## Phase 24 closed — generated-C backend retirement (Patch 24.18, merged 2026-09-17)

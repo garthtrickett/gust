@@ -18,6 +18,7 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase26-production-trust": 2,
     "guard-cranelift-phase26-approved-package": 2,
     "guard-cranelift-phase26-ffi-position-policy": 2,
     "guard-cranelift-phase26-ffi-packed-layout": 2,
