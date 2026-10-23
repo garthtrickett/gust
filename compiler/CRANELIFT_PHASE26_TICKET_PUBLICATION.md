@@ -9,8 +9,9 @@ The source-produced scalar probe reached normal ScopeCleanup where the scoped
 proof required Return. Ordinary local tagged helper returns also stopped in
 the earlier scalar-only parameter/argument planner. The local admission gate
 now recognizes an enum with exactly one branded Index variant and one Int
-variant, plus existing local Index parameters/returns. Extern positions and
-direct large aggregate payloads retain their previous rejections.
+variant. Local Index parameters are admitted only in functions returning that
+representation. Unrelated Index parameters, standalone Index returns, extern
+positions and direct large aggregate payloads retain their previous rejections.
 
 The worker independently checks the actual enum layouts and brand, constructor
 bodies, reaching values, region operations and cleanup edges. Each constructor

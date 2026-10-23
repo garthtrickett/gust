@@ -48085,7 +48085,7 @@
         {
           "path": "compiler/mir_native_backend_parameter_argument_source.gst",
           "previous_digest": "02c063f194bef30177817de810e38217f12778d05cf7362f190b569021e3f04a",
-          "current_digest": "a90cd6d508cf603afdf7bb6ac09ad899615534aff72065b316e7b9c99c4a9895"
+          "current_digest": "d338979726529705e093a9d0c44ef90160ed96c0a235df3b9d31c3f4e1648e57"
         },
         {
           "path": "compiler/experiments/cranelift/src/main.rs",
@@ -48135,7 +48135,7 @@
         },
         {
           "path": "scripts/phase26_ticket_publication_guard.py",
-          "digest": "606af789081b8ef4fa24e64df24a77641e9f3f2545bd91817f3a1f3fba8e4b5f"
+          "digest": "327010c5663f654f8b22b069dc4fc65625f65769de6fecb9e8667958fad3eb3d"
         },
         {
           "path": "scripts/phase26_ticket_publication_registration.py",
@@ -48147,7 +48147,7 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_TICKET_PUBLICATION.md",
-          "digest": "2dec7a12df33edfd820ab152fd16c123c0868fccbfbc3165a6082429cffbca25"
+          "digest": "aa8484443323a8aa2661a1579e7dfd87f083f2203667244994bcec1a1ae67a91"
         }
       ],
       "text_owned_digest": "bc45fde5a86a39b0d3762a094023b63cfd4ffb6dada95acae5d863aa5fc76d03",

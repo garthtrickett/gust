@@ -71,6 +71,17 @@ def cases(template):
 
 
 def rejections(template):
+    yield "unrelated_recursive_index", (ROOT / "tests/e2e_recursive_branded_linked_list.gst").read_text(), (
+        "expected_failure_stage=before_driver_discovery",
+        "reason_code=deferred_p13_parameter_argument_aggregate_parameter")
+    yield "standalone_index_return", """type Cell[ctx] struct { value: int }
+func local_slot(ctx: &Arena) Index[Cell, ctx] {
+    mut slot: Index[Cell, ctx] := os.ArenaAlloc(ctx);
+    return slot;
+}
+func main() {}
+""", ("expected_failure_stage=before_driver_discovery",
+        "reason_code=deferred_p13_parameter_argument_aggregate_return")
     yield "wrong_arena", template.replace("    defer destination.Free();",
         "    defer destination.Free();\n    mut other := os.Arena.New();\n    defer other.Free();").replace(
             "destination.get_ref(copied)", "other.get_ref(copied)"), "[BrandMismatch] Arena.get_ref index brand"
@@ -164,7 +175,8 @@ def main():
         (directory / "stdout").write_text(process.stdout)
         (directory / "stderr").write_text(process.stderr)
         rejected = 0 < process.returncode < 128 and not output.exists() and not output.is_symlink()
-        verdict = ("REJECTED (expected assertion)" if expected in process.stdout + process.stderr else
+        assertions = (expected,) if isinstance(expected, str) else expected
+        verdict = ("REJECTED (expected assertion)" if all(message in process.stdout + process.stderr for message in assertions) else
                    "REJECTED (different assertion)") if rejected else "ACCEPTED or invalid rejection"
         negatives.append(dict(case=name, source_sha256=digest(source), exit=process.returncode, verdict=verdict))
         (SCRATCH / "rejections.json").write_text(json.dumps(negatives, indent=2) + "\n")

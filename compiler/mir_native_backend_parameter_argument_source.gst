@@ -331,7 +331,9 @@ func mir_native_parameter_argument_scan_deferred(
                             ctx
                         );
                     if statement.FunctionDecl.is_extern == 0 &&
-                       (parameter.param_type.tag == 7 ||
+                       ((parameter.param_type.tag == 7 &&
+                         mir_native_parameter_argument_is_ticket_result(
+                             ctx[statement.FunctionDecl.return_type], statements, ctx) == 1) ||
                         mir_native_parameter_argument_is_ticket_result(
                             parameter.param_type, statements, ctx) == 1) {
                         parameter_class = 0;
@@ -440,9 +442,8 @@ func mir_native_parameter_argument_scan_deferred(
                 mut return_class :=
                     mir_native_parameter_argument_type_class(return_type, ctx);
                 if statement.FunctionDecl.is_extern == 0 &&
-                   (return_type.tag == 7 ||
-                    mir_native_parameter_argument_is_ticket_result(
-                        return_type, statements, ctx) == 1) {
+                   mir_native_parameter_argument_is_ticket_result(
+                       return_type, statements, ctx) == 1 {
                     return_class = 0;
                 }
                 if return_class == 1 &&
