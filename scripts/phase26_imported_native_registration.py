@@ -125,6 +125,10 @@ def operational_projection(kind, current):
         import phase26_r4_collection_registration as r4
         import phase26_r3_zlib_adapter_registration as r3
         live_text = r4.owned_text(r3.raw_text_surfaces())
+        # The enclosing record may already be normalized to this predecessor.
+        # Recomputed text must cross the same checked successor boundary before
+        # this module retires only its operational-state digest.
+        live_text = successor.project(json.loads(REGISTRY.read_text()), "r4_text", live_text)
         expected_text = operational_projection("r4_text", live_text)
         edge = result["projections"]["text"]
         require(edge["previous_digest"] == previous["projections"]["text"]["previous_digest"] and

@@ -91,11 +91,10 @@ def prior_digest(registry, path, live):
     # Older validators normalize the same physical file more than once. Admit
     # only coordinates frozen for this exact path; current physical bytes are
     # checked independently below, so none of these permits a rollback.
-    for previous in predecessor.get("phase26_activation_audit", {}).values():
-        if isinstance(previous, dict):
-            for item in previous.get("changed_files", []):
-                if item.get("path") == path:
-                    admitted.update(item[key] for key in ("current_digest", "previous_digest") if key in item)
+    for key in ("imported_native_successor_v1", "scoped_ticket_publication_successor_v1"):
+        for item in predecessor["phase26_activation_audit"][key]["changed_files"]:
+            if item["path"] == path:
+                admitted.update(item[field] for field in ("current_digest", "previous_digest"))
     require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
         pin["previous_digest"] == sha(base_bytes(path)) and
         live in admitted,
@@ -155,7 +154,14 @@ def project(registry, kind, current):
         foreign = [item for item in current if item["path"] not in owned]
         return sorted(copy.deepcopy(foreign + previous), key=lambda item: item["path"])
     require(fingerprint(current) == row["projections"][kind], f"R4 {kind} live projection drifted (composition successor)")
-    return copy.deepcopy(baseline()["projections"][kind])
+    previous = copy.deepcopy(baseline()["projections"][kind])
+    if kind == "r4_record":
+        # This predecessor retires operational state only after comparing its
+        # current digest with the actual file. Supply that actual coordinate;
+        # every protected field still comes from the exact reviewed baseline.
+        next(item for item in previous["changed_files"] if item["path"] == STATE)[
+            "current_digest"] = sha((ROOT / STATE).read_bytes())
+    return previous
 
 def project_registry(registry):
     result = copy.deepcopy(registry)
@@ -245,6 +251,17 @@ def inversions():
         require(ticket.prior_digest(registry, path, once) == once,
             "repeated ticket projection changed its frozen coordinate: " + path)
 
+    # Production's pre-enrollment rollback is not an intermediate input from
+    # either immediately enclosing successor. It must reject even while the
+    # physical current file remains correctly pinned.
+    production = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))[
+        "phase26_activation_audit"]["production_trust_successor_v1"]
+    for pin in production["changed_files"]:
+        if pin["path"] in CHANGED:
+            rejected("production rollback coordinate " + pin["path"],
+                lambda pin=pin: prior_digest(registry, pin["path"], pin["previous_digest"]),
+                "R4 changed file drifted")
+
     changed = copy.deepcopy(registry)
     changed["phase26_activation_audit"][KEY]["changed_files"].append(dict(path=STATE))
     rejected("re-admitted operational byte pin", lambda: identity(changed), "operational-state retirement")
@@ -300,6 +317,11 @@ def inversions():
     next(item for item in changed["changed_files"] if item["path"] == STATE)["previous_digest"] = "0" * 64
     rejected("historical operational predecessor mutation", lambda: project(registry, "r4_record", changed),
         "R4 r4_record live projection drifted")
+    expected = copy.deepcopy(baseline()["projections"]["r4_record"])
+    next(item for item in expected["changed_files"] if item["path"] == STATE)[
+        "current_digest"] = sha((ROOT / STATE).read_bytes())
+    require(project(registry, "r4_record", projections["r4_record"]) == expected,
+        "composition operational boundary changed a protected predecessor field")
     changed = copy.deepcopy(registry)
     changed["phase26_activation_audit"]["scoped_ticket_publication_successor_v1"]["phase26_1_status"] = "DONE"
     rejected("foreign ticket mutation", lambda: require(
