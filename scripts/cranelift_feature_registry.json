@@ -48112,6 +48112,11 @@
           "path": "scripts/cranelift_test_levels.py",
           "previous_digest": "0027cca4b0b56365e0169e73b4a3eab9a35df3251ae59059a2f2d1a0b24a1f87",
           "current_digest": "1faad962c4af9bb18ac754634465d076fbe861498b0b475380ed52d37b25e33b"
+        },
+        {
+          "path": "scripts/phase26_ffi_position_registration.py",
+          "previous_digest": "d78b2a5a84226e8e632a195d934e177b40d65e969e964c509d5a0ac0747a8dc8",
+          "current_digest": "f8431c9d5deb2997b4258c37293fdb564bd63f49ef4fc19433572e0b80b60496"
         }
       ],
       "added_files": [
@@ -48145,7 +48150,7 @@
         },
         {
           "path": "compiler/experiments/cranelift/production/predecessor-baseline.json.gz",
-          "digest": "dc24681e9e89afe49a579db4596c6fdf5afc88f63d68b22e080d12e0738ee732"
+          "digest": "f016d9fc2ec83952cf20cf2091894c2fe5dd85e06be4e1442286cfbeb0426cab"
         },
         {
           "path": "scripts/phase26_production_package.py",
@@ -48157,7 +48162,7 @@
         },
         {
           "path": "scripts/phase26_production_registration.py",
-          "digest": "c015f020ecf2672ab0292cea73c5a5d024e003f849476f05ff8af0175687be03"
+          "digest": "17785e6511aaf295b66a2d8c222fb9f81de5a3c36e9414e3a5a70a9b19da01e0"
         },
         {
           "path": "scripts/phase26_production_guard.py",
@@ -48168,7 +48173,7 @@
           "digest": "2fd9fb382f424856d5d952343cec7ada0d8b64b14ede8894156bad6ca263e74d"
         }
       ],
-      "text_current_digest": "5fb035babca82320523e4795a5d3b30259cb7e84a2423e20572bcfe6632c5d4f",
+      "text_current_digest": "2d2805b0889e88a43603828188111aeb6658dce56da1805f414eb39bb0f77f7b",
       "spelling_render_current_digest": "e7410ecf2870586786d597b5ff302bad8d1b26d57a07d64ec28164af215b2fa0",
       "projections": {
         "r4_text": {

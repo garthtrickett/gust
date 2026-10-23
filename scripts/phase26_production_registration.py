@@ -28,6 +28,7 @@ CHANGED = (
     "scripts/phase26_r3_zlib_adapter_registration.py",
     "scripts/phase26_r3_zlib_adapter_guard.sh",
     "scripts/cranelift_ci_family.py", "scripts/cranelift_test_levels.py",
+    "scripts/phase26_ffi_position_registration.py",
 )
 ADDED = (
     "compiler/experiments/cranelift/src/production_trust.rs",
@@ -52,7 +53,7 @@ def require(ok, reason):
 def sha(raw): return hashlib.sha256(raw).hexdigest()
 def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
 BASELINE = "compiler/experiments/cranelift/production/predecessor-baseline.json.gz"
-BASELINE_SHA256 = "dc24681e9e89afe49a579db4596c6fdf5afc88f63d68b22e080d12e0738ee732"
+BASELINE_SHA256 = "f016d9fc2ec83952cf20cf2091894c2fe5dd85e06be4e1442286cfbeb0426cab"
 
 def decode_baseline(raw):
     require(sha(raw) == BASELINE_SHA256, "production predecessor baseline bytes drifted")
@@ -267,7 +268,8 @@ def validate():
     check_files(registry)
     require(project_registry(registry) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
             "production changed predecessor registry")
-    for path in ("scripts/cranelift_ci_family.py", "scripts/cranelift_test_levels.py"):
+    for path in ("scripts/cranelift_ci_family.py", "scripts/cranelift_test_levels.py",
+                 "scripts/phase26_ffi_position_registration.py"):
         before = base_bytes(path).decode()
         old = "phase26-ffi-position]"
         require(before.count(old) == 1 and (ROOT / path).read_text() ==
