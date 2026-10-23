@@ -9,7 +9,9 @@ import copy
 import hashlib
 import json
 import re
-import subprocess
+import base64
+import gzip
+from functools import lru_cache
 import sys
 from pathlib import Path
 
@@ -34,6 +36,7 @@ ADDED = (
     "compiler/experiments/cranelift/production/snapshot.json",
     "compiler/experiments/cranelift/production/public-identity.json",
     "compiler/experiments/cranelift/production/build-toolchain.json",
+    "compiler/experiments/cranelift/production/predecessor-baseline.json.gz",
     "scripts/phase26_production_package.py",
     "scripts/phase26_production_toolchain.py",
     "scripts/phase26_production_registration.py",
@@ -47,7 +50,19 @@ def require(ok, reason):
 
 def sha(raw): return hashlib.sha256(raw).hexdigest()
 def fingerprint(value): return sha(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
-def base_bytes(path): return subprocess.check_output(["git", "show", f"{BASE}:{path}"], cwd=ROOT)
+BASELINE = "compiler/experiments/cranelift/production/predecessor-baseline.json.gz"
+BASELINE_SHA256 = "c34040c36e98be10e2ad3deee025477455c598fe735dbd9124369a16e33099bb"
+
+def decode_baseline(raw):
+    require(sha(raw) == BASELINE_SHA256, "production predecessor baseline bytes drifted")
+    return json.loads(gzip.decompress(raw))
+
+@lru_cache(maxsize=1)
+def baseline():
+    return decode_baseline((ROOT / BASELINE).read_bytes())
+
+def base_bytes(path):
+    return base64.b64decode(baseline()[path], validate=True)
 def raw_digest(path): return sha((ROOT / path).read_bytes())
 def record(registry): return registry.get("phase26_activation_audit", {}).get(KEY)
 
@@ -246,6 +261,8 @@ def inversions():
             require(assertion in str(error), f"{label}: REJECTED (different assertion): {error}")
             print(f"{label}: REJECTED (expected assertion): {error}")
         else: raise SystemExit(f"{label}: ACCEPTED")
+    rejected("substituted predecessor baseline", lambda: decode_baseline(b"substituted"),
+             "production predecessor baseline bytes drifted")
     for path in CHANGED:
         rejected("substituted " + path, lambda path=path: prior_digest(registry, path, "0" * 64),
                  "R4 changed file drifted")
@@ -301,9 +318,9 @@ def inversions():
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "generate":
         require(not record(json.loads(REGISTRY.read_text())), "generation requires unregistered successor")
-        baseline = json.loads(Path(sys.argv[2]).read_text())
-        previous = baseline["edges"]
-        previous["r4_record"] = {"current": baseline["r4_record"]}
+        opening_evidence = json.loads(Path(sys.argv[2]).read_text())
+        previous = opening_evidence["edges"]
+        previous["r4_record"] = {"current": opening_evidence["r4_record"]}
         value = build_record(previous)
         text = REGISTRY.read_text(); marker = '  "phase26_activation_audit": {\n'
         field = "\n".join("  " + l for l in json.dumps({KEY: value}, indent=2).splitlines()[1:-1])

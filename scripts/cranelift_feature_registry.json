@@ -48134,6 +48134,10 @@
           "digest": "abcf7a69825dc7ca0b63cdd65bf438e7bc561968446a87445f87e2a12dbe6286"
         },
         {
+          "path": "compiler/experiments/cranelift/production/predecessor-baseline.json.gz",
+          "digest": "c34040c36e98be10e2ad3deee025477455c598fe735dbd9124369a16e33099bb"
+        },
+        {
           "path": "scripts/phase26_production_package.py",
           "digest": "5dc03141dd57ffd6d54c6d29e3554f4e7ff4b7008d52212fc093064c72792c50"
         },
@@ -48143,7 +48147,7 @@
         },
         {
           "path": "scripts/phase26_production_registration.py",
-          "digest": "541261e0adeae97a6b7decb84c4cc8b2570b26873e2731f4bba51ecc87035df7"
+          "digest": "11cb670560034f008508a2c89a984c3073391e6b050971ce06179a20c7ba5bc3"
         },
         {
           "path": "scripts/phase26_production_guard.py",
@@ -48154,7 +48158,7 @@
           "digest": "2fd9fb382f424856d5d952343cec7ada0d8b64b14ede8894156bad6ca263e74d"
         }
       ],
-      "text_current_digest": "383870303aa776287fd3c55e6921b8c4c01320c700632cf840f532af3fc5f2a5",
+      "text_current_digest": "9b43a60f4b285de94edbd9f85d23a2ebe0b4b8c6906951174bb19b58c78ee0f5",
       "spelling_render_current_digest": "e7410ecf2870586786d597b5ff302bad8d1b26d57a07d64ec28164af215b2fa0",
       "projections": {
         "r4_text": {
