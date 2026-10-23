@@ -24576,3 +24576,9 @@ guard-cranelift-phase26-ticket-publication:
     python3 scripts/phase26_ticket_publication_registration.py inversions
     cargo test --locked --manifest-path compiler/experiments/cranelift/Cargo.toml ticket_result_tests
     python3 scripts/phase26_ticket_publication_guard.py
+
+# Ordinary imported byte-boundary declarations retain independent package authority.
+guard-cranelift-phase26-imported-native:
+    python3 scripts/phase26_imported_native_registration.py validate
+    python3 scripts/phase26_imported_native_registration.py inversions
+    python3 scripts/phase26_ticket_publication_guard.py --imported

@@ -1508,13 +1508,27 @@ func mir_native_module_import_evaluate(functions: std.Vector[MirNativeModuleImpo
     return evaluation;
 }
 
+// Use the same declaration identity as typechecking. Runtime intrinsics retain
+// global identities, while ordinary imported declarations retain module identity.
+func mir_native_module_import_extern_name(module_prefix: str, name: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut previous := (*env).current_prefix;
+        (*env).current_prefix = module_prefix;
+        mut resolved := typechecker.env_resolve_namespaced_ident(
+            env as *typechecker.TypeEnvironment[ctx], name, ctx
+        );
+        (*env).current_prefix = previous;
+        return resolved;
+    }
+}
+
 func mir_native_module_import_borrowed_aggregate_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
            std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 {
             return 0;
         }
-        mut name := mir_native_module_import_qualified(module_prefix, statement.FunctionDecl.name, ctx);
+        mut name := mir_native_module_import_extern_name(module_prefix, statement.FunctionDecl.name, env, ctx);
         guard signature := (*env).function_registry.Get(name) else { return 0; };
         if signature.ffi_contract_verified == 0 { return 0; }
         mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
@@ -1551,7 +1565,7 @@ func mir_native_module_import_untrusted_raw_return_extern(statement: ast.Stateme
         }
         mut result_type := ctx[statement.FunctionDecl.return_type];
         if result_type.tag != 9 { return 0; }
-        mut name := mir_native_module_import_qualified(module_prefix, statement.FunctionDecl.name, ctx);
+        mut name := mir_native_module_import_extern_name(module_prefix, statement.FunctionDecl.name, env, ctx);
         guard signature := (*env).function_registry.Get(name) else { return 0; };
         if signature.ffi_contract_verified == 1 &&
            signature.return_type.tag == 9 &&
@@ -1569,11 +1583,15 @@ func mir_native_module_import_owned_ffi_extern(statement: ast.Statement[ctx], mo
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
            std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
-        mut qualified := mir_native_module_import_qualified(
-            module_prefix, statement.FunctionDecl.name, ctx
+        mut qualified := mir_native_module_import_extern_name(
+            module_prefix, statement.FunctionDecl.name, env, ctx
         );
         guard sig := (*env).function_registry.Get(qualified) else { return 0; };
         if sig.ffi_contract_verified == 0 { return 0; }
+        if std.str_eq(sig.ffi_return_policy, "fallible_owned_out") == 1 &&
+           typechecker.env_ffi_fallible_owned_out_shape(
+               env as *typechecker.TypeEnvironment[ctx], sig.return_type, ctx
+           ) == 1 { return 1; }
         if std.str_eq(sig.ffi_return_policy, "owned_return") == 1 &&
            sig.return_type.tag == 8 { return 1; }
         mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
@@ -1600,6 +1618,36 @@ func mir_native_module_import_owned_ffi_extern(statement: ast.Statement[ctx], mo
     }
 }
 
+// Verified transient-region access and direct byte-span positions use the
+// existing full-program planner. This preflight selects no package or symbol:
+// independent canonical ownership, span and approved-package checks remain there.
+func mir_native_module_import_byte_boundary_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
+        mut qualified := mir_native_module_import_extern_name(
+            module_prefix, statement.FunctionDecl.name, env, ctx
+        );
+        guard sig := (*env).function_registry.Get(qualified) else { return 0; };
+        if sig.ffi_contract_verified == 0 { return 0; }
+        mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+        if len(policies) != len(sig.params) { return 0; }
+        mut index := 0;
+        while index < len(policies) {
+            mut parameter := sig.params[index];
+            if parameter.tag == 9 &&
+               (std.str_eq(policies[index], "region_access_call") == 1 ||
+                std.str_eq(policies[index], "borrow_read_call") == 1 ||
+                std.str_eq(policies[index], "borrow_write_call") == 1) {
+                mut element := ctx[parameter.RawPointer.inner];
+                if element.tag == 1 { return 1; }
+            }
+            index = index + 1;
+        }
+        return 0;
+    }
+}
+
 // The full-program planner owns the opt-in enum's physical ABI and selected
 // host proof. Let that planner inspect verified value positions before the
 // older scalar-only module-import profile rejects the declaration.
@@ -1607,7 +1655,7 @@ func mir_native_module_import_repr_int_extern(statement: ast.Statement[ctx], mod
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
            std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
-        mut name := mir_native_module_import_qualified(module_prefix, statement.FunctionDecl.name, ctx);
+        mut name := mir_native_module_import_extern_name(module_prefix, statement.FunctionDecl.name, env, ctx);
         guard signature := (*env).function_registry.Get(name) else { return 0; };
         if signature.ffi_contract_verified == 0 { return 0; }
         mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
@@ -1639,8 +1687,8 @@ func mir_native_module_import_callback_extern(statement: ast.Statement[ctx], mod
     unsafe {
         if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
            std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
-        mut name := mir_native_module_import_qualified(
-            module_prefix, statement.FunctionDecl.name, ctx
+        mut name := mir_native_module_import_extern_name(
+            module_prefix, statement.FunctionDecl.name, env, ctx
         );
         guard signature := (*env).function_registry.Get(name) else { return 0; };
         if signature.ffi_contract_verified == 0 { return 0; }
@@ -1665,8 +1713,8 @@ func mir_native_module_import_native_error_extern(statement: ast.Statement[ctx],
            std.str_eq(statement.FunctionDecl.ffi_return_policy, "native_error") == 0 {
             return 0;
         }
-        mut qualified := mir_native_module_import_qualified(
-            module_prefix, statement.FunctionDecl.name, ctx
+        mut qualified := mir_native_module_import_extern_name(
+            module_prefix, statement.FunctionDecl.name, env, ctx
         );
         guard sig := (*env).function_registry.Get(qualified) else { return 0; };
         if sig.ffi_contract_verified == 1 && sig.return_type.tag == 0 &&
@@ -1785,6 +1833,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                            mir_native_module_import_owned_ffi_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
+                           mir_native_module_import_byte_boundary_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 ||
                            mir_native_module_import_repr_int_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
@@ -1801,7 +1852,7 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                         model.represented = 1;
                         return mir_native_module_import_invalid(
                             model,
-                            "Native backend canonical MIR verification failed: unsupported external declaration shape",
+                            std.Concat("Native backend canonical MIR verification failed: unsupported external declaration shape: ", preflight_statement.FunctionDecl.name),
                             ctx
                         );
                     }

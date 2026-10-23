@@ -1039,8 +1039,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                     mut composed_status := 0;
                     if (isolated_count > 0 || direct_count > 0) &&
                        std.str_eq(statement.FunctionDecl.ffi_return_policy, "native_error") == 1 {
-                        mut key := mir_native_full_program_qualified_name(
-                            module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                        mut key := typechecker.env_resolve_namespaced_ident(
+                            env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
                         );
                         guard signature := (*env).function_registry.Get(key) else {
                             return "Native FFI policy vector lacks a verified signature";
@@ -1055,8 +1055,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                     mut checked_region_operation := 0;
                     if len(parameters) > 0 &&
                        std.str_eq(parameters[0].ffi_policy, "region_access_call") == 1 {
-                        mut key := mir_native_full_program_qualified_name(
-                            module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                        mut key := typechecker.env_resolve_namespaced_ident(
+                            env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
                         );
                         guard signature := (*env).function_registry.Get(key) else {
                             return "Native FFI region operation lacks a verified signature";
@@ -1077,8 +1077,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                              std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 1 ||
                              std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 1);
                         if legacy_isolated == false {
-                            mut key := mir_native_full_program_qualified_name(
-                                module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                            mut key := typechecker.env_resolve_namespaced_ident(
+                                env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
                             );
                             guard signature := (*env).function_registry.Get(key) else {
                                 return "Native FFI isolated declaration lacks a verified signature";
@@ -1099,8 +1099,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                              std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 1 ||
                              std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 1);
                         if legacy_direct == false {
-                            mut key := mir_native_full_program_qualified_name(
-                                module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                            mut key := typechecker.env_resolve_namespaced_ident(
+                                env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
                             );
                             guard signature := (*env).function_registry.Get(key) else {
                                 return "Native FFI direct declaration lacks a verified signature";
@@ -1157,7 +1157,9 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                     return "Native FFI borrowed aggregate target layout is unsupported";
                                 }
                                 mut name := inner.Struct.struct_name;
-                                mut key := mir_native_full_program_qualified_name(module_prefixes[module_index], statement.FunctionDecl.name, ctx);
+                                mut key := typechecker.env_resolve_namespaced_ident(
+                                    env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
+                                );
                                 guard signature := (*env).function_registry.Get(key) else {
                                     return "Native FFI borrowed aggregate lacks a verified declaration";
                                 };
@@ -1293,7 +1295,9 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                         }
                         mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                         if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
-                        mut key := mir_native_full_program_qualified_name(module_prefixes[module_index], statement.FunctionDecl.name, ctx);
+                        mut key := typechecker.env_resolve_namespaced_ident(
+                            env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
+                        );
                         guard signature := (*env).function_registry.Get(key) else {
                             return "Native FFI repr(int) enum lacks a verified declaration";
                         };
@@ -1357,7 +1361,9 @@ func mir_native_full_program_ffi_raw_return_diagnostic(programs: std.Vector[ast.
             unsafe {
                 if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 &&
                    std.str_eq(statement.FunctionDecl.ffi_return_policy, "raw_untrusted") == 1 {
-                    mut name := mir_native_full_program_qualified_name(module_prefixes[module_index], statement.FunctionDecl.name, ctx);
+                    mut name := typechecker.env_resolve_namespaced_ident(
+                        env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
+                    );
                     guard signature := (*env).function_registry.Get(name) else {
                         return "Native FFI raw return lacks a verified declaration";
                     };
@@ -1418,8 +1424,8 @@ func mir_native_full_program_ffi_owned_return_diagnostic(programs: std.Vector[as
                        target.target.pointer_size != 8 {
                         return "Native FFI owned result target ABI is unsupported";
                     }
-                    mut qualified := mir_native_full_program_qualified_name(
-                        module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                    mut qualified := typechecker.env_resolve_namespaced_ident(
+                        env as *typechecker.TypeEnvironment[ctx], statement.FunctionDecl.name, ctx
                     );
                     guard sig := (*env).function_registry.Get(qualified) else {
                         return "Native FFI owned result lacks a verified declaration";
@@ -3523,6 +3529,14 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                             ctx
                         );
                     function.is_extern = statement.FunctionDecl.is_extern;
+                    if function.is_extern == 1 {
+                        // Canonical declarations and call sites share the
+                        // typechecker's resolved identity, including intrinsics.
+                        function.qualified_name = typechecker.env_resolve_namespaced_ident(
+                            env as *typechecker.TypeEnvironment[ctx],
+                            statement.FunctionDecl.name, ctx
+                        );
+                    }
                     function.extern_symbol_name = std.Clone(
                         ctx,
                         statement.FunctionDecl.extern_symbol_name

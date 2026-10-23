@@ -1,3 +1,16 @@
+# Active Cranelift continuation — Phase26.1 wrapper audit (2026-10-23)
+
+Owner: `ea414019-6671-4c02-a629-b705e64769fb`. Worktree:
+`/home/gust/code/worktrees/gust/p26-scoped-ticket-publication`; branch
+`codex/phase26-1r4-wrapper-audit`; base `a695662da8805d89ac7b592227231a7fef98ec2a`.
+PR610 merged after all153 PR workflows and Trusted Gate passed. Its checked
+handoff is retained outside the repository; Stdlib resumes only on merged support.
+Next: exact wrapper origin/nullability/Vector/brand/arena/move/cleanup audit and
+any compiler-owned additive census, then remaining R5/R6 and final-main Historical.
+No local jobs, observer or fixed `/tmp` reservation remains. This worktree is
+retained as the existing agent's required startup-symlink target. Phase26.1 OPEN.
+The prior ticket-patch active entry below is superseded, not a current terminal.
+
 # Active Cranelift lane — scoped ticket publication, 2026-10-23
 
 Owner `ea414019-6671-4c02-a629-b705e64769fb`; worktree

@@ -70,7 +70,11 @@ def cases(template):
         yield name, source, expected
 
 
-def rejections(template):
+def rejections(template, imported=False):
+    if imported:
+        yield "unregistered_imported_adapter", template.replace(
+            "gust_zlib_compress", "unregistered_byte_adapter"), \
+            "byte-span Call requires exact signed approved-package admission"
     yield "unrelated_recursive_index", (ROOT / "tests/e2e_recursive_branded_linked_list.gst").read_text(), (
         "expected_failure_stage=before_driver_discovery",
         "reason_code=deferred_p13_parameter_argument_target_dependent_abi")
@@ -99,11 +103,35 @@ func main() {}
     yield "publication_before_cleanup", early, "scoped byte-copy stages are out of order"
 
 
+
+def imported_source(directory, text):
+    """Exercise ordinary imports using the existing generic source fixture."""
+    parts = text.split("\nfunc main()")
+    if len(parts) != 2:
+        raise ValueError("import fixture must have one entry function")
+    declaration, entry = parts
+    call = re.search(r"mut result := ([A-Za-z_][A-Za-z_0-9]*)\(", entry)
+    if call is None:
+        # Negative controls without a ticket call keep their original source.
+        source = directory / "case.gst"
+        source.write_text(text)
+        return source
+    (directory / "operation.gst").write_text(declaration + "\n")
+    entry = entry[:call.start(1)] + "operation." + entry[call.start(1):]
+    source = directory / "case.gst"
+    source.write_text('import "operation.gst" as operation;\nfunc main()' + entry)
+    return source
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--package", type=Path,
         default=ROOT / "build/guards/phase26_production_trust/candidate/package")
+    parser.add_argument("--imported", action="store_true",
+                        help="qualify existing byte-boundary contracts through ordinary modules")
     args = parser.parse_args()
+    global SCRATCH
+    if args.imported:
+        SCRATCH = ROOT / "build/guards/phase26_imported_native"
     checked_package(args.package)
     if SCRATCH.exists():
         shutil.rmtree(SCRATCH)
@@ -127,7 +155,9 @@ def main():
         directory = SCRATCH / name
         directory.mkdir()
         source = SOURCE if name == "source" else directory / "case.gst"
-        if name != "source":
+        if args.imported:
+            source = imported_source(directory, text)
+        elif name != "source":
             source.write_text(text)
         clean = dict(environment, HOME=str(directory), GUST_TEST_MIR_TO_C_UNAVAILABLE="1",
                      GUST_NATIVE_BACKEND_DRIVER=str(tools / "gust-native-backend"),
@@ -136,17 +166,24 @@ def main():
         with (directory / "stdout").open("w") as stdout, (directory / "stderr").open("w") as stderr:
             subprocess.run(offline_command([tools / "gust", "--backend", "cranelift", "-o", output, source], clean),
                            env=environment, cwd=ROOT, stdout=stdout, stderr=stderr, check=True, timeout=120)
-        if name == "source":
+        if args.imported:
+            actual = from_bundle((directory / "keep/program.mir.bundle").read_bytes(), source.resolve())
+            modules = [line for line in actual.decode().splitlines() if line.startswith("module: ")]
+            operation_path = str((directory / "operation.gst").resolve()).encode().hex()
+            if len(modules) != 2 or not any(operation_path in line for line in modules):
+                raise ValueError("imported guard did not lower the separate source module")
+        if name == "source" and not args.imported:
             actual = from_bundle((directory / "keep/program.mir.bundle").read_bytes(), SOURCE.resolve())
             if normalized(actual)[0] != normalized(FIXTURE.read_bytes())[0]:
                 raise ValueError("ticket source-produced canonical fixture drifted")
+        if name == "source":
             first = digest(output)
             with (directory / "repeat.stdout").open("w") as stdout, (directory / "repeat.stderr").open("w") as stderr:
                 subprocess.run(offline_command([tools / "gust", "--backend", "cranelift", "-o", output, source], clean),
                                env=environment, cwd=ROOT, stdout=stdout, stderr=stderr, check=True, timeout=120)
             if digest(output) != first:
                 raise ValueError("ticket production linking is not deterministic")
-        if name == "decompress_content":
+        if name == "decompress_content" and not args.imported:
             actual = from_bundle((directory / "keep/program.mir.bundle").read_bytes(), source.resolve())
             fixture = FIXTURE.with_name("scoped_ticket_content_producer.canonical")
             if normalized(actual)[0] != normalized(fixture.read_bytes())[0]:
@@ -162,11 +199,13 @@ def main():
         (SCRATCH / "partial-results.json").write_text(json.dumps(results, indent=2) + "\n")
         print("TICKET_PRODUCTION_CASE_PASS", name, flush=True)
     negatives = []
-    for name, text, expected in rejections(SOURCE.read_text()):
+    for name, text, expected in rejections(SOURCE.read_text(), args.imported):
         directory = SCRATCH / name
         directory.mkdir()
         source = directory / "never-execute.gst"
         source.write_text(text)
+        if args.imported:
+            source = imported_source(directory, text)
         output = directory / "never-execute"
         clean = dict(environment, HOME=str(directory), GUST_TEST_MIR_TO_C_UNAVAILABLE="1",
                      GUST_NATIVE_BACKEND_DRIVER=str(tools / "gust-native-backend"))
@@ -185,6 +224,7 @@ def main():
         print("TICKET_SOURCE_REJECTION_PASS", name, flush=True)
     (SCRATCH / "result.json").write_text(json.dumps(dict(
         status="PASS generic ticket production profile only; Phase26.1 OPEN",
+        imported_modules=args.imported,
         offline_network_namespace_verified=True, snapshot=json.loads((PROFILE / "snapshot.json").read_text()),
         frontend_sha256=digest(tools / "gust"), worker_sha256=digest(tools / "gust-native-backend"),
         cases=results, rejections=negatives), indent=2) + "\n")

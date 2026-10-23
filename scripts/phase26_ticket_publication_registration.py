@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import phase26_imported_native_registration as successor
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "0c8e31c93c021453bf6088eec1375974a482bb9b"
@@ -76,23 +77,26 @@ def identity(registry):
     return row
 
 def prior_digest(registry, path, live):
+    live = successor.prior_digest(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
     # Repeated predecessor normalization is harmless only while the physical
     # current bytes still match the successor. A rollback cannot pass this gate.
-    require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
+    require(successor.prior_digest(registry, path, sha((ROOT / path).read_bytes())) == pin["current_digest"] and
         pin["previous_digest"] == sha(base_bytes(path)) and
         live in (pin["current_digest"], pin["previous_digest"]), f"R4 changed file drifted: {path} (ticket successor)")
     return pin["previous_digest"]
 
 def prior_bytes(registry, path, live):
+    live = successor.prior_bytes(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     prior_digest(registry, path, sha(live))
     return base_bytes(path)
 
 def project(registry, kind, current):
+    current = successor.project(registry, kind, current)
     if not record(registry):
         return current
     if kind == "text":
@@ -111,15 +115,18 @@ def project(registry, kind, current):
     return copy.deepcopy(baseline()["projections"][kind])
 
 def project_registry(registry):
-    result = copy.deepcopy(registry)
+    result = successor.project_registry(registry)
     result.get("phase26_activation_audit", {}).pop(KEY, None)
     return result
 
 def workflow_predecessor(text):
+    if successor.record(json.loads(REGISTRY.read_text())):
+        text = successor.workflow_predecessor(text)
     require(text.count(STEP) == 1, "ticket owning CI step drifted")
     return text.replace(STEP, "", 1)
 
 def prior_render_digest(registry, live):
+    live = successor.prior_render_digest(registry, live)
     if not record(registry):
         return live
     require(live == identity(registry)["spelling_render_current_digest"],
@@ -155,12 +162,12 @@ def validate():
     for pin in row["changed_files"]:
         prior_digest(registry, pin["path"], sha((ROOT / pin["path"]).read_bytes()))
     for pin in row["added_files"]:
-        require(pin["digest"] == sha((ROOT / pin["path"]).read_bytes()), f"ticket added file drifted: {pin['path']}")
+        require(pin["digest"] == successor.prior_digest(registry, pin["path"], sha((ROOT / pin["path"]).read_bytes())), f"ticket added file drifted: {pin['path']}")
     old = base_bytes(".github/workflows/pr-fast.yml").decode()
-    require(old.count(ANCHOR) == 1 and (ROOT / ".github/workflows/pr-fast.yml").read_text() == old.replace(ANCHOR, ANCHOR + STEP, 1),
+    require(old.count(ANCHOR) == 1 and successor.prior_bytes(registry, ".github/workflows/pr-fast.yml", (ROOT / ".github/workflows/pr-fast.yml").read_bytes()).decode() == old.replace(ANCHOR, ANCHOR + STEP, 1),
         "ticket workflow changed predecessor obligations, deadlines or owning step")
-    require((ROOT / "justfile").read_bytes() == base_bytes("justfile") + RECIPE.encode(), "ticket owning recipe drifted")
-    levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
+    require(successor.prior_bytes(registry, "justfile", (ROOT / "justfile").read_bytes()) == base_bytes("justfile") + RECIPE.encode(), "ticket owning recipe drifted")
+    levels = json.loads(successor.prior_bytes(registry, "scripts/cranelift_test_levels.json", (ROOT / "scripts/cranelift_test_levels.json").read_bytes()))
     require(levels["guards"].pop(GUARD, None) == 2 and levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")),
         "ticket levels or predecessor guards drifted")
     for kind, value in current_projections().items():
