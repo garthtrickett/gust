@@ -1392,6 +1392,7 @@ type LinearResourceRecord[ctx] struct {
 type ResourceAcquisitionObligation[ctx] struct {
     identity: str,
     type_name: str,
+    owned_type: ast.Type[ctx],
     destructor_name: str,
     storage_name: str,
     cleanup_condition: str,
@@ -4621,6 +4622,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Move.span, env, ctx);
                 }
                 
+                if inner_type.tag == 4 &&
+                   env_validate_resource_allocator_invalidation(env, inner_idx, "move", expr.Move.span, ctx) == 0 {
+                    return inner_type;
+                }
                 // Invalidate brand transitive use
                 if env_type_is_linear(inner_type, env, ctx) == 1 {
                     (*env).moved_vars.Insert(std.Clone(ctx, name), 1);
@@ -6208,6 +6213,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if current_type.tag != 4 || next_type.tag != 4 {
                     mut msg := "Semantic Error: std.GenerationalSwap arguments must be Arena allocators";
                     report_error(2, msg, expr.Call.span, env, ctx);
+                }
+
+                mut current_resources_clear := env_validate_resource_allocator_invalidation(
+                    env, arg0_idx, "GenerationalSwap current allocator", expr.Call.span, ctx
+                );
+                mut next_resources_clear := env_validate_resource_allocator_invalidation(
+                    env, arg1_idx, "GenerationalSwap next allocator", expr.Call.span, ctx
+                );
+                if current_resources_clear == 0 || next_resources_clear == 0 {
+                    mut rejected_swap: ast.Type[ctx]; rejected_swap.tag = 3;
+                    return rejected_swap;
                 }
 
                 // 1. Invalidate all variables branded with current_brand
@@ -11802,6 +11818,7 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
             mut obligation: ResourceAcquisitionObligation[ctx];
             obligation.identity = std.Clone(ctx, identity);
             obligation.type_name = std.Clone(ctx, type_name);
+            obligation.owned_type = env_resolve_type(env, acquired_type, ctx);
             obligation.destructor_name = env_struct_linear_destructor_name(env, type_name, ctx);
             obligation.storage_name = "";
             obligation.cleanup_condition = "";
@@ -11853,6 +11870,7 @@ func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], func
     mut obligation: ResourceAcquisitionObligation[ctx];
     obligation.identity = std.Clone(ctx, identity);
     obligation.type_name = std.Clone(ctx, type_name);
+    obligation.owned_type = resolved_parameter;
     obligation.destructor_name = env_struct_linear_destructor_name(
         env, type_name, ctx
     );
@@ -12200,6 +12218,11 @@ func env_consume_resource_destructor_call(env: *TypeEnvironment[ctx], resolved_f
             }
         }
     }
+    unsafe {
+        if (*env).in_defer_expression == 1 {
+            return env_resource_obligation_set_state(env, identity, 4, ctx);
+        }
+    }
     return env_resource_obligation_set_state(env, identity, 1, ctx);
 }
 
@@ -12215,6 +12238,11 @@ func env_transfer_owned_resource_argument(env: *TypeEnvironment[ctx], argument_i
     mut identity := env_resource_identity_for_expression(env, argument_idx, ctx);
     if len(identity) == 0 || env_resource_obligation_is_pending(env, identity, ctx) == 0 {
         return 0;
+    }
+    unsafe {
+        if (*env).in_defer_expression == 1 {
+            return env_resource_obligation_set_state(env, identity, 4, ctx);
+        }
     }
     return env_resource_obligation_set_state(env, identity, 2, ctx);
 }
@@ -13132,6 +13160,68 @@ func env_get_brand_identity(env: *TypeEnvironment[ctx], resolved: ast.Type[ctx],
     }
 }
 
+// Only owned, metadata-opted resource values participate. References and
+// Index observations do not acquire ownership here; OD23 still owns slots.
+func env_resource_type_uses_allocator(env: *TypeEnvironment[ctx], t: ast.Type[ctx], allocator_identity: str, visited: *std.HashMap[str, int, ctx], ctx: &Arena) int {
+    unsafe {
+        mut resolved := env_resolve_type(env, t, ctx);
+        if type_is_resource(resolved, ctx) == 1 {
+            return env_resource_type_uses_allocator(env, resource_type_payload(resolved, ctx), allocator_identity, visited, ctx);
+        }
+        if resolved.tag != 8 { return 0; } // owned Struct only
+        mut name := resolved.Struct.struct_name;
+        if env_struct_has_resource_tracking_metadata(env, name, ctx) == 1 {
+            mut identity := env_arena_lifecycle_identity_from_type(env, resolved, "", ctx);
+            if len(identity) > 0 && std.str_eq(identity, allocator_identity) == 1 {
+                return 1;
+            }
+        }
+        if (*visited).Get(name).Ok { return 0; }
+        (*visited).Insert(std.Clone(ctx, name), 1);
+        guard layout := (*env).struct_registry.Get(name) else { return 0; };
+        mut fields := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+        mut i := 0;
+        while i < len(fields) {
+            guard field := layout.fields.Get(fields[i]) else { return 0; };
+            if env_resource_type_uses_allocator(env, field, allocator_identity, visited, ctx) == 1 {
+                return 1;
+            }
+            i = i + 1;
+        }
+        return 0;
+    }
+}
+
+func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], allocator: Index[ast.Expression[ctx], ctx], operation: str, span: token.Span, ctx: &Arena) int {
+    unsafe {
+        mut identity := env_arena_lifecycle_resolve_expression_identity(allocator, env, ctx);
+        if len(identity) == 0 { return 1; }
+        mut keys := (*env).resource_acquisition_obligations.Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        mut i := 0;
+        while i < len(keys) {
+            guard obligation := (*env).resource_acquisition_obligations.Get(keys[i]) else { return 0; };
+            // Pending, deferred cleanup, and a live/terminal path join all
+            // retain an obligation. Consumed/transferred owners do not.
+            if obligation.state == 0 || obligation.state == 4 || obligation.state == 5 {
+                mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+                if env_resource_type_uses_allocator(env, obligation.owned_type, identity, &visited, ctx) == 1 {
+                    mut message := std.Concat("Semantic Error: [LinearResourceLeak] Cannot ", operation);
+                    message = std.Concat(message, " while resource '");
+                    message = std.Concat(message, obligation.storage_name);
+                    message = std.Concat(message, "' still depends on allocator '");
+                    message = std.Concat(message, identity);
+                    message = std.Concat(message, "'");
+                    report_error(2, message, span, env, ctx);
+                    return 0;
+                }
+            }
+            i = i + 1;
+        }
+        return 1;
+    }
+}
+
 func arena_lifecycle_state_live() int {
     return 0;
 }
@@ -13271,6 +13361,10 @@ func arena_lifecycle_operation_description(operation: str, ctx: &Arena) str {
 
 func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], operation: str, span: token.Span, ctx: &Arena) int {
     unsafe {
+        if std.str_eq(operation, "free") == 1 &&
+           env_validate_resource_allocator_invalidation(env, expr_idx, "Free", span, ctx) == 0 {
+            return 0;
+        }
         mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);
         if std.str_eq(identity, "") == 1 {
             return 1;
@@ -18005,6 +18099,7 @@ func resource_acquisition_obligation_clone(record: ResourceAcquisitionObligation
     mut cloned: ResourceAcquisitionObligation[ctx];
     cloned.identity = std.Clone(ctx, record.identity);
     cloned.type_name = std.Clone(ctx, record.type_name);
+    cloned.owned_type = record.owned_type;
     cloned.destructor_name = std.Clone(ctx, record.destructor_name);
     cloned.storage_name = std.Clone(ctx, record.storage_name);
     cloned.cleanup_condition = std.Clone(ctx, record.cleanup_condition);
