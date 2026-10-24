@@ -275,9 +275,26 @@ def inversions():
     for item in identity(registry)['added_files']:
         path = item['path']
         with patch.object(Path,'read_bytes',lambda p,path=path:original(p)+b'\n' if p==ROOT/path else original(p)):
-            rejected('added bytes '+path,lambda item=item:require(
-                item['digest'] == sha((ROOT/item['path']).read_bytes()),
-                'allocator added file drifted: '+item['path']), 'allocator added file drifted')
+            rejected('added bytes '+path,validate, 'allocator added file drifted')
+    original_text = Path.read_text
+    changed = copy.deepcopy(registry)
+    changed['allocator_foreign_mutation'] = True
+    with patch.object(Path,'read_text',lambda p,*args,**kwargs:
+            json.dumps(changed) if p == REGISTRY else original_text(p,*args,**kwargs)):
+        rejected('actual foreign registry refusal',validate,
+                 'allocator changed frozen predecessor or foreign registry rows')
+    original_is_file = Path.is_file
+    with patch.object(Path,'is_file',lambda p:False if p == ROOT/STATE else original_is_file(p)):
+        rejected('missing operational state',lambda:identity(registry),
+                 'operational lane state is absent')
+    original_stat = Path.stat
+    import os
+    fields = list(original_stat(ROOT/STATE));fields[6] = 0
+    empty_stat = os.stat_result(fields)
+    with patch.object(Path,'stat',lambda p,*args,**kwargs:
+            empty_stat if p == ROOT/STATE else original_stat(p,*args,**kwargs)):
+        rejected('empty operational state',lambda:identity(registry),
+                 'operational lane state is absent')
     print('ALLOCATOR_ENROLLMENT_INVERSIONS_PASS')
 
 

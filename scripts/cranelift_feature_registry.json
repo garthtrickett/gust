@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "8c674a381935b0816525eff952f488ef1b08532b418d23d7d517db7f9f7a6eca",
-          "current_digest": "015d408fc0546a97d66bc3d24d4375ee400779b3f9b9027a2597016e6ac3268a"
+          "current_digest": "07bd089e3a91267f876e0b1c09fb5270b519ae5d670000ae6c50411940513dfc"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "b8e184fa43e4602cd6192ca5943ded75dff39e5dac7c6fd84fb25e21150373d3",
-          "current_digest": "e8a3d8f8ec978c147635968644c14eadad6d8fc8ed693e2f5a73acbe2f1e45f7"
+          "current_digest": "a509f6710d6e13378d23dbccdd1bc112e10315dc59c46e756f70c959a2258208"
         }
       ],
       "added_files": [
@@ -48107,7 +48107,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_registration.py",
-          "digest": "85be88e954029c4f04a01e58d2ec49d20234a6f90386f870ee30f25a6464e25d"
+          "digest": "09263b79685ceec8c343321fdce1d2c9dd9fb4e009db6d165c056184776399da"
         },
         {
           "path": "scripts/phase26_2_allocator_guard.py",
@@ -48195,7 +48195,7 @@
         }
       ],
       "owned_text": {
-        "text": "5f4ad23c545fd39609c06b953b92054be78b2f6919c7615a7c7a9419850d09c7",
+        "text": "fdd95772c3f94075cb425bd7bdc04da8e18001065a962687224be15131f352b9",
         "r4_text": "6373e109f933074b4c8f881eeaec277adb0ac0f4830141011bedf8e29ed89f27"
       },
       "projections": {
@@ -48206,7 +48206,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "5324bc854c1b6327cb992140773ad9a0d1c2ea36b1e5a3fa0010fd1ea6f972ce",
-        "text": "5d4930b3cc574f06c739b079f4d705f0d7a14b8883e3a0089e731b02d54fe275"
+        "text": "67f0c9b2d12e84f6efafa479f7b7340185816dafd98364f35a380a0a8525cf99"
       },
       "spelling_render_current_digest": "3ed45b6e9e79c239946b4f9448f67ee4fec4a689145aa629818d97d22c7abfa7"
     },

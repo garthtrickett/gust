@@ -2464,7 +2464,7 @@
     "scripts/fixture_reachability_allowlist.json": "ccecd2a0b36323415bff9b40ebd27dba7f3ba3cca9ffdf5601bee95c2701e0ac",
     "scripts/phase25_native_fixed_point.sh": "3a8d714e54c8f12a602f9e295d3349b3c473919f5116d08389fc57f4efe2f91f",
     "scripts/phase26_2_allocator_guard.py": "8954d334eefd0e07a5323205ad10f394a947f52f3932c7447d44ec6a644a26c1",
-    "scripts/phase26_2_allocator_registration.py": "85be88e954029c4f04a01e58d2ec49d20234a6f90386f870ee30f25a6464e25d",
+    "scripts/phase26_2_allocator_registration.py": "09263b79685ceec8c343321fdce1d2c9dd9fb4e009db6d165c056184776399da",
     "scripts/phase26_arithmetic_zero_evidence.sh": "36ac18f19e898cf197bc673f5a3c553dacdc2ee4e7ad15c938415a726c214203",
     "scripts/phase26_arithmetic_zero_registration.py": "d4ddda2ed007735d28d3916d2c723de8c9fd1449eb42b82d848bc925d1e7c0ca",
     "scripts/phase26_bool_literal_zero_evidence.sh": "6d4abb2220a8b6d42123b49a21481f6a0eedf84c3dac6b67df9bd06367b6e8f3",
