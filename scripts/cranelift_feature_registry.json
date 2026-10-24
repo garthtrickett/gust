@@ -84208,6 +84208,98 @@
       "target": "x86_64-unknown-linux-gnu",
       "zlib_source_archive_digest": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
       "zlib_version": "1.3.2"
+    },
+    "first_release_closure_successor_v1": {
+      "predecessor_main": "2210c1c36d16fd120dcc342a00ebd2ac0fa71bf7",
+      "owner": "cranelift",
+      "guard": "guard-cranelift-phase26-release-closure",
+      "phase26_1_status": "OPEN",
+      "operational_state_excluded": "GUST_LANE_STATE.md",
+      "changed_files": [
+        {
+          "path": "justfile",
+          "previous_digest": "52c29911d94ac5252a1297321e331fe860a4dc1c8ad2e13bf8a407997d0a715c",
+          "current_digest": "b2f5f4478d476706e513539cc796365b2c4c54cd534ce04b1c8e722e0dd9f34b"
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "883af9023886297180487c39d9d42b62e52aab0fdf06cff41a336c3524e4ece6",
+          "current_digest": "26d37341d6c9f03459e374de92aedb7196873baadce5a11c52ddda2a6695dfbc"
+        },
+        {
+          "path": "scripts/phase26_readonly_input_copy_registration.py",
+          "previous_digest": "32a506dcc0675d48b994b3e6ebb91316b32fdcbb70f035eda7299c6d7dc6fba7",
+          "current_digest": "8da91271d38c9e0568bd18a4dec891fb0275ee7c4fde5b0e06300c2099e5ca74"
+        },
+        {
+          "path": "docs/PHASES_26_AND_27.md",
+          "previous_digest": "5fcc0a1c1f440e94213301cd6d5742b3691418a6266a07a2b6d1e6361a030aa3",
+          "current_digest": "51bde8bae06f1e142c8ccf6f44561c956d93aafa135556ed7492e4601d9055e7"
+        },
+        {
+          "path": "scripts/fixture_reachability.py",
+          "previous_digest": "2112fc20eebfc9323b42992c699be601f5a2475eff2c57414e9a37a1f08a624b",
+          "current_digest": "b8f51d07c1ede2d19ea6bad72d8d59e4e8c1cfa87a463feaeb691ed638683f81"
+        }
+      ],
+      "added_files": [
+        {
+          "path": "scripts/phase26_release_registration.py",
+          "digest": "4b3e9ae32ea99ac00c8bc0d1cb2228f873bcb778bec2cc398cac0b95f0dcf35d"
+        },
+        {
+          "path": "compiler/phase26-release/predecessor-baseline.json.gz",
+          "digest": "100b4048a7471b5ec593093c5c972e9f89278f42a5d9fd2be378e286efc167d9"
+        },
+        {
+          "path": "compiler/phase26-release/predecessor-baseline-v2.json.gz",
+          "digest": "e1794b0a83d663ee6a244d343cc344b27b6649f4062e38f242468adf4a552f54"
+        },
+        {
+          "path": "scripts/phase26_release_closure.py",
+          "digest": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56"
+        },
+        {
+          "path": "scripts/phase26_release_regression.py",
+          "digest": "2e1224aaf982a74403cf6fe7edeb1ca9a40824e7560c6bd3ec63a0ec4817c630"
+        },
+        {
+          "path": "scripts/phase26_release_ci.py",
+          "digest": "78d6c22f9ee79735ab130843f28aeb7f70f5ff72e9e3b45f7c43b321082f99ff"
+        },
+        {
+          "path": "scripts/phase26_release_bounded.py",
+          "digest": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e"
+        },
+        {
+          "path": "compiler/phase26-release/release.json",
+          "digest": "91b2f996da338b8ca0dd8c04346f386c0b5e64f43ae335335cee331cbf1aed2e"
+        },
+        {
+          "path": "compiler/phase26-release/reachable-audit.json",
+          "digest": "620e23d8392ecc21a63b3266b5bcb8241c95bac9fefec812a98b13c459f00639"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md",
+          "digest": "251f7cc603eaa41410c40e65bc7f7dfb0420ab84e542f746c697e573ce3624b3"
+        },
+        {
+          "path": ".github/workflows/phase26-release-closure.yml",
+          "digest": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050"
+        }
+      ],
+      "text_owned_digest": "3a8e7c770e7e426f307f9010bc2800d1dd59fe6ec6ab80add566fc1aafa096b2",
+      "projections": {
+        "r4_text": "985e47ecc06fb82ffaf4d905d1d3b5e31eaad4c82085ab926c33ffa29833aed7",
+        "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
+        "filename": "96f3433a10f5c471c4b0bce8f229ea8394760ead5096f0adb7157bdac5487130",
+        "r3_record": "9891325697f8d751fa987641356d3576a5c1ccb285786e72e4e52f0903a636fc",
+        "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
+        "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
+        "r4_record": "a37bdb69aafacbad78e210e21e79c818608961189a7a84e982325e747f5c14ce",
+        "text": "25363105dd29bcf251cfbac128c66fca745aea3881af799b82bca54815c0b88b"
+      },
+      "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
     }
   },
   "phase25_historical9g_guard_repair": {

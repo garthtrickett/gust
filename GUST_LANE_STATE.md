@@ -1,3 +1,60 @@
+## Active Cranelift — merged-wrapper R5/R6 qualification (2026-10-23)
+
+Owner: existing compiler agent ea414019-6671-4c02-a629-b705e64769fb.
+Worktree: /home/gust/code/worktrees/gust/p26-scoped-ticket-publication;
+branch: codex/phase26-1r6-release-closure; base: 2210c1c36d16fd120dcc342a00ebd2ac0fa71bf7.
+The bounded wait below is invalidated. PR614 merged and all12 final Git hashes
+and qualified/main tree equality were independently checked. Stdlib's observer
+is reaped; this compiler owner owns the next publication wave.
+Next: clean merged predecessor capture, exact authority/additive enrollment,
+full pin/inversion enumeration and actual R5 production/public/fixed-point recipe,
+then independent reviews and owning CI/merge. Exact-final-main Historical remains
+required. Phase26.1 and separate general-model/OD23/later gates remain OPEN.
+No fixed /tmp reservation or compiler CI observer is live at this resumption.
+Preserve startup symlink and physical checkout; every exec uses explicit workdir.
+
+## Cranelift bounded wait — Phase26.1 merged-wrapper prerequisite (2026-10-23)
+
+Owner: existing compiler agent ea414019-6671-4c02-a629-b705e64769fb.
+Worktree: /home/gust/code/worktrees/gust/p26-scoped-ticket-publication;
+branch: codex/phase26-1r6-release-closure; current base: 981caef41195601430c6dcaec0e06b2ca7ddb30f.
+
+Completed independent preparation: exact final public-source/CI artifact audit;
+draft R5/R6 checker with56 synthetic refusals;17 targeted paths bound to34 existing
+test anchors; recipe/Level2/workflow and predecessor delegation; seven artifact
+omission refusals; finite clean-predecessor and authority preparers (NOT RUN).
+Draft source wiring is unbound and unpublished. Actual new registration/full pins,
+R5 recipe, independent final reviews, owning CI/merge and final-main Historical
+have NOT passed and are not claimed. Prior receipts and failed attempts remain.
+
+Waiting for Stdlib's checked PR614 merge/handoff to bind actual merged wrapper
+bytes and capture its clean predecessor. Stdlib owns its sole observer and wave.
+No compiler job/wait/observer or fixed /tmp reservation is live. No peer Actions
+queried. Resume this same owner, invalidate this wait, fetch/rebase before the next
+push, then finish enrollment/local qualification/reviews/own CI and merge.
+The bounded source, reproduction and evidence-documentation continuation is done;
+standing containment/demo proposals add no authorized item to this release patch.
+No new semantic node or operator permission is requested. Phase26.1 stays OPEN;
+general-model/follow-up/OD23 and later-phase gates retain separate OPEN status.
+Preserve the startup symlink and physical checkout; every exec uses explicit workdir.
+
+## Active Cranelift — Phase26.1 release closure (2026-10-23)
+
+Owner: existing compiler agent ea414019-6671-4c02-a629-b705e64769fb.
+Worktree: /home/gust/code/worktrees/gust/p26-scoped-ticket-publication;
+branch: codex/phase26-1r6-release-closure; base: 981caef41195601430c6dcaec0e06b2ca7ddb30f.
+PR613 merged after all150 eligible PR workflows and Trusted Actor succeeded;
+its checked handoff is retained outside the repository. The prior entries below
+are historical. This owner remains active for targeted wrapper audit and R5/R6.
+Stdlib owns PR614 and its sole CI observer; no compiler CI observer, heavy local
+job or fixed /tmp reservation is active. Current closure sources are drafts.
+Next gate: bind actual merged wrapper bytes, complete additive closure registration,
+qualify the full compiler/runtime/emitted-object and production/public recipe,
+then independent reviews and owning exact-head CI/merge. Historical Full must pass
+on the same final main before first-release completion. Phase26.1 remains OPEN;
+the general model, OD23 and later Phase26.2–26.6 gates remain separately OPEN.
+Preserve the startup symlink and physical checkout; every exec uses explicit workdir.
+
 # Active Stdlib lane — final S26.1 publication qualification
 
 Operator-activated S26.1 wrapper patch on codex/stdlib-phase26-safe-native-wrapper,

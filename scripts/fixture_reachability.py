@@ -38,7 +38,17 @@ NON_EXECUTING_INVENTORIES = {
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
     "scripts/phase24_retirement_consumer_inventory.py",
     "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
+    # Source hashes bind bytes; listing a fixture does not execute it.
+    "compiler/phase26-release/release.json",
+    "compiler/phase26-release/reachable-audit.json",
 }
+
+
+def executing_references(paths):
+    return [path for path in paths
+            if not path.startswith("justfile")
+            and not pathlib.Path(path).name.startswith("fixture_reachability")
+            and path not in NON_EXECUTING_INVENTORIES]
 
 
 def recipes_mentioning(stem, sources):
@@ -86,10 +96,7 @@ def unexercised():
         # every fixture it records, so once it is committed -- and `git grep`
         # only sees tracked files -- each allowlisted fixture would look
         # exercised by the very file recording that it is not.
-        elsewhere = [f for f in elsewhere
-                     if not f.startswith("justfile")
-                     and not pathlib.Path(f).name.startswith("fixture_reachability")
-                     and f not in NON_EXECUTING_INVENTORIES]
+        elsewhere = executing_references(elsewhere)
         if elsewhere:
             continue
         owners = recipes_mentioning(stem, sources)
