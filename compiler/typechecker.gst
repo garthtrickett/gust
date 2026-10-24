@@ -1392,8 +1392,7 @@ type LinearResourceRecord[ctx] struct {
 type ResourceAcquisitionObligation[ctx] struct {
     identity: str,
     type_name: str,
-    // One resolved type, initialized once; snapshots share immutable storage.
-    owned_type: std.Vector[ast.Type[ctx], ctx],
+    owned_type: ast.Type[ctx],
     destructor_name: str,
     storage_name: str,
     cleanup_condition: str,
@@ -11503,6 +11502,11 @@ func resource_type_payload_is_resource_tracking_eligible(env: *TypeEnvironment[c
 
 func env_tracking_resource_type_name_recursive(env: *TypeEnvironment[ctx], t: ast.Type[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) str {
     unsafe {
+        // Primitive leaves cannot own resources or record an arena identity.
+        // Keep Arena and every composite on the existing resolution path.
+        if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 5 {
+            return "";
+        }
         mut resolved := env_resolve_type(env, t, ctx);
         if type_is_resource(resolved, ctx) == 1 {
             mut payload_name := resource_type_payload_struct_name(resolved, ctx);
@@ -11819,9 +11823,7 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
             mut obligation: ResourceAcquisitionObligation[ctx];
             obligation.identity = std.Clone(ctx, identity);
             obligation.type_name = std.Clone(ctx, type_name);
-            mut owned_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-            owned_type.Push(env_resolve_type(env, acquired_type, ctx));
-            obligation.owned_type = owned_type;
+            obligation.owned_type = env_resolve_type(env, acquired_type, ctx);
             obligation.destructor_name = env_struct_linear_destructor_name(env, type_name, ctx);
             obligation.storage_name = "";
             obligation.cleanup_condition = "";
@@ -11873,9 +11875,7 @@ func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], func
     mut obligation: ResourceAcquisitionObligation[ctx];
     obligation.identity = std.Clone(ctx, identity);
     obligation.type_name = std.Clone(ctx, type_name);
-    mut owned_type: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
-    owned_type.Push(resolved_parameter);
-    obligation.owned_type = owned_type;
+    obligation.owned_type = resolved_parameter;
     obligation.destructor_name = env_struct_linear_destructor_name(
         env, type_name, ctx
     );
@@ -13210,7 +13210,7 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
             // retain an obligation. Consumed/transferred owners do not.
             if obligation.state == 0 || obligation.state == 4 || obligation.state == 5 {
                 mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
-                if env_resource_type_uses_allocator(env, obligation.owned_type[0], identity, &visited, ctx) == 1 {
+                if env_resource_type_uses_allocator(env, obligation.owned_type, identity, &visited, ctx) == 1 {
                     mut message := std.Concat("Semantic Error: [LinearResourceLeak] Allocator cannot be ", operation);
                     message = std.Concat(message, " while resource '");
                     message = std.Concat(message, obligation.storage_name);
