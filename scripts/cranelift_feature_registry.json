@@ -84245,7 +84245,7 @@
       "added_files": [
         {
           "path": "scripts/phase26_release_registration.py",
-          "digest": "bff1f66e7cffb6edc1d55293ab2b32fdc6686509d1170b8ec5b31241ead16a03"
+          "digest": "4b3e9ae32ea99ac00c8bc0d1cb2228f873bcb778bec2cc398cac0b95f0dcf35d"
         },
         {
           "path": "compiler/phase26-release/predecessor-baseline.json.gz",
@@ -84273,11 +84273,11 @@
         },
         {
           "path": "compiler/phase26-release/release.json",
-          "digest": "514bff6d103f2611cf94238e7aafa366f4d6e46d48ce416bfb872c94a6fae11c"
+          "digest": "91b2f996da338b8ca0dd8c04346f386c0b5e64f43ae335335cee331cbf1aed2e"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
-          "digest": "11bb8ce0097191d2062e993722a0cab393060807ac21dc97a4d7bb15c55df0e6"
+          "digest": "620e23d8392ecc21a63b3266b5bcb8241c95bac9fefec812a98b13c459f00639"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md",
@@ -84285,10 +84285,10 @@
         },
         {
           "path": ".github/workflows/phase26-release-closure.yml",
-          "digest": "333d2e3e13b7ecba412826682d08d796626f44ee76843cdae9b87f7999276a9e"
+          "digest": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050"
         }
       ],
-      "text_owned_digest": "432d6df0f44978d10feb84cf1a7a9e0d7b47b4c859e445cc99c6c98a13907413",
+      "text_owned_digest": "3a8e7c770e7e426f307f9010bc2800d1dd59fe6ec6ab80add566fc1aafa096b2",
       "projections": {
         "r4_text": "985e47ecc06fb82ffaf4d905d1d3b5e31eaad4c82085ab926c33ffa29833aed7",
         "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
@@ -84297,7 +84297,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "a37bdb69aafacbad78e210e21e79c818608961189a7a84e982325e747f5c14ce",
-        "text": "de97e02cd209581fda65b8a70f9f428d318750469bc5401e9495f5d419422c11"
+        "text": "25363105dd29bcf251cfbac128c66fca745aea3881af799b82bca54815c0b88b"
       },
       "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
     }

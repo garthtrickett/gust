@@ -13,7 +13,7 @@
   "od23": "OPEN; resource admission deferred; transfer zeroing retained",
   "source_pins": {
     ".github/workflows/cranelift-historical-full.yml": "fc035fb057fef36711abe6d37379bc23e1975592e72c91cc33d3d8a423c3f0da",
-    ".github/workflows/phase26-release-closure.yml": "333d2e3e13b7ecba412826682d08d796626f44ee76843cdae9b87f7999276a9e",
+    ".github/workflows/phase26-release-closure.yml": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050",
     ".github/workflows/stdlib-s26-native-bytes.yml": "e7091cbec685c8d704b62ca4392bc98b1690c9ae261a0d6b533c6be72cf25d22",
     "Makefile": "d0d930c100aa85455e8abebdde19eb606d9fad22aa9b7a26ad9fd8ca5bcac2d2",
     "compiler/ast.gst": "ecb66cdae7da18996eac67fa852c209dd3cd11ff75d62fdebb69d1c16043fea9",
@@ -2577,7 +2577,7 @@
     "scripts/phase26_release_bounded.py": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e",
     "scripts/phase26_release_ci.py": "78d6c22f9ee79735ab130843f28aeb7f70f5ff72e9e3b45f7c43b321082f99ff",
     "scripts/phase26_release_closure.py": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56",
-    "scripts/phase26_release_registration.py": "bff1f66e7cffb6edc1d55293ab2b32fdc6686509d1170b8ec5b31241ead16a03",
+    "scripts/phase26_release_registration.py": "4b3e9ae32ea99ac00c8bc0d1cb2228f873bcb778bec2cc398cac0b95f0dcf35d",
     "scripts/phase26_release_regression.py": "2e1224aaf982a74403cf6fe7edeb1ca9a40824e7560c6bd3ec63a0ec4817c630",
     "scripts/phase26_safe_reference_call.sh": "83920ecb425b560dbf3158b3667630150a9a908829245c70299fcbd594664d86",
     "scripts/phase26_safe_reference_call_registration.py": "0276410c7ce60c4979bd1d22708d2adbb2f2418b94beaac7d644fb59dab4968b",

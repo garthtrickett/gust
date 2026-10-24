@@ -74,6 +74,7 @@ jobs:
         with:
           name: phase26-first-release-qualification
           if-no-files-found: error
+          include-hidden-files: true
           path: |
             build/guards/phase26_release_qualification.json
             build/guards/phase26_release_regression/

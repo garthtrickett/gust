@@ -193,6 +193,7 @@ def workflow_identity(text):
         "github.actor == vars.CODEX_GITHUB_ACTOR" in text and
         "startsWith(github.head_ref, 'codex/')" in text and
         "if: always()" in text and "if-no-files-found: error" in text and
+        text.count("include-hidden-files: true") == 1 and
         "phase26_production_toolchain.py install-ci" in text and
         "bash scripts/phase26_r3_zlib_adapter.sh" in text and
         all(path in text.split("          path: |", 1)[-1].splitlines()
@@ -373,6 +374,7 @@ def inversions():
         ("raised deadline", workflow.replace("timeout-minutes: 60", "timeout-minutes: 61", 1)),
         ("write permission", workflow.replace("contents: read", "contents: write", 1)),
         ("shallow checkout", workflow.replace("fetch-depth: 0", "fetch-depth: 1", 1)),
+        ("missing hidden bound evidence", workflow.replace("          include-hidden-files: true\n", "", 1)),
         ("missing failure artifacts", workflow.replace("if: always()", "if: success()", 1)),
         ("missing toolchain pin", workflow.replace("phase26_production_toolchain.py install-ci",
             "unreviewed_toolchain.py install-ci", 1)),
