@@ -48067,7 +48067,7 @@
         {
           "path": "compiler/typechecker.gst",
           "previous_digest": "55c873b917efcce279abaf2446b1fb881b2f332cc9d2e4d01db485ee3cc7c416",
-          "current_digest": "245a6392ce1d138bfdfb5c85ca720a2d58901d138e5c3bb0021a68538122169c"
+          "current_digest": "54f9d3b21d0f28c7819de8bf4254daa643fbd5829340c2c0a69ae3d586441d9f"
         },
         {
           "path": "TASK.md",
@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "8c674a381935b0816525eff952f488ef1b08532b418d23d7d517db7f9f7a6eca",
-          "current_digest": "b91a7935113e4f1391afff3fd4f3deda1afd69715e2bf5b7dded071ddc3de12f"
+          "current_digest": "824b7d16834f1c58ae48d5cc646ab3bbe74fd104c2bcd1124dc13a9b3b0a3937"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "b8e184fa43e4602cd6192ca5943ded75dff39e5dac7c6fd84fb25e21150373d3",
-          "current_digest": "d7490239089c18241be472451cb6e6069cfc988272c467cfc3c929e13921da5b"
+          "current_digest": "a90a9db158f015d6346ca22c4271c45992223ab2850b8c7fc74898f18170c5e9"
         }
       ],
       "added_files": [
@@ -48195,20 +48195,20 @@
         }
       ],
       "owned_text": {
-        "text": "608d0dbfca8b3a199bdc818dd3656bdd66c571699c5037ac29f2d4392484a9d4",
-        "r4_text": "f9d680a46f0aa8a4e63ae61984c9e5420f9cdc598af903952d8df319b05b5930"
+        "text": "56281931e622827f9cbd200351e5c2f7589722182d68280f36078f20439385e1",
+        "r4_text": "0f7fa32cf94fa223d020ba2f51a58d1cc4bda69acbff93219ad597db4effefce"
       },
       "projections": {
-        "r4_text": "9262a6796dd8ac97130c106403c624b4056433180c87c2bd3df3cf5382dedce9",
-        "spelling": "cce68ebd76df9a75ea9f3b4a3fa28897e3d2c235ab49740cd5eddd31c1e6218b",
-        "filename": "6c3e689f68606ffcf23206245d440b58fb476e8803e505939cbd2c03bb04e191",
-        "r3_record": "e19fe282acb10212d6d9841e50a292ea0887b88a70cdaddb2885ea25bade7d08",
+        "r4_text": "b75f3eb0e3ac70104d0af4566508ed2585d15635c4b1e1e1b5906cf2fc0d9087",
+        "spelling": "a46bd31b5d485f9c0fcd2cb4049a9caa1a814a4961fe28f5d24cfa1fa1ea8b9b",
+        "filename": "9a409e447cfa02b5571c28deafefb489bff9fed41213552fd2537db5f80ae6f2",
+        "r3_record": "0b712d6eb429ba4245cfdac65487ba03da35908ac7e031fc46971cb3b451672d",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "a50b760f3c47456aba83a5a152cf4823f6859748d7c942d634d0178c121a35c7",
-        "text": "40ba74ae6efc0da67a54d7ecbd44ecca3a4c5f7daec5692dd08eeebb3c769726"
+        "r4_record": "1e3578302f39d746bd1c8061e52ec4401a3a881df4f6653ccd717da5b538dd3d",
+        "text": "f4f1ba72392b6173490aa818410344422370eae1ab207ef64c494ee4ba49975e"
       },
-      "spelling_render_current_digest": "f1928a6d5cf8e4dc07242acc7508a9df4bd11d1035f56254f78fbe465deb1eb3"
+      "spelling_render_current_digest": "63afa6a25e5c0f0c739d1a603c1f5a52b9757182faf9aef1e24147e65e0a80ab"
     },
     "readonly_input_copy_successor_v1": {
       "predecessor_main": "0b5e3ad5dc832779aa8c76ed5d54a3f235bcb953",

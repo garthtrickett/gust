@@ -8756,8 +8756,7 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
             while template_idx < len(template_keys) && resolved_nested_template == 0 {
                 mut nested_template_name := template_keys[template_idx];
                 mut nested_template_lookup := (*env).struct_templates.Get(nested_template_name);
-                // Exact flattened names must first match this normalized prefix.
-                if nested_template_lookup.Ok && typechecker_matches_template_prefix(name, nested_template_name) == 1 {
+                if nested_template_lookup.Ok {
                     mut nested_template := nested_template_lookup.Val;
                     mut nested_generics: std.Vector[str, ctx] := ctx[nested_template.generics];
                     mut placeholder_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
@@ -17778,26 +17777,41 @@ func typechecker_str_compare(s1: str, s2: str) int {
     return 0;
 }
 
+func typechecker_sort_vector_str_sift_down(vec: *std.Vector[str, ctx], root_index: int, size: int, ctx: &Arena) {
+    unsafe {
+        mut root := root_index;
+        // Only parents enter: child arithmetic stays within the live heap.
+        while root < size / 2 {
+            mut child := root * 2 + 1;
+            if child + 1 < size && typechecker_str_compare((*vec)[child + 1], (*vec)[child]) > 0 {
+                child = child + 1;
+            }
+            if typechecker_str_compare((*vec)[root], (*vec)[child]) >= 0 {
+                return;
+            }
+            mut value := (*vec)[root];
+            (*vec).Set(root, (*vec)[child]);
+            (*vec).Set(child, value);
+            root = child;
+        }
+    }
+}
+
 func typechecker_sort_vector_str(vec: *std.Vector[str, ctx], ctx: &Arena) {
     unsafe {
         mut n := len(*vec);
-        mut i := 0;
-        while i < n {
-            mut min_idx := i;
-            mut j := i + 1;
-            while j < n {
-                mut cmp := typechecker_str_compare((*vec)[j], (*vec)[min_idx]);
-                if cmp < 0 {
-                    min_idx = j;
-                }
-                j = j + 1;
-            }
-            if min_idx != i {
-                mut temp := (*vec)[i];
-                (*vec).Set(i, (*vec)[min_idx]);
-                (*vec).Set(min_idx, temp);
-            }
-            i = i + 1;
+        mut parent := n / 2;
+        while parent > 0 {
+            parent = parent - 1;
+            typechecker_sort_vector_str_sift_down(vec, parent, n, ctx);
+        }
+        mut end := n;
+        while end > 1 {
+            end = end - 1;
+            mut value := (*vec)[0];
+            (*vec).Set(0, (*vec)[end]);
+            (*vec).Set(end, value);
+            typechecker_sort_vector_str_sift_down(vec, 0, end, ctx);
         }
     }
 }
