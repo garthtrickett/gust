@@ -13361,7 +13361,7 @@ func arena_lifecycle_operation_description(operation: str, ctx: &Arena) str {
 
 func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], operation: str, span: token.Span, ctx: &Arena) int {
     unsafe {
-        if std.str_eq(operation, "free") == 1 &&
+        if std.str_eq(operation, "free") == 1 && (*env).in_defer_expression == 0 &&
            env_validate_resource_allocator_invalidation(env, expr_idx, "Free", span, ctx) == 0 {
             return 0;
         }

@@ -18,7 +18,7 @@ NEGATIVES = (
 )
 POSITIVES = (
     "closed_free", "closed_move", "closed_swap", "unrelated_free",
-    "automatic_cleanup",
+    "automatic_cleanup", "deferred_free_lifo", "deferred_free_closed",
 )
 
 

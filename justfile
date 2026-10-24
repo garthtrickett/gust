@@ -24609,3 +24609,9 @@ guard-cranelift-phase26-release-closure:
     python3 scripts/phase26_release_bounded.py python3 scripts/phase26_production_guard.py
     python3 scripts/phase26_release_bounded.py python3 scripts/stdlib_s26_1_native_bytes.py --package build/guards/phase26_production_trust/candidate/package
     python3 scripts/phase26_release_closure.py qualify build/guards/stdlib_s26_1_public_qualification build/guards/phase26_production_trust build/guards/phase26_release_regression build/guards/phase26_release_qualification.json
+
+# Existing owned-resource dependence at direct allocator invalidation.
+guard-cranelift-phase26-2-allocator-liveness:
+    python3 scripts/phase26_2_allocator_registration.py validate
+    python3 scripts/phase26_2_allocator_registration.py inversions
+    python3 scripts/phase26_2_allocator_guard.py
