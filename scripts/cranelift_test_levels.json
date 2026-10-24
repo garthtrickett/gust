@@ -588,6 +588,7 @@
     "guard-cranelift-phase26-ticket-composition": 2,
     "guard-cranelift-phase26-readonly-input-copy": 2,
     "guard-cranelift-phase26-release-closure": 2,
-    "guard-cranelift-phase26-2-allocator-liveness": 2
+    "guard-cranelift-phase26-2-allocator-liveness": 2,
+    "guard-cranelift-phase26-2-allocator-identities": 2
   }
 }

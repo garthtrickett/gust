@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import phase26_2_allocator_identity_registration as successor
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '35ebca4c91dce0b14d7343e638c8ed91a09cd867'
@@ -80,6 +81,7 @@ def identity(registry):
 
 
 def prior_digest(registry, path, live):
+    live = successor.prior_digest(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     pin = next(p for p in identity(registry)['changed_files'] if p['path'] == path)
@@ -91,7 +93,7 @@ def prior_digest(registry, path, live):
         for item in predecessor['phase26_activation_audit'][key]['changed_files']:
             if item['path'] == path:
                 admitted.update(item[field] for field in ('current_digest', 'previous_digest'))
-    require(sha((ROOT / path).read_bytes()) == pin['current_digest'] and
+    require(successor.prior_digest(registry, path, sha((ROOT / path).read_bytes())) == pin['current_digest'] and
         pin['previous_digest'] == sha(base_bytes(path)) and
         live in admitted,
         'R4 changed file drifted: ' + path + ' (allocator successor)')
@@ -99,6 +101,7 @@ def prior_digest(registry, path, live):
 
 
 def prior_bytes(registry, path, live):
+    live = successor.prior_bytes(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     prior_digest(registry, path, sha(live))
@@ -131,7 +134,7 @@ def canonical_projection(kind, current):
         states[0]['current_digest'] = old_state['current_digest']
         import phase26_r3_zlib_adapter_registration as r3
         import phase26_r4_collection_registration as r4
-        raw = r4.owned_text(r3.raw_text_surfaces())
+        raw = successor.project(json.loads(REGISTRY.read_text()), 'r4_text', r4.owned_text(r3.raw_text_surfaces()))
         edge = result['projections']['text']
         require(edge['current_digest'] in (fingerprint(raw),
                 fingerprint(operational_text('r4_text', raw)),
@@ -143,6 +146,7 @@ def canonical_projection(kind, current):
 
 
 def project(registry, kind, current):
+    current = successor.project(registry, kind, current)
     if not record(registry):
         return current
     row = identity(registry)
@@ -168,12 +172,13 @@ def project(registry, kind, current):
 
 
 def project_registry(registry):
-    result = copy.deepcopy(registry)
+    result = successor.project_registry(registry)
     result.get('phase26_activation_audit', {}).pop(KEY, None)
     return result
 
 
 def prior_render_digest(registry, live):
+    live = successor.prior_render_digest(registry, live)
     if not record(registry):
         return live
     require(live == identity(registry)['spelling_render_current_digest'],
@@ -212,9 +217,9 @@ def validate():
     for p in row['changed_files']:
         prior_digest(registry, p['path'], sha((ROOT / p['path']).read_bytes()))
     for p in row['added_files']:
-        require(p['digest'] == sha((ROOT / p['path']).read_bytes()), 'allocator added file drifted: '+p['path'])
-    require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
-    levels = json.loads((ROOT/'scripts/cranelift_test_levels.json').read_text())
+        require(p['digest'] == successor.prior_digest(registry, p['path'], sha((ROOT / p['path']).read_bytes())), 'allocator added file drifted: '+p['path'])
+    require(successor.prior_bytes(registry, 'justfile', (ROOT/'justfile').read_bytes()) == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
+    levels = json.loads(successor.prior_bytes(registry, 'scripts/cranelift_test_levels.json', (ROOT/'scripts/cranelift_test_levels.json').read_bytes()))
     require(levels['guards'].pop(GUARD,None)==2 and levels==json.loads(base_bytes('scripts/cranelift_test_levels.json')),
             'allocator test level or predecessor guards drifted')
     for kind,value in current_projections().items():
@@ -275,7 +280,9 @@ def inversions():
     for item in identity(registry)['added_files']:
         path = item['path']
         with patch.object(Path,'read_bytes',lambda p,path=path:original(p)+b'\n' if p==ROOT/path else original(p)):
-            rejected('added bytes '+path,validate, 'allocator added file drifted')
+            rejected('added bytes '+path, validate,
+                'R4 changed file drifted' if successor.record(registry) and path in successor.CHANGED
+                else 'allocator added file drifted')
     original_text = Path.read_text
     changed = copy.deepcopy(registry)
     changed['allocator_foreign_mutation'] = True
