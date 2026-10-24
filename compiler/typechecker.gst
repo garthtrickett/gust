@@ -1392,7 +1392,7 @@ type LinearResourceRecord[ctx] struct {
 type ResourceAcquisitionObligation[ctx] struct {
     identity: str,
     type_name: str,
-    owned_type: ast.Type[ctx],
+    owned_type: Index[ast.Type[ctx], ctx],
     destructor_name: str,
     storage_name: str,
     cleanup_condition: str,
@@ -11818,7 +11818,9 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
             mut obligation: ResourceAcquisitionObligation[ctx];
             obligation.identity = std.Clone(ctx, identity);
             obligation.type_name = std.Clone(ctx, type_name);
-            obligation.owned_type = env_resolve_type(env, acquired_type, ctx);
+            mut owned_type: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx.Set(owned_type, env_resolve_type(env, acquired_type, ctx));
+            obligation.owned_type = owned_type;
             obligation.destructor_name = env_struct_linear_destructor_name(env, type_name, ctx);
             obligation.storage_name = "";
             obligation.cleanup_condition = "";
@@ -11870,7 +11872,9 @@ func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], func
     mut obligation: ResourceAcquisitionObligation[ctx];
     obligation.identity = std.Clone(ctx, identity);
     obligation.type_name = std.Clone(ctx, type_name);
-    obligation.owned_type = resolved_parameter;
+    mut owned_type: Index[ast.Type[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(owned_type, resolved_parameter);
+    obligation.owned_type = owned_type;
     obligation.destructor_name = env_struct_linear_destructor_name(
         env, type_name, ctx
     );
@@ -13205,7 +13209,7 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
             // retain an obligation. Consumed/transferred owners do not.
             if obligation.state == 0 || obligation.state == 4 || obligation.state == 5 {
                 mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
-                if env_resource_type_uses_allocator(env, obligation.owned_type, identity, &visited, ctx) == 1 {
+                if env_resource_type_uses_allocator(env, ctx[obligation.owned_type], identity, &visited, ctx) == 1 {
                     mut message := std.Concat("Semantic Error: [LinearResourceLeak] Allocator cannot be ", operation);
                     message = std.Concat(message, " while resource '");
                     message = std.Concat(message, obligation.storage_name);
