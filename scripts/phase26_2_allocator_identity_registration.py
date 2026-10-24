@@ -157,6 +157,18 @@ def ancestor_text_subsets(kind):
     return images
 
 
+def mixed_ancestor_subset(subset, images, allowed):
+    paths = {p['path'] for p in subset}
+    for other in images:
+        for replacement in other:
+            if replacement['path'] not in paths:
+                continue
+            mixed = [replacement if p['path'] == replacement['path'] else p for p in subset]
+            if fingerprint(mixed) not in allowed:
+                return mixed
+    return None
+
+
 def ancestor_text_inversions(registry, kind, current, rejected):
     from unittest.mock import patch
     owned = set(CHANGED + ADDED)
@@ -185,16 +197,12 @@ def ancestor_text_inversions(registry, kind, current, rejected):
         mutated = sorted(image + [extra], key=lambda p:p['path'])
         require(project(registry, kind, mutated) == mutated,
                 'ancestor projection swallowed foreign rows or duplicates')
-        for other in images.values():
-            replacement = next(p for p in other if p['path'] == target['path'])
-            mixed = [replacement if p['path'] == target['path'] else p for p in subset]
-            if fingerprint(mixed) in allowed:
-                continue  # An exact complete archived image is legitimate.
+        mixed = mixed_ancestor_subset(subset, images.values(), allowed)
+        if mixed is not None:
             mixed_checked = True
             changed = operational_text(kind, foreign + copy.deepcopy(mixed))
             rejected('mixed ancestor '+digest[:12]+' '+kind,
                 lambda:project(registry, kind, changed), 'R4 '+kind+' live projection drifted')
-            break
     require(mixed_checked, 'no mixed ancestor text rejection was exercised')
     for name in ANCESTOR_REGISTRATIONS:
         previous = importlib.import_module(name)
