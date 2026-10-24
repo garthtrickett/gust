@@ -1368,7 +1368,8 @@ type Scope[ctx] struct {
     bindings: std.HashMap[str, ast.Type[ctx], ctx],
     allocator_bindings: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
     allocator_brands: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
-    allocator_expressions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx]
+    allocator_expressions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
+    allocator_resources: std.HashMap[str, AllocatorDependencies[ctx], ctx]
 }
 
 type StructTemplate[ctx] struct {
@@ -7761,6 +7762,7 @@ func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ct
         scope_ref_new.allocator_bindings = std.HashMapNew(ctx);
         scope_ref_new.allocator_brands = std.HashMapNew(ctx);
         scope_ref_new.allocator_expressions = std.HashMapNew(ctx);
+        scope_ref_new.allocator_resources = std.HashMapNew(ctx);
     }
     if parent == empty[Index[Scope[ctx], ctx]] {
         typechecker_log_trace("🗄️", "scope_new: spawned root scope", ctx);
@@ -13564,16 +13566,32 @@ func env_resource_acquisition_allocator_dependencies(env: *TypeEnvironment[ctx],
     }
 }
 
-func env_validate_resource_return_allocator(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], expected: ast.Type[ctx], span: token.Span, ctx: &Arena) {
+func env_resource_expression_allocator_dependencies(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], ctx: &Arena) AllocatorDependencies[ctx] {
     unsafe {
         mut identity := env_resource_identity_for_expression(env, expression, ctx);
-        guard owner := (*env).resource_acquisition_obligations.Get(identity) else { return; }
+        mut owner := (*env).resource_acquisition_obligations.Get(identity);
+        if owner.Ok { return allocator_dependencies_clone(owner.Val.allocator_dependencies, ctx); }
+        mut binding := get_root_variable(expression, ctx);
+        mut declaration := env_allocator_binding_scope(env, binding, ctx);
+        if declaration != empty[Index[Scope[ctx], ctx]] {
+            mut saved := ctx[declaration].allocator_resources.Get(binding);
+            if saved.Ok { return allocator_dependencies_clone(saved.Val, ctx); }
+        }
+        mut unknown := allocator_dependencies_empty(ctx);
+        unknown.unresolved = 1;
+        return unknown;
+    }
+}
+
+func env_validate_resource_return_allocator(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], expected: ast.Type[ctx], span: token.Span, ctx: &Arena) {
+    unsafe {
+        if len(env_tracking_resource_type_name(env, expected, ctx)) == 0 { return; }
         mut function_scope := (*env).function_allocator_scope;
         if function_scope == empty[Index[Scope[ctx], ctx]] { return; }
         // The signature's formal context belongs to the function boundary,
         // even when a body-local declaration shadows its source spelling.
         mut required := env_resource_allocator_dependencies(env, expected, ctx[function_scope].allocator_brands, 0, ctx);
-        mut actual := owner.allocator_dependencies;
+        mut actual := env_resource_expression_allocator_dependencies(env, expression, ctx);
         mut actual_keys := actual.identities.Keys(ctx);
         mut mismatch := actual.unresolved;
         if required.unresolved == 1 { mismatch = 1; }
@@ -16574,6 +16592,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
             }
 
+            mut declaration_resource_dependencies := allocator_dependencies_empty(ctx);
+            mut declaration_has_resource_dependencies := len(env_tracking_resource_type_name(env, val_type, ctx)) > 0;
+            if declaration_has_resource_dependencies {
+                if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                    declaration_resource_dependencies = env_resource_expression_allocator_dependencies(env, val_idx, ctx);
+                } else {
+                    mut declaration_resource_substitutions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx] := std.HashMapNew(ctx);
+                    declaration_resource_dependencies = env_resource_allocator_dependencies(env, val_type, declaration_resource_substitutions, 1, ctx);
+                }
+            }
+
             mut field_alias_source_decl := phase26_zero_local_alias_source(val_idx, ctx);
             if std.str_eq(field_alias_source_decl, name) == 0 {
                 phase26_zero_clear_local_fields(env, name, ctx);
@@ -16627,6 +16656,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Preserve uncertainty as well as identity. A missing fact must
             // never become a known allocator merely through a copied spelling.
             env_allocator_record_binding(env, name, declaration_allocator_proof, ctx);
+            if declaration_has_resource_dependencies {
+                ctx[scope].allocator_resources.Insert(std.Clone(ctx, name), declaration_resource_dependencies);
+            }
 
             if val_type.tag == 8 { // Struct
                 mut decl_struct_name := val_type.Struct.struct_name;
