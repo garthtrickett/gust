@@ -16559,7 +16559,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut declared_allocator_brand := typechecker_brand_identity_from_resolved_type(resolved_explicit, env, ctx);
                 if brand_identity_has_identity(declared_allocator_brand) == 1 {
                     mut declared_allocator_proof := env_allocator_binding_proof(env, declared_allocator_brand.arena_identity, ctx);
-                    if len(declared_allocator_proof.identity) > 0 && declared_allocator_proof.unresolved == 0 {
+                    if len(declared_allocator_proof.identity) == 0 || declared_allocator_proof.unresolved == 1 {
+                        // An annotation is an additional constraint. Keeping
+                        // the initializer's origin must not erase uncertainty
+                        // about whether that declared context agrees with it.
+                        declaration_allocator_proof.unresolved = 1;
+                    } else {
                         if declaration_allocator_proof.unresolved == 1 ||
                            std.str_eq(declared_allocator_proof.identity, declaration_allocator_proof.identity) == 0 {
                             report_error(2,
