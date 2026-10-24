@@ -13392,6 +13392,26 @@ func env_arena_lifecycle_identity_from_type(env: *TypeEnvironment[ctx], resolved
     return std.Clone(ctx, "");
 }
 
+func env_allocator_storage_path(expression: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        if expression == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
+        mut value := ctx[expression];
+        if value.tag == 0 { return std.Clone(ctx, value.Identifier.name); }
+        if value.tag == 4 { return env_allocator_storage_path(value.Move.expr, ctx); }
+        if value.tag == 5 { return env_allocator_storage_path(value.Take.expr, ctx); }
+        if value.tag == 6 { return env_allocator_storage_path(value.AddressOf.expr, ctx); }
+        if value.tag == 7 { return env_allocator_storage_path(value.Dereference.expr, ctx); }
+        if value.tag == 9 { return env_allocator_storage_path(value.AsCast.left, ctx); }
+        if value.tag == 14 { return env_allocator_storage_path(value.Query.terminal, ctx); }
+        if value.tag == 11 {
+            mut parent := env_allocator_storage_path(value.Selector.left, ctx);
+            if len(parent) > 0 { return std.Clone(ctx, std.Concat(std.Concat(parent, "."), value.Selector.right)); }
+        }
+        // Index slot ownership is not inferred here: OD23 remains open.
+        return "";
+    }
+}
+
 func env_allocator_expression_key(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     mut key := typechecker_resolution_scope_key(env, ctx);
     key = std.Concat(key, ":");
@@ -13438,7 +13458,7 @@ func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], e
             }
         }
     }
-    mut expression_key := expression_to_string(expr_idx, ctx);
+    mut expression_key := env_allocator_storage_path(expr_idx, ctx);
     mut proof := env_allocator_binding_proof(env, expression_key, ctx);
     if len(proof.identity) > 0 {
         return proof;
@@ -13665,7 +13685,7 @@ func env_resource_expression_allocator_dependencies(env: *TypeEnvironment[ctx], 
         mut identity := env_resource_identity_for_expression(env, expression, ctx);
         mut owner := (*env).resource_acquisition_obligations.Get(identity);
         if owner.Ok { return allocator_dependencies_clone(owner.Val.allocator_dependencies, ctx); }
-        mut binding := expression_to_string(expression, ctx);
+        mut binding := env_allocator_storage_path(expression, ctx);
         mut declaration := env_allocator_binding_scope(env, binding, ctx);
         if declaration != empty[Index[Scope[ctx], ctx]] {
             mut saved := ctx[declaration].allocator_resources.Get(binding);
@@ -16432,6 +16452,28 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 i = i + 1;
             }
 
+            // Seed field constraints after every formal allocator is bound.
+            // References project constraints only; they acquire no ownership.
+            mut parameter_field_index := 0;
+            while parameter_field_index < len(params_vec_function_decl_impl) {
+                mut field_parameter := params_vec_function_decl_impl[parameter_field_index];
+                mut parameter_type_lookup := ctx[child_scope].bindings.Get(field_parameter.name);
+                if parameter_type_lookup.Ok {
+                    mut parameter_field_type := parameter_type_lookup.Val;
+                    if parameter_field_type.tag == 9 { parameter_field_type = ctx[parameter_field_type.RawPointer.inner]; }
+                    if len(env_tracking_resource_type_name(env, parameter_field_type, ctx)) > 0 {
+                        mut parameter_field_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+                        mut parameter_field_proof := env_allocator_binding_proof(env, field_parameter.name, ctx);
+                        env_capture_resource_field_allocator_constraints(env, child_scope,
+                            field_parameter.name, "", parameter_field_type,
+                            strip_brand_prefix(get_type_brand(parameter_field_type, env, ctx), ctx),
+                            parameter_field_proof, parameter_field_proof, 0,
+                            parameter_field_visited, ctx);
+                    }
+                }
+                parameter_field_index = parameter_field_index + 1;
+            }
+
             // Save old function contexts
             mut old_expected := (*env).expected_return_type;
             mut old_return_origins := (*env).current_function_return_origins;
@@ -16702,7 +16744,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut field_constraint_initialized := 0;
                 if val_idx != empty[Index[ast.Expression[ctx], ctx]] { field_constraint_initialized = 1; }
                 env_capture_resource_field_allocator_constraints(env, scope, name,
-                    expression_to_string(val_idx, ctx), val_type,
+                    env_allocator_storage_path(val_idx, ctx), val_type,
                     strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
                     declaration_allocator_proof, declaration_allocator_proof,
                     field_constraint_initialized, field_constraint_visited, ctx);
@@ -16955,7 +16997,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
             }
 
-            mut assignment_lifecycle_binding := expression_to_string(left_idx, ctx);
+            mut assignment_lifecycle_binding := env_allocator_storage_path(left_idx, ctx);
             mut assignment_expected_allocator := env_allocator_binding_proof(env, assignment_lifecycle_binding, ctx);
             mut assignment_actual_allocator := env_allocator_expression_proof(val_idx, env, ctx);
             mut assignment_allocator_scope := env_allocator_binding_scope(env, assignment_lifecycle_binding, ctx);
@@ -16974,7 +17016,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                len(env_tracking_resource_type_name(env, left_type, ctx)) > 0 {
                 mut assignment_field_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
                 env_validate_resource_field_allocator_assignment(env, assignment_allocator_scope,
-                    assignment_lifecycle_binding, expression_to_string(val_idx, ctx), left_type,
+                    assignment_lifecycle_binding, env_allocator_storage_path(val_idx, ctx), left_type,
                     strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
                     assignment_actual_allocator, stmt.Assignment.span, assignment_field_visited, ctx);
                 mut resource_constraint := ctx[assignment_allocator_scope].allocator_resources.Get(assignment_lifecycle_binding);
