@@ -43,6 +43,10 @@ for repeated normalization. Operational state remains required and nonempty;
 its prose is not a semantic byte pin. Mutations cover physical rollback, omitted
 or duplicated owned census rows, foreign drift, added-file drift and attempted
 OD23 admission. Normalization preserves foreign changes and is idempotent.
+Exact archived ancestor subsets are fixed points of the successor, so composing
+it with an older normalizer cannot restore newer coordinates. Historical images
+still require current physical pins. Mixed, omitted, duplicated and substituted
+ancestor rows reject; foreign rows survive for their own validator to check.
 
 The existing allocator18 matrix, resource guards, full affected-pin enumeration,
 actual first-release regression, native emitted-object fixed point, independent

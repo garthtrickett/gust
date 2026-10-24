@@ -6,6 +6,7 @@ import copy
 from functools import lru_cache
 import gzip
 import hashlib
+import importlib
 import json
 from pathlib import Path
 import sys
@@ -18,6 +19,9 @@ STATE = 'GUST_LANE_STATE.md'
 BASELINE = 'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz'
 BASELINE_SHA256 = '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b'
 REGISTRY = ROOT / 'scripts/cranelift_feature_registry.json'
+ANCESTOR_REGISTRATIONS = ('phase26_2_allocator_registration', 'phase26_release_registration',
+    'phase26_readonly_input_copy_registration', 'phase26_ticket_composition_registration',
+    'phase26_imported_native_registration', 'phase26_ticket_publication_registration')
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_2_allocator_registration.py',
     'compiler/phase26-release/release.json', 'compiler/phase26-release/reachable-audit.json')
@@ -140,6 +144,83 @@ def canonical_projection(kind, current):
     return current
 
 
+@lru_cache(maxsize=2)
+def ancestor_text_subsets(kind):
+    """Exact archived images, never independently mixed historical coordinates."""
+    owned = set(CHANGED + ADDED)
+    images = {}
+    for name in ANCESTOR_REGISTRATIONS:
+        previous = importlib.import_module(name)
+        value = previous.baseline()['projections'][kind]
+        subset = [p for p in value if p['path'] in owned]
+        images[fingerprint(subset)] = subset
+    return images
+
+
+def ancestor_text_inversions(registry, kind, current, rejected):
+    from unittest.mock import patch
+    owned = set(CHANGED + ADDED)
+    foreign = [p for p in current if p['path'] not in owned]
+    images = ancestor_text_subsets(kind)
+    allowed = set(images) | {identity(registry)['owned_text'][kind],
+        fingerprint([p for p in baseline()['projections'][kind] if p['path'] in owned])}
+    mixed_checked = False
+    for digest, subset in images.items():
+        image = operational_text(kind, foreign + copy.deepcopy(subset))
+        require(project(registry, kind, image) == image,
+                'ancestor allocator text image is not a fixed point')
+        target = next(p for p in subset if p['path'] == 'compiler/typechecker.gst')
+        for label, changed in (
+                ('omitted', [p for p in image if p['path'] != target['path']]),
+                ('duplicated', image + [copy.deepcopy(target)])):
+            rejected('ancestor '+digest[:12]+' '+label+' '+kind,
+                lambda changed=changed:project(registry, kind, changed),
+                'R4 '+kind+' live projection drifted')
+        changed = copy.deepcopy(image)
+        next(p for p in changed if p['path'] == target['path'])['digest'] = '0'*64
+        rejected('ancestor '+digest[:12]+' substituted '+kind,
+            lambda:project(registry, kind, changed), 'R4 '+kind+' live projection drifted')
+        foreign_row = next(p for p in foreign if p['path'] != STATE)
+        extra = dict(copy.deepcopy(foreign_row), allocator_foreign_mutation=True)
+        mutated = sorted(image + [extra], key=lambda p:p['path'])
+        require(project(registry, kind, mutated) == mutated,
+                'ancestor projection swallowed foreign rows or duplicates')
+        for other in images.values():
+            replacement = next(p for p in other if p['path'] == target['path'])
+            mixed = [replacement if p['path'] == target['path'] else p for p in subset]
+            if fingerprint(mixed) in allowed:
+                continue  # An exact complete archived image is legitimate.
+            mixed_checked = True
+            changed = operational_text(kind, foreign + copy.deepcopy(mixed))
+            rejected('mixed ancestor '+digest[:12]+' '+kind,
+                lambda:project(registry, kind, changed), 'R4 '+kind+' live projection drifted')
+            break
+    require(mixed_checked, 'no mixed ancestor text rejection was exercised')
+    for name in ANCESTOR_REGISTRATIONS:
+        previous = importlib.import_module(name)
+        image = previous.project(registry, kind, current)
+        require(project(registry, kind, image) == operational_text(kind, image),
+                'composed ancestor allocator text image changed: '+name)
+    previous = importlib.import_module(ANCESTOR_REGISTRATIONS[0])
+    image = previous.project(registry, kind, current)
+    require(previous.project(registry, kind, image) == image,
+            'composed predecessor allocator text normalization is not idempotent')
+    original = Path.read_bytes
+    path = 'compiler/typechecker.gst'
+    with patch.object(Path, 'read_bytes',
+            lambda p:base_bytes(path) if p == ROOT/path else original(p)):
+        rejected('ancestor image physical rollback '+kind,
+            lambda:project(registry, kind, image), 'R4 changed file drifted')
+
+
+def physical_files(registry, row):
+    for p in row['changed_files']:
+        prior_digest(registry, p['path'], sha((ROOT / p['path']).read_bytes()))
+    for p in row['added_files']:
+        require(p['digest'] == sha((ROOT / p['path']).read_bytes()),
+                'allocator identity added file drifted: '+p['path'])
+
+
 def project(registry, kind, current):
     if not record(registry):
         return current
@@ -153,6 +234,13 @@ def project(registry, kind, current):
         owned = set(CHANGED + ADDED)
         subset = [p for p in current if p['path'] in owned]
         old_subset = [p for p in previous if p['path'] in owned]
+        if fingerprint(subset) in ancestor_text_subsets(kind):
+            # A predecessor may feed its own normalized image back through us.
+            # Keep that exact image fixed; restoring our newer baseline would
+            # undo its normalization. Projection coordinates never excuse
+            # current physical rollback, and foreign rows remain untouched.
+            physical_files(registry, row)
+            return copy.deepcopy(current)
         require(fingerprint(subset) in (row['owned_text'][kind], fingerprint(old_subset)),
                 'R4 ' + kind + ' live projection drifted (allocator identity successor)')
         return sorted(copy.deepcopy([p for p in current if p['path'] not in owned] + old_subset),
@@ -207,10 +295,7 @@ def validate():
     row = identity(registry)
     require(project_registry(registry) == json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
             'allocator identity changed frozen predecessor or foreign registry rows')
-    for p in row['changed_files']:
-        prior_digest(registry, p['path'], sha((ROOT / p['path']).read_bytes()))
-    for p in row['added_files']:
-        require(p['digest'] == sha((ROOT / p['path']).read_bytes()), 'allocator identity added file drifted: '+p['path'])
+    physical_files(registry, row)
     require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
     levels = json.loads((ROOT/'scripts/cranelift_test_levels.json').read_text())
     require(levels['guards'].pop(GUARD,None)==2 and levels==json.loads(base_bytes('scripts/cranelift_test_levels.json')),
@@ -265,6 +350,7 @@ def inversions():
         once = project(registry,kind,values)
         require(project(registry,kind,once) == once,
                 'allocator text normalization is not idempotent')
+        ancestor_text_inversions(registry, kind, values, rejected)
     changed = copy.deepcopy(registry)
     changed['allocator_foreign_mutation'] = True
     require(project_registry(changed) != json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
