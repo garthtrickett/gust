@@ -13566,6 +13566,44 @@ func env_resource_acquisition_allocator_dependencies(env: *TypeEnvironment[ctx],
     }
 }
 
+func env_capture_resource_field_allocator_constraints(env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], path: str, source_path: str, source: ast.Type[ctx], root_brand: str, root_proof: AllocatorIdentityProof[ctx], initialized: int, visited: std.HashMap[str, int, ctx], ctx: &Arena) {
+    unsafe {
+        mut resolved := env_resolve_type(env, source, ctx);
+        if type_is_resource(resolved, ctx) == 1 {
+            resolved = resource_type_payload(resolved, ctx);
+        }
+        if resolved.tag != 8 { return; }
+        mut type_key := ast.serialize_type(resolved, ctx);
+        if visited.Get(type_key).Ok { return; }
+        mut nested_visited := typechecker_clone_int_map(visited, ctx);
+        nested_visited.Insert(std.Clone(ctx, type_key), 1);
+        guard layout := (*env).struct_registry.Get(resolved.Struct.struct_name) else { return; }
+        mut fields := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+        mut i := 0;
+        while i < len(fields) {
+            guard field := layout.fields.Get(fields[i]) else { return; }
+            mut field_path := std.Clone(ctx, std.Concat(std.Concat(path, "."), fields[i]));
+            mut actual_path := "";
+            if len(source_path) > 0 { actual_path = std.Clone(ctx, std.Concat(std.Concat(source_path, "."), fields[i])); }
+            mut brand := strip_brand_prefix(get_type_brand(field, env, ctx), ctx);
+            if len(brand) > 0 {
+                mut proof := allocator_identity_proof("", 1, ctx);
+                if initialized == 0 {
+                    proof = env_allocator_binding_proof(env, brand, ctx);
+                } else if len(actual_path) > 0 {
+                    proof = env_allocator_binding_proof(env, actual_path, ctx);
+                }
+                if len(proof.identity) == 0 && std.str_eq(brand, root_brand) == 1 {
+                    proof = root_proof;
+                }
+                ctx[scope].allocator_bindings.Insert(std.Clone(ctx, field_path), proof);
+            }
+            env_capture_resource_field_allocator_constraints(env, scope, field_path, actual_path, field, root_brand, root_proof, initialized, nested_visited, ctx);
+            i = i + 1;
+        }
+    }
+}
+
 func env_resource_expression_allocator_dependencies(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], ctx: &Arena) AllocatorDependencies[ctx] {
     unsafe {
         mut identity := env_resource_identity_for_expression(env, expression, ctx);
@@ -16603,6 +16641,17 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
             }
 
+            if declaration_has_resource_dependencies {
+                mut field_constraint_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+                mut field_constraint_initialized := 0;
+                if val_idx != empty[Index[ast.Expression[ctx], ctx]] { field_constraint_initialized = 1; }
+                env_capture_resource_field_allocator_constraints(env, scope, name,
+                    expression_to_string(val_idx, ctx), val_type,
+                    strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
+                    declaration_allocator_proof, field_constraint_initialized,
+                    field_constraint_visited, ctx);
+            }
+
             mut field_alias_source_decl := phase26_zero_local_alias_source(val_idx, ctx);
             if std.str_eq(field_alias_source_decl, name) == 0 {
                 phase26_zero_clear_local_fields(env, name, ctx);
@@ -16853,6 +16902,18 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut assignment_lifecycle_binding := expression_to_string(left_idx, ctx);
             mut assignment_expected_allocator := env_allocator_binding_proof(env, assignment_lifecycle_binding, ctx);
             mut assignment_actual_allocator := env_allocator_expression_proof(val_idx, env, ctx);
+            mut assignment_allocator_scope := env_allocator_binding_scope(env, assignment_lifecycle_binding, ctx);
+            if assignment_allocator_scope != empty[Index[Scope[ctx], ctx]] &&
+               std.str_eq(assignment_lifecycle_binding, env_resource_storage_root(assignment_lifecycle_binding, ctx)) == 0 {
+                mut field_constraint := ctx[assignment_allocator_scope].allocator_bindings.Get(assignment_lifecycle_binding);
+                if field_constraint.Ok {
+                    if field_constraint.Val.unresolved == 1 {
+                        report_error(2,
+                            "Semantic Error: [BrandIdentityMismatch] Resource field assignment has an unresolved declared lexical allocator origin",
+                            stmt.Assignment.span, env, ctx);
+                    }
+                }
+            }
             if len(assignment_expected_allocator.identity) > 0 && assignment_expected_allocator.unresolved == 0 {
                 if assignment_actual_allocator.unresolved == 1 ||
                    std.str_eq(assignment_expected_allocator.identity, assignment_actual_allocator.identity) == 0 {
