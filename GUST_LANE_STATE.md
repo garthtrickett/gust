@@ -1,3 +1,7 @@
+# Cranelift ACTIVE lexical allocator proof identities — 2026-10-24T20:54:08.509996+00:00
+
+Same compiler owner ea414019-6671-4c02-a629-b705e64769fb; actual worktree /home/gust/code/worktrees/gust/p26-scoped-ticket-publication; branch codex/phase26-2-allocator-proof-identities; fresh base9df2eb10291caa6a76e5cc1c2c20a7488a54e67d. Deferred-order candidate retained unqualified on codex/phase26-2-deferred-allocator-cleanup after exact compile-only controls demonstrated a shadowed allocator false rejection. Next coherent prerequisite is proof-side lexical allocator declaration identities and actual-origin owner dependencies, preserving type/MIR/runtime meaning. No live jobs, CI observer or fixed /tmp reservation. Full26.2–26.6 active/OPEN, OD23 unselected; first-release DONE frozen.
+
 # Cranelift ACTIVE Phase26 remainder — 2026-10-24T11:41:35.467392+00:00
 
 Same compiler owner ea414019-6671-4c02-a629-b705e64769fb resumes canonical26.2–26.6 from35ebca4c on codex/phase26-2-linear-resource-enforcement. Prior first-release terminal superseded prospectively; FFI-R1–R6 DONE evidence remains frozen. Current patch enforces direct allocator invalidation with live branded resource obligations. OD23 slot ownership remains OPEN/unselected. Current next gate: maintained matrix, complete additive pin census, fixed point, reviews and owning exact-head CI/merge. No fixed /tmp reservation or CI observer.

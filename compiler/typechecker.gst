@@ -1350,9 +1350,25 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
     }
 }
 
+// Proof identities do not alter source brands or canonical type spelling.
+// An unresolved origin retains a local identity for lifecycle tracking but
+// cannot establish that another allocator is unrelated to an owned value.
+type AllocatorIdentityProof[ctx] struct {
+    identity: str,
+    unresolved: int
+}
+
+type AllocatorDependencies[ctx] struct {
+    identities: std.HashMap[str, int, ctx],
+    unresolved: int
+}
+
 type Scope[ctx] struct {
     parent: Index[Scope[ctx], ctx],
-    bindings: std.HashMap[str, ast.Type[ctx], ctx]
+    bindings: std.HashMap[str, ast.Type[ctx], ctx],
+    allocator_bindings: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
+    allocator_brands: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
+    allocator_expressions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx]
 }
 
 type StructTemplate[ctx] struct {
@@ -1393,6 +1409,7 @@ type ResourceAcquisitionObligation[ctx] struct {
     identity: str,
     type_name: str,
     owned_type: ast.Type[ctx],
+    allocator_dependencies: AllocatorDependencies[ctx],
     destructor_name: str,
     storage_name: str,
     cleanup_condition: str,
@@ -1451,6 +1468,8 @@ type TypeEnvironment[ctx] struct {
     brand_identities: std.HashMap[str, BrandIdentity[ctx], ctx],
     arena_lifecycle_states: std.HashMap[str, ArenaLifecycleState[ctx], ctx],
     arena_lifecycle_bindings: std.HashMap[str, str, ctx],
+    current_allocator_scope: Index[Scope[ctx], ctx],
+    function_allocator_scope: Index[Scope[ctx], ctx],
     arena_lifecycle_deferred_frees: std.HashMap[str, int, ctx],
     current_function_identity_scope: str,
     in_defer_expression: int,
@@ -7028,6 +7047,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     sig.return_type, &call_brand_substitutions, ctx
                 );
                 resolved_return = env_resolve_type(env, resolved_return, ctx);
+                env_allocator_record_call_result(env, expr_idx, resolved_func, sig, args_vec_valid_call, resolved_return, ctx);
                 env_register_resource_acquisition(
                     env, expr_idx, resolved_return, ctx
                 );
@@ -7060,6 +7080,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
 }
 
 func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    mut parent_allocator_scope: Index[Scope[ctx], ctx] := empty[Index[Scope[ctx], ctx]];
+    unsafe {
+        parent_allocator_scope = (*env).current_allocator_scope;
+        (*env).current_allocator_scope = scope;
+    }
     mut t := check_expression_internal(expr_idx, env, scope, ctx);
     unsafe {
         mut final_span := get_expression_span(expr_idx, ctx);
@@ -7092,6 +7117,7 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         type_entry.end_offset = final_span.end.offset;
         type_entry.val_type = t;
         (*entry_ref).types.Push(type_entry);
+        (*env).current_allocator_scope = parent_allocator_scope;
     }
     return t;
 }
@@ -7732,6 +7758,9 @@ func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ct
         mut scope_ref_new := ctx.get_ref(scope_idx);
         scope_ref_new.parent = parent;
         scope_ref_new.bindings = std.HashMapNew(ctx);
+        scope_ref_new.allocator_bindings = std.HashMapNew(ctx);
+        scope_ref_new.allocator_brands = std.HashMapNew(ctx);
+        scope_ref_new.allocator_expressions = std.HashMapNew(ctx);
     }
     if parent == empty[Index[Scope[ctx], ctx]] {
         typechecker_log_trace("🗄️", "scope_new: spawned root scope", ctx);
@@ -10134,6 +10163,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.brand_identities = std.HashMapNew(ctx);
         env_ref_new.arena_lifecycle_states = std.HashMapNew(ctx);
         env_ref_new.arena_lifecycle_bindings = std.HashMapNew(ctx);
+        env_ref_new.current_allocator_scope = empty[Index[Scope[ctx], ctx]];
+        env_ref_new.function_allocator_scope = empty[Index[Scope[ctx], ctx]];
         env_ref_new.arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
         env_ref_new.current_function_identity_scope = "module";
         env_ref_new.in_defer_expression = 0;
@@ -11819,6 +11850,7 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
             obligation.identity = std.Clone(ctx, identity);
             obligation.type_name = std.Clone(ctx, type_name);
             obligation.owned_type = env_resolve_type(env, acquired_type, ctx);
+            obligation.allocator_dependencies = env_resource_acquisition_allocator_dependencies(env, expr_idx, ctx);
             obligation.destructor_name = env_struct_linear_destructor_name(env, type_name, ctx);
             obligation.storage_name = "";
             obligation.cleanup_condition = "";
@@ -11871,6 +11903,8 @@ func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], func
     obligation.identity = std.Clone(ctx, identity);
     obligation.type_name = std.Clone(ctx, type_name);
     obligation.owned_type = resolved_parameter;
+    mut parameter_substitutions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx] := std.HashMapNew(ctx);
+    obligation.allocator_dependencies = env_resource_allocator_dependencies(env, resolved_parameter, parameter_substitutions, 1, ctx);
     obligation.destructor_name = env_struct_linear_destructor_name(
         env, type_name, ctx
     );
@@ -13194,8 +13228,8 @@ func env_resource_type_uses_allocator(env: *TypeEnvironment[ctx], t: ast.Type[ct
 
 func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], allocator: Index[ast.Expression[ctx], ctx], operation: str, span: token.Span, ctx: &Arena) int {
     unsafe {
-        mut identity := env_arena_lifecycle_resolve_expression_identity(allocator, env, ctx);
-        if len(identity) == 0 { return 1; }
+        mut allocator_proof := env_allocator_expression_proof(allocator, env, ctx);
+        mut identity := allocator_proof.identity;
         mut keys := (*env).resource_acquisition_obligations.Keys(ctx);
         typechecker_sort_vector_str(&keys, ctx);
         mut i := 0;
@@ -13204,8 +13238,7 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
             // Pending, deferred cleanup, and a live/terminal path join all
             // retain an obligation. Consumed/transferred owners do not.
             if obligation.state == 0 || obligation.state == 4 || obligation.state == 5 {
-                mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
-                if env_resource_type_uses_allocator(env, obligation.owned_type, identity, &visited, ctx) == 1 {
+                if allocator_dependencies_overlap(obligation.allocator_dependencies, allocator_proof, ctx) == 1 {
                     mut message := std.Concat("Semantic Error: [LinearResourceLeak] Allocator cannot be ", operation);
                     message = std.Concat(message, " while resource '");
                     message = std.Concat(message, obligation.storage_name);
@@ -13263,14 +13296,70 @@ func env_arena_lifecycle_ensure(env: *TypeEnvironment[ctx], identity: str, ctx: 
     }
 }
 
+func allocator_identity_proof(identity: str, unresolved: int, ctx: &Arena) AllocatorIdentityProof[ctx] {
+    mut proof: AllocatorIdentityProof[ctx];
+    proof.identity = std.Clone(ctx, identity);
+    proof.unresolved = unresolved;
+    return proof;
+}
+
+func env_allocator_binding_scope(env: *TypeEnvironment[ctx], binding: str, ctx: &Arena) Index[Scope[ctx], ctx] {
+    unsafe {
+        mut root := env_resource_storage_root(binding, ctx);
+        mut current := (*env).current_allocator_scope;
+        while current != empty[Index[Scope[ctx], ctx]] {
+            if ctx[current].bindings.Get(root).Ok { return current; }
+            current = ctx[current].parent;
+        }
+        return empty[Index[Scope[ctx], ctx]];
+    }
+}
+
+func env_allocator_binding_proof(env: *TypeEnvironment[ctx], binding: str, ctx: &Arena) AllocatorIdentityProof[ctx] {
+    unsafe {
+        mut root := env_resource_storage_root(binding, ctx);
+        mut current := (*env).current_allocator_scope;
+        while current != empty[Index[Scope[ctx], ctx]] {
+            if ctx[current].bindings.Get(root).Ok {
+                mut local := ctx[current].allocator_bindings.Get(binding);
+                if local.Ok { return local.Val; }
+                // A declaration with no fact shadows the outer spelling too.
+                return allocator_identity_proof("", 1, ctx);
+            }
+            mut formal := ctx[current].allocator_brands.Get(binding);
+            if formal.Ok { return formal.Val; }
+            current = ctx[current].parent;
+        }
+        mut key := arena_lifecycle_binding_key(env, binding, ctx);
+        mut global := (*env).arena_lifecycle_bindings.Get(key);
+        if global.Ok { return allocator_identity_proof(global.Val, 0, ctx); }
+        return allocator_identity_proof("", 1, ctx);
+    }
+}
+
+func env_allocator_record_binding(env: *TypeEnvironment[ctx], binding: str, proof: AllocatorIdentityProof[ctx], ctx: &Arena) {
+    unsafe {
+        mut declaration := env_allocator_binding_scope(env, binding, ctx);
+        if declaration != empty[Index[Scope[ctx], ctx]] {
+            // This is the binding's declared context, not a mutable last-value
+            // fact. Assignment must prove compatibility instead of refining it.
+            if ctx[declaration].allocator_bindings.Get(binding).Ok { return; }
+            ctx[declaration].allocator_bindings.Insert(std.Clone(ctx, binding), proof);
+        }
+        if len(proof.identity) > 0 {
+            env_arena_lifecycle_ensure(env, proof.identity, ctx);
+            mut key := arena_lifecycle_binding_key(env, binding, ctx);
+            (*env).arena_lifecycle_bindings.Insert(std.Clone(ctx, key), std.Clone(ctx, proof.identity));
+        }
+    }
+}
+
 func env_arena_lifecycle_record_binding(env: *TypeEnvironment[ctx], binding: str, identity: str, ctx: &Arena) {
     unsafe {
         if std.str_eq(binding, "") == 1 || std.str_eq(identity, "") == 1 {
             return;
         }
-        env_arena_lifecycle_ensure(env, identity, ctx);
-        mut key := arena_lifecycle_binding_key(env, binding, ctx);
-        (*env).arena_lifecycle_bindings.Insert(std.Clone(ctx, key), std.Clone(ctx, identity));
+        env_allocator_record_binding(env, binding, allocator_identity_proof(identity, 0, ctx), ctx);
     }
 }
 
@@ -13279,12 +13368,7 @@ func env_arena_lifecycle_lookup_binding(env: *TypeEnvironment[ctx], binding: str
         if std.str_eq(binding, "") == 1 {
             return std.Clone(ctx, "");
         }
-        mut key := arena_lifecycle_binding_key(env, binding, ctx);
-        mut lookup := (*env).arena_lifecycle_bindings.Get(key);
-        if lookup.Ok {
-            return std.Clone(ctx, lookup.Val);
-        }
-        return std.Clone(ctx, "");
+        return env_allocator_binding_proof(env, binding, ctx).identity;
     }
 }
 
@@ -13306,14 +13390,271 @@ func env_arena_lifecycle_identity_from_type(env: *TypeEnvironment[ctx], resolved
     return std.Clone(ctx, "");
 }
 
-func env_arena_lifecycle_resolve_expression_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+func env_allocator_expression_key(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    mut key := typechecker_resolution_scope_key(env, ctx);
+    key = std.Concat(key, ":");
+    return std.Concat(key, env_resource_acquisition_identity(env, get_expression_span(expr_idx, ctx), ctx));
+}
+
+func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
+    unsafe {
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return allocator_identity_proof("", 1, ctx);
+        }
+        mut current := (*env).current_allocator_scope;
+        if current != empty[Index[Scope[ctx], ctx]] {
+            mut saved := ctx[current].allocator_expressions.Get(env_allocator_expression_key(expr_idx, env, ctx));
+            if saved.Ok { return saved.Val; }
+        }
+        mut expr := ctx[expr_idx];
+        if expr.tag == 4 { return env_allocator_expression_proof(expr.Move.expr, env, ctx); }
+        if expr.tag == 5 { return env_allocator_expression_proof(expr.Take.expr, env, ctx); }
+        if expr.tag == 6 { return env_allocator_expression_proof(expr.AddressOf.expr, env, ctx); }
+        if expr.tag == 7 { return env_allocator_expression_proof(expr.Dereference.expr, env, ctx); }
+        if expr.tag == 9 { return env_allocator_expression_proof(expr.AsCast.left, env, ctx); }
+        if expr.tag == 14 { return env_allocator_expression_proof(expr.Query.terminal, env, ctx); }
+        if expr.tag == 8 { return env_allocator_expression_proof(expr.IndexAccess.allocator, env, ctx); }
+        if expr.tag == 12 {
+            mut callee := ctx[expr.Call.function];
+            // These existing checked readback routes retain the receiver's
+            // allocator. Do not generalize this to methods such as Keys whose
+            // explicit destination allocator may differ from the receiver.
+            if callee.tag == 11 &&
+               (std.str_eq(callee.Selector.right, "get_ref") == 1 ||
+                std.str_eq(callee.Selector.right, "GetRef") == 1) {
+                return env_allocator_expression_proof(callee.Selector.left, env, ctx);
+            }
+            mut name := env_resolve_namespaced_ident(env, expression_to_string(expr.Call.function, ctx), ctx);
+            if std.str_eq(name, "std_VectorGetRef") == 1 || std.str_eq(name, "std.VectorGetRef") == 1 ||
+               std.str_eq(name, "std_HashMapGetRef") == 1 || std.str_eq(name, "std.HashMapGetRef") == 1 {
+                mut arguments := ctx[expr.Call.arguments];
+                if len(arguments) > 0 {
+                    mut receiver: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                    ctx.Set(receiver, arguments[0]);
+                    return env_allocator_expression_proof(receiver, env, ctx);
+                }
+            }
+        }
+    }
     mut expression_key := expression_to_string(expr_idx, ctx);
-    mut identity := env_arena_lifecycle_lookup_binding(env, expression_key, ctx);
-    if std.str_eq(identity, "") == 0 {
-        return identity;
+    mut proof := env_allocator_binding_proof(env, expression_key, ctx);
+    if len(proof.identity) > 0 {
+        return proof;
     }
     mut root_binding := get_root_variable(expr_idx, ctx);
-    return env_arena_lifecycle_lookup_binding(env, root_binding, ctx);
+    return env_allocator_binding_proof(env, root_binding, ctx);
+}
+
+func env_arena_lifecycle_resolve_expression_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    return env_allocator_expression_proof(expr_idx, env, ctx).identity;
+}
+
+func allocator_dependencies_empty(ctx: &Arena) AllocatorDependencies[ctx] {
+    mut dependencies: AllocatorDependencies[ctx];
+    dependencies.identities = std.HashMapNew(ctx);
+    dependencies.unresolved = 0;
+    return dependencies;
+}
+
+func allocator_dependencies_clone(source: AllocatorDependencies[ctx], ctx: &Arena) AllocatorDependencies[ctx] {
+    mut cloned := allocator_dependencies_empty(ctx);
+    cloned.identities = typechecker_clone_int_map(source.identities, ctx);
+    cloned.unresolved = source.unresolved;
+    return cloned;
+}
+
+func allocator_dependencies_join(left: AllocatorDependencies[ctx], right: AllocatorDependencies[ctx], ctx: &Arena) AllocatorDependencies[ctx] {
+    mut joined := allocator_dependencies_clone(left, ctx);
+    mut keys := right.identities.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        joined.identities.Insert(std.Clone(ctx, keys[i]), 1);
+        i = i + 1;
+    }
+    if right.unresolved == 1 { joined.unresolved = 1; }
+    return joined;
+}
+
+func allocator_dependencies_overlap(dependencies: AllocatorDependencies[ctx], allocator: AllocatorIdentityProof[ctx], ctx: &Arena) int {
+    if dependencies.unresolved == 1 { return 1; }
+    if allocator.unresolved == 1 && len(dependencies.identities.Keys(ctx)) > 0 { return 1; }
+    if dependencies.identities.Get(allocator.identity).Ok { return 1; }
+    return 0;
+}
+
+func env_resource_collect_allocator_dependencies(env: *TypeEnvironment[ctx], source: ast.Type[ctx], substitutions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx], lexical_parameters: int, visited: *std.HashMap[str, int, ctx], dependencies: *AllocatorDependencies[ctx], ctx: &Arena) {
+    unsafe {
+        mut resolved := env_resolve_type(env, source, ctx);
+        if type_is_resource(resolved, ctx) == 1 {
+            env_resource_collect_allocator_dependencies(env, resource_type_payload(resolved, ctx), substitutions, lexical_parameters, visited, dependencies, ctx);
+            return;
+        }
+        if resolved.tag != 8 { return; } // owned structs; no reference/Index ownership
+        mut name := resolved.Struct.struct_name;
+        if env_struct_has_resource_tracking_metadata(env, name, ctx) == 1 {
+            mut brand := strip_brand_prefix(get_type_brand(resolved, env, ctx), ctx);
+            if len(brand) > 0 {
+                mut proof := allocator_identity_proof("", 1, ctx);
+                mut actual := substitutions.Get(brand);
+                if actual.Ok {
+                    proof = actual.Val;
+                } else if lexical_parameters == 1 {
+                    proof = env_allocator_binding_proof(env, brand, ctx);
+                    if len(proof.identity) == 0 {
+                        proof = allocator_identity_proof(arena_lifecycle_identity_for_binding(env, brand, ctx), 0, ctx);
+                    }
+                }
+                if proof.unresolved == 1 || len(proof.identity) == 0 {
+                    (*dependencies).unresolved = 1;
+                }
+                if len(proof.identity) > 0 {
+                    (*dependencies).identities.Insert(std.Clone(ctx, proof.identity), 1);
+                }
+            }
+        }
+        mut key := ast.serialize_type(resolved, ctx);
+        if (*visited).Get(key).Ok { return; }
+        (*visited).Insert(std.Clone(ctx, key), 1);
+        mut layout := (*env).struct_registry.Get(name);
+        if layout.Ok {
+            mut fields := typechecker_get_sorted_keys_type(&layout.Val.fields, ctx);
+            mut i := 0;
+            while i < len(fields) {
+                mut field := layout.Val.fields.Get(fields[i]);
+                if field.Ok {
+                    env_resource_collect_allocator_dependencies(env, field.Val, substitutions, lexical_parameters, visited, dependencies, ctx);
+                }
+                i = i + 1;
+            }
+        }
+    }
+}
+
+func env_resource_allocator_dependencies(env: *TypeEnvironment[ctx], source: ast.Type[ctx], substitutions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx], lexical_parameters: int, ctx: &Arena) AllocatorDependencies[ctx] {
+    mut dependencies := allocator_dependencies_empty(ctx);
+    mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+    env_resource_collect_allocator_dependencies(env, source, substitutions, lexical_parameters, &visited, &dependencies, ctx);
+    return dependencies;
+}
+
+func env_resource_acquisition_allocator_dependencies(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], ctx: &Arena) AllocatorDependencies[ctx] {
+    unsafe {
+        mut substitutions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx] := std.HashMapNew(ctx);
+        mut call := ctx[expression];
+        if call.tag == 12 {
+            mut callee := env_resolve_namespaced_ident(env, get_call_func_name(call.Call.function, ctx), ctx);
+            mut producer := (*env).function_registry.Get(callee);
+            if producer.Ok {
+                mut signature := producer.Val;
+                mut arguments := ctx[call.Call.arguments];
+                mut i := 0;
+                while i < len(signature.params) && i < len(signature.param_names) {
+                    mut brand := env_allocator_formal_brand(signature.params[i], signature.param_names[i], env, ctx);
+                    if len(brand) > 0 && substitutions.Get(brand).Ok == false {
+                        substitutions.Insert(std.Clone(ctx, brand), env_allocator_call_brand_proof(env, brand, signature, arguments, call.Call.span, ctx));
+                    }
+                    i = i + 1;
+                }
+                return env_resource_allocator_dependencies(env, signature.return_type, substitutions, 0, ctx);
+            }
+        }
+        mut unknown := allocator_dependencies_empty(ctx);
+        unknown.unresolved = 1;
+        return unknown;
+    }
+}
+
+func env_validate_resource_return_allocator(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], expected: ast.Type[ctx], span: token.Span, ctx: &Arena) {
+    unsafe {
+        mut identity := env_resource_identity_for_expression(env, expression, ctx);
+        mut owner := (*env).resource_acquisition_obligations.Get(identity);
+        if owner.Ok == false { return; }
+        mut function_scope := (*env).function_allocator_scope;
+        if function_scope == empty[Index[Scope[ctx], ctx]] { return; }
+        // The signature's formal context belongs to the function boundary,
+        // even when a body-local declaration shadows its source spelling.
+        mut required := env_resource_allocator_dependencies(env, expected, ctx[function_scope].allocator_brands, 0, ctx);
+        mut actual := owner.Val.allocator_dependencies;
+        mut actual_keys := actual.identities.Keys(ctx);
+        mut mismatch := actual.unresolved;
+        if required.unresolved == 1 { mismatch = 1; }
+        mut i := 0;
+        while i < len(actual_keys) {
+            if required.identities.Get(actual_keys[i]).Ok == false { mismatch = 1; }
+            i = i + 1;
+        }
+        if mismatch == 1 {
+            report_error(2,
+                "Semantic Error: [BrandIdentityMismatch] Returned resource does not preserve the function's declared lexical allocator origins",
+                span, env, ctx);
+        }
+    }
+}
+
+func env_allocator_formal_brand(parameter: ast.Type[ctx], name: str, env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    if typechecker_is_arena_value_or_ref(parameter, ctx) == 1 { return name; }
+    return strip_brand_prefix(get_type_brand(parameter, env, ctx), ctx);
+}
+
+func env_allocator_call_brand_proof(env: *TypeEnvironment[ctx], brand: str, signature: FunctionSignature[ctx], arguments: std.Vector[ast.Expression[ctx], ctx], span: token.Span, ctx: &Arena) AllocatorIdentityProof[ctx] {
+    mut result := allocator_identity_proof("", 0, ctx);
+    mut matched := 0;
+    mut i := 0;
+    while i < len(signature.params) && i < len(arguments) && i < len(signature.param_names) {
+        mut formal := env_allocator_formal_brand(signature.params[i], signature.param_names[i], env, ctx);
+        if len(formal) > 0 && std.str_eq(formal, brand) == 1 {
+            mut argument: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx.Set(argument, arguments[i]);
+            mut actual := env_allocator_expression_proof(argument, env, ctx);
+            if len(actual.identity) == 0 || actual.unresolved == 1 {
+                result.unresolved = 1;
+            }
+            if len(actual.identity) > 0 {
+                if len(result.identity) == 0 {
+                    result.identity = std.Clone(ctx, actual.identity);
+                } else if std.str_eq(result.identity, actual.identity) == 0 {
+                    report_error(2,
+                        "Semantic Error: [BrandIdentityMismatch] Actual arguments sharing a formal allocator brand have different lexical allocator origins",
+                        span, env, ctx);
+                    result.unresolved = 1;
+                }
+            }
+            matched = 1;
+        }
+        i = i + 1;
+    }
+    if matched == 0 { result.unresolved = 1; }
+    return result;
+}
+
+func env_allocator_record_call_result(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], callee: str, signature: FunctionSignature[ctx], arguments: std.Vector[ast.Expression[ctx], ctx], returned_type: ast.Type[ctx], ctx: &Arena) {
+    unsafe {
+        mut current := (*env).current_allocator_scope;
+        if current == empty[Index[Scope[ctx], ctx]] { return; }
+        mut key := env_allocator_expression_key(expression, env, ctx);
+        mut brand := strip_brand_prefix(get_type_brand(signature.return_type, env, ctx), ctx);
+        mut proof := allocator_identity_proof("", 1, ctx);
+        if std.str_eq(callee, "os_Arena_New") == 1 ||
+           std.str_eq(callee, "os.Arena.New") == 1 ||
+           std.str_eq(callee, "os_Arena.New") == 1 {
+            proof = allocator_identity_proof(std.Concat("allocator:", key), 0, ctx);
+        } else if len(brand) > 0 {
+            proof = env_allocator_call_brand_proof(env, brand, signature, arguments, get_expression_span(expression, ctx), ctx);
+        } else if typechecker_is_arena_value_or_ref(returned_type, ctx) == 0 {
+            return;
+        }
+        if len(proof.identity) == 0 {
+            // Preserve same-binding lifecycle checks without claiming that an
+            // unknown factory result is disjoint from another live allocator.
+            proof.identity = std.Concat("allocator-unresolved:", key);
+            proof.unresolved = 1;
+        }
+        // Facts belong to the checked lexical Scope, which is fresh for each
+        // concrete function/derivation. Assignment cannot refine its declared
+        // allocator constraints; rechecks therefore never reuse a branch's
+        // mutable last-value origin as another branch's proof.
+        ctx[current].allocator_expressions.Insert(std.Clone(ctx, key), proof);
+    }
 }
 
 func env_arena_lifecycle_observe_identity(env: *TypeEnvironment[ctx], identity: str, operation: str, ctx: &Arena) {
@@ -15590,7 +15931,10 @@ func check_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnviron
         mut start_msg := std.Format("check_statement: start for stmt tag %d", stmt.tag);
         typechecker_log_trace("📥", start_msg, ctx);
 
+        mut parent_allocator_scope := (*env).current_allocator_scope;
+        (*env).current_allocator_scope = scope;
         res = check_statement_impl(stmt_idx, env, scope, ctx);
+        (*env).current_allocator_scope = parent_allocator_scope;
 
         if len((*env).errors) == err_count {
             mut success_msg := std.Format("check_statement: successfully verified stmt tag %d", stmt.tag);
@@ -15606,6 +15950,8 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             return;
         }
         mut parent_depth := (*env).current_resource_scope_depth;
+        mut parent_allocator_scope := (*env).current_allocator_scope;
+        (*env).current_allocator_scope = scope;
         mut parent_zero_local_name := (*env).zero_local_call_name;
         mut parent_zero_local_callee := (*env).zero_local_call_callee;
         mut parent_zero_local_alias_hops := (*env).zero_local_call_alias_hops;
@@ -15801,6 +16147,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             local_zero_index = local_zero_index + 1;
         }
         (*env).current_resource_scope_depth = parent_depth;
+        (*env).current_allocator_scope = parent_allocator_scope;
         (*env).zero_local_call_name = parent_zero_local_name;
         (*env).zero_local_call_callee = parent_zero_local_callee;
         (*env).zero_local_call_alias_hops = parent_zero_local_alias_hops;
@@ -15854,6 +16201,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_resource_storage_scope_depths := typechecker_clone_int_map((*env).resource_storage_scope_depths, ctx);
             mut parent_resource_storage_declaration_orders := typechecker_clone_int_map((*env).resource_storage_declaration_orders, ctx);
             mut parent_resource_scope_depth := (*env).current_resource_scope_depth;
+            mut parent_function_allocator_scope := (*env).function_allocator_scope;
             mut parent_resource_declaration_order := (*env).current_resource_declaration_order;
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
@@ -15900,6 +16248,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             mut child_scope := scope_new(scope, ctx);
+            (*env).current_allocator_scope = child_scope;
+            (*env).function_allocator_scope = child_scope;
 
             // Register parameters
             mut inout_params: std.Vector[str, ctx] := std.VectorNew(ctx);
@@ -15934,6 +16284,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
 
                 scope_insert(child_scope, param.name, resolved_param_type, ctx);
+                mut formal_allocator_brand := env_allocator_formal_brand(resolved_param_type, param.name, env, ctx);
+                if len(formal_allocator_brand) > 0 && ctx[child_scope].allocator_brands.Get(formal_allocator_brand).Ok == false {
+                    ctx[child_scope].allocator_brands.Insert(std.Clone(ctx, formal_allocator_brand), allocator_identity_proof(arena_lifecycle_identity_for_binding(env, formal_allocator_brand, ctx), 0, ctx));
+                }
                 (*env).variable_types.Insert(std.Clone(ctx, param.name), resolved_param_type);
                 env_register_resource_storage(env, param.name, ctx);
 
@@ -16095,6 +16449,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).resource_storage_scope_depths = parent_resource_storage_scope_depths;
             (*env).resource_storage_declaration_orders = parent_resource_storage_declaration_orders;
             (*env).current_resource_scope_depth = parent_resource_scope_depth;
+            (*env).function_allocator_scope = parent_function_allocator_scope;
             (*env).current_resource_declaration_order = parent_resource_declaration_order;
             (*env).variable_origins = parent_origins;
             (*env).variable_zero_states = parent_zero_states;
@@ -16190,6 +16545,31 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
             }
 
+            // Resolve the initializer before inserting the declaration: a new
+            // binding may shadow the very outer alias used by its initializer.
+            mut declaration_allocator_proof := env_allocator_expression_proof(val_idx, env, ctx);
+            if len(declaration_allocator_proof.identity) == 0 {
+                mut declaration_brand := typechecker_brand_identity_from_resolved_type(val_type, env, ctx);
+                if brand_identity_has_identity(declaration_brand) == 1 {
+                    declaration_allocator_proof = env_allocator_binding_proof(env, declaration_brand.arena_identity, ctx);
+                }
+            }
+
+            if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
+                mut declared_allocator_brand := typechecker_brand_identity_from_resolved_type(resolved_explicit, env, ctx);
+                if brand_identity_has_identity(declared_allocator_brand) == 1 {
+                    mut declared_allocator_proof := env_allocator_binding_proof(env, declared_allocator_brand.arena_identity, ctx);
+                    if len(declared_allocator_proof.identity) > 0 && declared_allocator_proof.unresolved == 0 {
+                        if declaration_allocator_proof.unresolved == 1 ||
+                           std.str_eq(declared_allocator_proof.identity, declaration_allocator_proof.identity) == 0 {
+                            report_error(2,
+                                "Semantic Error: [BrandIdentityMismatch] Initializer does not preserve the annotation's lexical allocator origin",
+                                stmt.VarDecl.span, env, ctx);
+                        }
+                    }
+                }
+            }
+
             mut field_alias_source_decl := phase26_zero_local_alias_source(val_idx, ctx);
             if std.str_eq(field_alias_source_decl, name) == 0 {
                 phase26_zero_clear_local_fields(env, name, ctx);
@@ -16240,20 +16620,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 val_type = lookup_type;
             }
 
-            mut declaration_arena_identity := "";
-            if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                declaration_arena_identity = env_arena_lifecycle_resolve_expression_identity(
-                    val_idx, env, ctx
-                );
-            }
-            if std.str_eq(declaration_arena_identity, "") == 1 {
-                declaration_arena_identity = env_arena_lifecycle_identity_from_type(
-                    env, val_type, name, ctx
-                );
-            }
-            if std.str_eq(declaration_arena_identity, "") == 0 {
-                env_arena_lifecycle_record_binding(env, name, declaration_arena_identity, ctx);
-            }
+            // Preserve uncertainty as well as identity. A missing fact must
+            // never become a known allocator merely through a copied spelling.
+            env_allocator_record_binding(env, name, declaration_allocator_proof, ctx);
 
             if val_type.tag == 8 { // Struct
                 mut decl_struct_name := val_type.Struct.struct_name;
@@ -16445,19 +16814,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
             }
 
-            mut assignment_arena_identity := env_arena_lifecycle_resolve_expression_identity(
-                val_idx, env, ctx
-            );
-            if std.str_eq(assignment_arena_identity, "") == 1 {
-                assignment_arena_identity = env_arena_lifecycle_identity_from_type(
-                    env, val_type, "", ctx
-                );
-            }
-            if std.str_eq(assignment_arena_identity, "") == 0 {
-                mut assignment_lifecycle_binding := expression_to_string(left_idx, ctx);
-                env_arena_lifecycle_record_binding(
-                    env, assignment_lifecycle_binding, assignment_arena_identity, ctx
-                );
+            mut assignment_lifecycle_binding := expression_to_string(left_idx, ctx);
+            mut assignment_expected_allocator := env_allocator_binding_proof(env, assignment_lifecycle_binding, ctx);
+            mut assignment_actual_allocator := env_allocator_expression_proof(val_idx, env, ctx);
+            if len(assignment_expected_allocator.identity) > 0 && assignment_expected_allocator.unresolved == 0 {
+                if assignment_actual_allocator.unresolved == 1 ||
+                   std.str_eq(assignment_expected_allocator.identity, assignment_actual_allocator.identity) == 0 {
+                    report_error(2,
+                        "Semantic Error: [BrandIdentityMismatch] Assignment does not preserve the binding's declared lexical allocator origin",
+                        stmt.Assignment.span, env, ctx);
+                }
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
@@ -17537,6 +17903,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // remaining live owners. Preserve the continuation state while
             // checking so a diverging branch does not discharge its sibling.
             if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                if (*env).expected_return_type != empty[Index[ast.Type[ctx], ctx]] {
+                    env_validate_resource_return_allocator(env, expr_idx, ctx[(*env).expected_return_type], stmt.Return.span, ctx);
+                }
                 env_transfer_resource_return_expression(env, expr_idx, ctx);
             }
             env_record_resource_cleanup_plan(
@@ -18115,6 +18484,7 @@ func resource_acquisition_obligation_clone(record: ResourceAcquisitionObligation
     cloned.identity = std.Clone(ctx, record.identity);
     cloned.type_name = std.Clone(ctx, record.type_name);
     cloned.owned_type = record.owned_type;
+    cloned.allocator_dependencies = allocator_dependencies_clone(record.allocator_dependencies, ctx);
     cloned.destructor_name = std.Clone(ctx, record.destructor_name);
     cloned.storage_name = std.Clone(ctx, record.storage_name);
     cloned.cleanup_condition = std.Clone(ctx, record.cleanup_condition);
@@ -18226,12 +18596,15 @@ func typechecker_join_resource_acquisition_obligation_maps(left: std.HashMap[str
             );
             mut right_lookup := right.Get(key);
             if right_lookup.Ok {
+                record.allocator_dependencies = allocator_dependencies_join(record.allocator_dependencies, right_lookup.Val.allocator_dependencies, ctx);
                 record.state = resource_acquisition_obligation_join_state(
                     record.state, right_lookup.Val.state
                 );
                 if record.retained_lease_state != right_lookup.Val.retained_lease_state {
                     record.retained_lease_state = 2; // ambiguous retained lifetime
                 }
+            } else {
+                record.allocator_dependencies.unresolved = 1;
             }
             joined.Insert(std.Clone(ctx, key), record);
         }
@@ -18245,9 +18618,11 @@ func typechecker_join_resource_acquisition_obligation_maps(left: std.HashMap[str
         if joined.Get(key).Ok == false {
             mut right_lookup := right.Get(key);
             if right_lookup.Ok {
+                mut right_record := resource_acquisition_obligation_clone(right_lookup.Val, ctx);
+                right_record.allocator_dependencies.unresolved = 1;
                 joined.Insert(
                     std.Clone(ctx, key),
-                    resource_acquisition_obligation_clone(right_lookup.Val, ctx)
+                    right_record
                 );
             }
         }
