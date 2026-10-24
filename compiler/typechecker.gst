@@ -16461,6 +16461,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 if parameter_type_lookup.Ok {
                     mut parameter_field_type := parameter_type_lookup.Val;
                     if parameter_field_type.tag == 9 { parameter_field_type = ctx[parameter_field_type.RawPointer.inner]; }
+                    else if parameter_field_type.tag == 11 { parameter_field_type = ctx[parameter_field_type.Reference.inner]; }
                     if len(env_tracking_resource_type_name(env, parameter_field_type, ctx)) > 0 {
                         mut parameter_field_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
                         mut parameter_field_proof := env_allocator_binding_proof(env, field_parameter.name, ctx);
