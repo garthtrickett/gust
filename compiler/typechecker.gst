@@ -13566,42 +13566,58 @@ func env_resource_acquisition_allocator_dependencies(env: *TypeEnvironment[ctx],
     }
 }
 
-func env_capture_resource_field_allocator_constraints(env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], path: str, source_path: str, source: ast.Type[ctx], root_brand: str, root_proof: AllocatorIdentityProof[ctx], initialized: int, visited: std.HashMap[str, int, ctx], ctx: &Arena) {
+func env_capture_resource_field_allocator_constraints(env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], path: str, source_path: str, source: ast.Type[ctx], root_brand: str, root_proof: AllocatorIdentityProof[ctx], node_proof: AllocatorIdentityProof[ctx], initialized: int, visited: std.HashMap[str, int, ctx], ctx: &Arena) AllocatorDependencies[ctx] {
+    mut dependencies := allocator_dependencies_empty(ctx);
     unsafe {
         mut resolved := env_resolve_type(env, source, ctx);
-        if type_is_resource(resolved, ctx) == 1 {
-            resolved = resource_type_payload(resolved, ctx);
-        }
-        if resolved.tag != 8 { return; }
+        if type_is_resource(resolved, ctx) == 1 { resolved = resource_type_payload(resolved, ctx); }
+        if resolved.tag != 8 { return dependencies; }
         mut type_key := ast.serialize_type(resolved, ctx);
-        if visited.Get(type_key).Ok { return; }
+        if visited.Get(type_key).Ok { return dependencies; }
         mut nested_visited := typechecker_clone_int_map(visited, ctx);
         nested_visited.Insert(std.Clone(ctx, type_key), 1);
-        guard layout := (*env).struct_registry.Get(resolved.Struct.struct_name) else { return; }
+        if env_struct_has_resource_tracking_metadata(env, resolved.Struct.struct_name, ctx) == 1 &&
+           len(get_type_brand(resolved, env, ctx)) > 0 {
+            dependencies.unresolved = node_proof.unresolved;
+            if len(node_proof.identity) == 0 { dependencies.unresolved = 1; }
+            else { dependencies.identities.Insert(std.Clone(ctx, node_proof.identity), 1); }
+        }
+        guard layout := (*env).struct_registry.Get(resolved.Struct.struct_name) else { return dependencies; }
         mut fields := typechecker_get_sorted_keys_type(&layout.fields, ctx);
         mut i := 0;
         while i < len(fields) {
-            guard field := layout.fields.Get(fields[i]) else { return; }
+            guard field := layout.fields.Get(fields[i]) else { return dependencies; }
             mut field_path := std.Clone(ctx, std.Concat(std.Concat(path, "."), fields[i]));
             mut actual_path := "";
             if len(source_path) > 0 { actual_path = std.Clone(ctx, std.Concat(std.Concat(source_path, "."), fields[i])); }
             mut brand := strip_brand_prefix(get_type_brand(field, env, ctx), ctx);
+            mut proof := allocator_identity_proof("", 1, ctx);
+            mut source_fact_present := 0;
             if len(brand) > 0 {
-                mut proof := allocator_identity_proof("", 1, ctx);
-                if initialized == 0 {
-                    proof = env_allocator_binding_proof(env, brand, ctx);
-                } else if len(actual_path) > 0 {
-                    proof = env_allocator_binding_proof(env, actual_path, ctx);
+                if initialized == 0 { proof = env_allocator_binding_proof(env, brand, ctx); }
+                else if len(actual_path) > 0 {
+                    mut actual_scope := env_allocator_binding_scope(env, actual_path, ctx);
+                    if actual_scope != empty[Index[Scope[ctx], ctx]] {
+                        mut actual_fact := ctx[actual_scope].allocator_bindings.Get(actual_path);
+                        if actual_fact.Ok { proof = actual_fact.Val; source_fact_present = 1; }
+                    }
                 }
-                if len(proof.identity) == 0 && std.str_eq(brand, root_brand) == 1 {
+                // Missing and explicitly unresolved source facts differ: an
+                // unresolved field must not be laundered by its root's brand.
+                if source_fact_present == 0 && len(proof.identity) == 0 && std.str_eq(brand, root_brand) == 1 {
                     proof = root_proof;
                 }
                 ctx[scope].allocator_bindings.Insert(std.Clone(ctx, field_path), proof);
             }
-            env_capture_resource_field_allocator_constraints(env, scope, field_path, actual_path, field, root_brand, root_proof, initialized, nested_visited, ctx);
+            mut field_dependencies := env_capture_resource_field_allocator_constraints(env, scope, field_path, actual_path, field, root_brand, root_proof, proof, initialized, nested_visited, ctx);
+            dependencies = allocator_dependencies_join(dependencies, field_dependencies, ctx);
             i = i + 1;
         }
+        // Exact projections are immutable constraints, not mutable field-state
+        // guesses. Resource-valued stores must prove them before assignment.
+        ctx[scope].allocator_resources.Insert(std.Clone(ctx, path), allocator_dependencies_clone(dependencies, ctx));
     }
+    return dependencies;
 }
 
 func env_resource_expression_allocator_dependencies(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], ctx: &Arena) AllocatorDependencies[ctx] {
@@ -13609,7 +13625,7 @@ func env_resource_expression_allocator_dependencies(env: *TypeEnvironment[ctx], 
         mut identity := env_resource_identity_for_expression(env, expression, ctx);
         mut owner := (*env).resource_acquisition_obligations.Get(identity);
         if owner.Ok { return allocator_dependencies_clone(owner.Val.allocator_dependencies, ctx); }
-        mut binding := get_root_variable(expression, ctx);
+        mut binding := expression_to_string(expression, ctx);
         mut declaration := env_allocator_binding_scope(env, binding, ctx);
         if declaration != empty[Index[Scope[ctx], ctx]] {
             mut saved := ctx[declaration].allocator_resources.Get(binding);
@@ -16648,8 +16664,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 env_capture_resource_field_allocator_constraints(env, scope, name,
                     expression_to_string(val_idx, ctx), val_type,
                     strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
-                    declaration_allocator_proof, field_constraint_initialized,
-                    field_constraint_visited, ctx);
+                    declaration_allocator_proof, declaration_allocator_proof,
+                    field_constraint_initialized, field_constraint_visited, ctx);
             }
 
             mut field_alias_source_decl := phase26_zero_local_alias_source(val_idx, ctx);
@@ -16910,6 +16926,26 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     if field_constraint.Val.unresolved == 1 {
                         report_error(2,
                             "Semantic Error: [BrandIdentityMismatch] Resource field assignment has an unresolved declared lexical allocator origin",
+                            stmt.Assignment.span, env, ctx);
+                    }
+                }
+            }
+            if assignment_allocator_scope != empty[Index[Scope[ctx], ctx]] &&
+               len(env_tracking_resource_type_name(env, left_type, ctx)) > 0 {
+                mut resource_constraint := ctx[assignment_allocator_scope].allocator_resources.Get(assignment_lifecycle_binding);
+                if resource_constraint.Ok {
+                    mut actual_dependencies := env_resource_expression_allocator_dependencies(env, val_idx, ctx);
+                    mut resource_mismatch := actual_dependencies.unresolved;
+                    if resource_constraint.Val.unresolved == 1 { resource_mismatch = 1; }
+                    mut actual_dependency_keys := actual_dependencies.identities.Keys(ctx);
+                    mut dependency_index := 0;
+                    while dependency_index < len(actual_dependency_keys) {
+                        if resource_constraint.Val.identities.Get(actual_dependency_keys[dependency_index]).Ok == false { resource_mismatch = 1; }
+                        dependency_index = dependency_index + 1;
+                    }
+                    if resource_mismatch == 1 {
+                        report_error(2,
+                            "Semantic Error: [BrandIdentityMismatch] Resource assignment does not preserve declared lexical allocator dependencies",
                             stmt.Assignment.span, env, ctx);
                     }
                 }
