@@ -84257,7 +84257,7 @@
         },
         {
           "path": "scripts/phase26_release_closure.py",
-          "digest": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56"
+          "digest": "e382b0e60ed8e58a472808025f4658bc1f7466e7ba0368e6f30ed4155f173579"
         },
         {
           "path": "scripts/phase26_release_regression.py",
@@ -84273,11 +84273,11 @@
         },
         {
           "path": "compiler/phase26-release/release.json",
-          "digest": "91b2f996da338b8ca0dd8c04346f386c0b5e64f43ae335335cee331cbf1aed2e"
+          "digest": "8c674a381935b0816525eff952f488ef1b08532b418d23d7d517db7f9f7a6eca"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
-          "digest": "620e23d8392ecc21a63b3266b5bcb8241c95bac9fefec812a98b13c459f00639"
+          "digest": "b8e184fa43e4602cd6192ca5943ded75dff39e5dac7c6fd84fb25e21150373d3"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md",
@@ -84288,7 +84288,7 @@
           "digest": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050"
         }
       ],
-      "text_owned_digest": "3a8e7c770e7e426f307f9010bc2800d1dd59fe6ec6ab80add566fc1aafa096b2",
+      "text_owned_digest": "e99b114918f7315feeccc5427e7083e031a109c37f7603c803dee38a4e5baaa6",
       "projections": {
         "r4_text": "985e47ecc06fb82ffaf4d905d1d3b5e31eaad4c82085ab926c33ffa29833aed7",
         "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
@@ -84297,7 +84297,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "a37bdb69aafacbad78e210e21e79c818608961189a7a84e982325e747f5c14ce",
-        "text": "25363105dd29bcf251cfbac128c66fca745aea3881af799b82bca54815c0b88b"
+        "text": "e04635f984a166b3909d4fef97c9da1bb9069e857e806dedd14f692f7dd64993"
       },
       "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
     }

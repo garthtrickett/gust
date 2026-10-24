@@ -394,6 +394,22 @@ def qualification(public_dir, production_dir, regression_dir, output):
     output.write_text(json.dumps(record, indent=2) + "\n")
 
 
+def checked_latest_historical(latest, selected, head):
+    require(latest.get("id") == selected and latest.get("head_sha") == head and
+            latest.get("head_branch") == "main" and
+            latest.get("path") == ".github/workflows/cranelift-historical-full.yml" and
+            latest.get("status") == "completed" and latest.get("conclusion") == "success",
+            "latest main Historical Full is not the selected successful final-main run")
+
+
+def latest_historical(api, selected, head):
+    value = api("actions/workflows/cranelift-historical-full.yml/runs?branch=main&per_page=1")
+    require(len(value.get("workflow_runs", [])) == 1, "latest main Historical Full is absent")
+    latest = value["workflow_runs"][0]
+    checked_latest_historical(latest, selected, head)
+    return latest
+
+
 def historical(run_id, artifact_id, archive, closure_pr, reviews_path, output):
     authority = validate_sources()
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -433,6 +449,7 @@ def historical(run_id, artifact_id, archive, closure_pr, reviews_path, output):
             "owning qualification run used another source tree")
     reviews = load(reviews_path)
     checked_reviews(reviews, pr_evidence["qualified_head"], qualified["qualified_tree"])
+    latest_historical(api, run_id, head)
     run = api(f"actions/runs/{run_id}")
     jobs = []
     page = 1
@@ -447,8 +464,9 @@ def historical(run_id, artifact_id, archive, closure_pr, reviews_path, output):
     targets = phase14_composition.declared_targets(load(ROOT / "scripts/cranelift_feature_registry.json"))
     checked_historical_record(run, jobs, head, targets)
     require(api("commits/main")["sha"] == head, "main moved during final closure verification")
+    latest = latest_historical(api, run_id, head)
     output.mkdir(parents=True, exist_ok=False)
-    for name, value in (("run.json", run), ("jobs.json", jobs), ("pr-ci.json", pr_evidence),
+    for name, value in (("latest-historical.json", latest), ("run.json", run), ("jobs.json", jobs), ("pr-ci.json", pr_evidence),
                        ("qualification-artifact.json", artifact), ("qualification-run.json", owning_run),
                        ("qualification.json", qualified), ("independent-reviews.json", reviews),
                        ("result.json", {
@@ -606,6 +624,17 @@ def inversions():
         rejected("historical-" + field,
                  lambda changed=changed: checked_historical_record(changed, jobs, head, targets),
                  "exact final main")
+    checked_latest_historical(run, 42, head)
+    for field, value in (("id", 43), ("head_sha", "2" * 40),
+                         ("head_branch", "codex/old"), ("status", "queued"),
+                         ("conclusion", "failure"), ("path", "other.yml")):
+        changed = dict(run, **{field: value})
+        rejected("latest-historical-" + field,
+                 lambda changed=changed: checked_latest_historical(changed, 42, head),
+                 "latest main Historical Full")
+    rejected("latest-historical-absent",
+             lambda: latest_historical(lambda _: {"workflow_runs": []}, 42, head),
+             "latest main Historical Full is absent")
     rejected("historical-job-omitted", lambda: checked_historical_record(run, jobs[:-1], head, targets),
              "population")
     duplicate = copy.deepcopy(jobs)
