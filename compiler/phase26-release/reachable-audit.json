@@ -2567,7 +2567,7 @@
     "scripts/phase26_relational_zero_registration.py": "5decdc243d32739f003ad6200fa979d44921822dbcee21d5d74aa166450a3da7",
     "scripts/phase26_release_bounded.py": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e",
     "scripts/phase26_release_ci.py": "78d6c22f9ee79735ab130843f28aeb7f70f5ff72e9e3b45f7c43b321082f99ff",
-    "scripts/phase26_release_closure.py": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56",
+    "scripts/phase26_release_closure.py": "e382b0e60ed8e58a472808025f4658bc1f7466e7ba0368e6f30ed4155f173579",
     "scripts/phase26_release_registration.py": "4b3e9ae32ea99ac00c8bc0d1cb2228f873bcb778bec2cc398cac0b95f0dcf35d",
     "scripts/phase26_release_regression.py": "2e1224aaf982a74403cf6fe7edeb1ca9a40824e7560c6bd3ec63a0ec4817c630",
     "scripts/phase26_safe_reference_call.sh": "83920ecb425b560dbf3158b3667630150a9a908829245c70299fcbd594664d86",
