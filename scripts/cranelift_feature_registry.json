@@ -84235,16 +84235,25 @@
           "path": "docs/PHASES_26_AND_27.md",
           "previous_digest": "5fcc0a1c1f440e94213301cd6d5742b3691418a6266a07a2b6d1e6361a030aa3",
           "current_digest": "51bde8bae06f1e142c8ccf6f44561c956d93aafa135556ed7492e4601d9055e7"
+        },
+        {
+          "path": "scripts/fixture_reachability.py",
+          "previous_digest": "2112fc20eebfc9323b42992c699be601f5a2475eff2c57414e9a37a1f08a624b",
+          "current_digest": "b8f51d07c1ede2d19ea6bad72d8d59e4e8c1cfa87a463feaeb691ed638683f81"
         }
       ],
       "added_files": [
         {
           "path": "scripts/phase26_release_registration.py",
-          "digest": "660546e57babd5d5b39ddfc8c15a883e098a5830d29993a80e703a0a9763a209"
+          "digest": "bff1f66e7cffb6edc1d55293ab2b32fdc6686509d1170b8ec5b31241ead16a03"
         },
         {
           "path": "compiler/phase26-release/predecessor-baseline.json.gz",
           "digest": "100b4048a7471b5ec593093c5c972e9f89278f42a5d9fd2be378e286efc167d9"
+        },
+        {
+          "path": "compiler/phase26-release/predecessor-baseline-v2.json.gz",
+          "digest": "e1794b0a83d663ee6a244d343cc344b27b6649f4062e38f242468adf4a552f54"
         },
         {
           "path": "scripts/phase26_release_closure.py",
@@ -84264,22 +84273,22 @@
         },
         {
           "path": "compiler/phase26-release/release.json",
-          "digest": "71937d679b9e61983776a81efc878952cdffbebfe235b27a9f87875e3e2b9afb"
+          "digest": "514bff6d103f2611cf94238e7aafa366f4d6e46d48ce416bfb872c94a6fae11c"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
-          "digest": "48da8007bda3cc3474a3cd8533c5d27755557177ede551eb79c8027ebadeb134"
+          "digest": "11bb8ce0097191d2062e993722a0cab393060807ac21dc97a4d7bb15c55df0e6"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_FIRST_RELEASE.md",
-          "digest": "f6a147cfb9f38857428b39067d9ef25c4be2503c6de97fba93b661685781fcfa"
+          "digest": "251f7cc603eaa41410c40e65bc7f7dfb0420ab84e542f746c697e573ce3624b3"
         },
         {
           "path": ".github/workflows/phase26-release-closure.yml",
           "digest": "333d2e3e13b7ecba412826682d08d796626f44ee76843cdae9b87f7999276a9e"
         }
       ],
-      "text_owned_digest": "7c6f4c6c833d972faed851274d7850993fb8d9e7f9ed0be0c880af53afd99c39",
+      "text_owned_digest": "432d6df0f44978d10feb84cf1a7a9e0d7b47b4c859e445cc99c6c98a13907413",
       "projections": {
         "r4_text": "985e47ecc06fb82ffaf4d905d1d3b5e31eaad4c82085ab926c33ffa29833aed7",
         "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
@@ -84288,7 +84297,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "a37bdb69aafacbad78e210e21e79c818608961189a7a84e982325e747f5c14ce",
-        "text": "838dc9832a008a3370b81a840213fa260ba2a2a0dae6e102286ca7b1e6288d56"
+        "text": "de97e02cd209581fda65b8a70f9f428d318750469bc5401e9495f5d419422c11"
       },
       "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
     }

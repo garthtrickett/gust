@@ -43,6 +43,12 @@ origins and unsupported control flow gain no safe authority. The audit is
 specific to the admitted interface and does not close the Phase26.5 collection
 audit, OD23 resource admission or general alias immutability.
 
+The two source-hash inventories are data, not fixture execution. Fixture
+reachability excludes those exact inventories while preserving real runner
+references and the existing staged-fixture allowlist. Refusal controls retain
+both the new-unreachable and stale-allowlist checks. The additive predecessor
+archive successor preserves the original archive and its projections unchanged.
+
 ## Actual owning qualification
 
 The `Cranelift Phase26 First Release` workflow reproduces the approved native

@@ -16,11 +16,13 @@ KEY = "first_release_closure_successor_v1"
 GUARD = "guard-cranelift-phase26-release-closure"
 STATE = "GUST_LANE_STATE.md"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
-BASELINE = "compiler/phase26-release/predecessor-baseline.json.gz"
-BASELINE_SHA256 = "100b4048a7471b5ec593093c5c972e9f89278f42a5d9fd2be378e286efc167d9"
+BASELINE = "compiler/phase26-release/predecessor-baseline-v2.json.gz"
+BASELINE_SHA256 = "e1794b0a83d663ee6a244d343cc344b27b6649f4062e38f242468adf4a552f54"
 CHANGED = ("justfile", "scripts/cranelift_test_levels.json",
-    "scripts/phase26_readonly_input_copy_registration.py", "docs/PHASES_26_AND_27.md")
-ADDED = ("scripts/phase26_release_registration.py", BASELINE,
+    "scripts/phase26_readonly_input_copy_registration.py", "docs/PHASES_26_AND_27.md",
+    "scripts/fixture_reachability.py")
+ADDED = ("scripts/phase26_release_registration.py",
+    "compiler/phase26-release/predecessor-baseline.json.gz", BASELINE,
     "scripts/phase26_release_closure.py", "scripts/phase26_release_regression.py",
     "scripts/phase26_release_ci.py", "scripts/phase26_release_bounded.py",
     "compiler/phase26-release/release.json", "compiler/phase26-release/reachable-audit.json",
@@ -237,6 +239,37 @@ def inversions():
             require(verdict == "REJECTED (expected assertion)", str(error))
         else:
             raise SystemExit(label + ": ACCEPTED")
+
+    import fixture_reachability as fixtures
+    from contextlib import redirect_stdout
+    from io import StringIO
+    for path in ("compiler/phase26-release/release.json",
+                 "compiler/phase26-release/reachable-audit.json"):
+        require(not fixtures.executing_references([path]), "source inventory counted as execution")
+        with patch.object(fixtures, "NON_EXECUTING_INVENTORIES",
+                          fixtures.NON_EXECUTING_INVENTORIES - {path}):
+            rejected("re-admitted inventory executor " + path,
+                lambda path=path: require(not fixtures.executing_references([path]),
+                                         "source inventory counted as execution"),
+                "source inventory counted as execution")
+    runner = "scripts/actual_fixture_runner.py"
+    require(fixtures.executing_references([runner]) == [runner],
+            "real fixture runner was hidden by inventory classification")
+    known = sorted(json.loads(fixtures.ALLOWLIST.read_text())["known_unexercised"])
+    for label, names, expected, diagnostic in (
+        ("known staged fixtures", known, 0, "No newly unexercised fixtures"),
+        ("new unreachable fixture", known + ["release_unreachable_probe"], 1,
+         "Nothing in CI compiles or runs these fixtures"),
+        ("stale fixture allowlist", known[:-1], 1, "No longer unexercised"),
+    ):
+        output = StringIO()
+        with patch.object(fixtures, "unexercised", lambda names=names: [(name, []) for name in names]), \
+             patch.object(sys, "argv", ["fixture_reachability.py"]), redirect_stdout(output):
+            code = fixtures.main()
+        require(code == expected and diagnostic in output.getvalue(),
+                "fixture reachability control differs: " + label)
+        print(label + (": ACCEPTED (known staged cohort)" if expected == 0 else
+                       ": REJECTED (expected assertion)"), flush=True)
 
     # First prove the successor is loaded and its physical patch is pinned.
     original_read = Path.read_bytes

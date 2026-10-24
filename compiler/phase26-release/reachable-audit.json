@@ -2439,6 +2439,8 @@
     "docs/FIRST_RELEASE_FFI_CONTRACT.md": "1aaf23267dbb615b6b7ae805b7c8ad434fc9db9e3ab104bf23a24db137b4ed32",
     "docs/PHASE26_PACKAGE_TRUST_DECISION.md": "246747764bd4b93c52fb447f3a16304bcce32a7a4e51c39f8a105a531f9da113",
     "docs/PHASE26_TAGGED_RESULT_DECISION.md": "3893e741512da5fecd3b2716514599a2d27f5d671d0202821918a48ac738bfb8",
+    "scripts/fixture_reachability.py": "b8f51d07c1ede2d19ea6bad72d8d59e4e8c1cfa87a463feaeb691ed638683f81",
+    "scripts/fixture_reachability_allowlist.json": "ccecd2a0b36323415bff9b40ebd27dba7f3ba3cca9ffdf5601bee95c2701e0ac",
     "scripts/phase25_native_fixed_point.sh": "3a8d714e54c8f12a602f9e295d3349b3c473919f5116d08389fc57f4efe2f91f",
     "scripts/phase26_arithmetic_zero_evidence.sh": "36ac18f19e898cf197bc673f5a3c553dacdc2ee4e7ad15c938415a726c214203",
     "scripts/phase26_arithmetic_zero_registration.py": "d4ddda2ed007735d28d3916d2c723de8c9fd1449eb42b82d848bc925d1e7c0ca",
@@ -2563,9 +2565,10 @@
     "scripts/phase26_reference_return_escape_registration.py": "2917390ee601c26a53e8e17f2972421a1e9ae4032fbe76aff95f076375dd90bf",
     "scripts/phase26_relational_zero_evidence.sh": "bf6484b3ad5c4340fa4734081f342453a824936873f9e8542afd13e45a6310d2",
     "scripts/phase26_relational_zero_registration.py": "5decdc243d32739f003ad6200fa979d44921822dbcee21d5d74aa166450a3da7",
+    "scripts/phase26_release_bounded.py": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e",
     "scripts/phase26_release_ci.py": "78d6c22f9ee79735ab130843f28aeb7f70f5ff72e9e3b45f7c43b321082f99ff",
     "scripts/phase26_release_closure.py": "fc71438d180e2b37184cb035d66e9e6f14d84c28493cc776941d216be4b7ca56",
-    "scripts/phase26_release_registration.py": "660546e57babd5d5b39ddfc8c15a883e098a5830d29993a80e703a0a9763a209",
+    "scripts/phase26_release_registration.py": "bff1f66e7cffb6edc1d55293ab2b32fdc6686509d1170b8ec5b31241ead16a03",
     "scripts/phase26_release_regression.py": "2e1224aaf982a74403cf6fe7edeb1ca9a40824e7560c6bd3ec63a0ec4817c630",
     "scripts/phase26_safe_reference_call.sh": "83920ecb425b560dbf3158b3667630150a9a908829245c70299fcbd594664d86",
     "scripts/phase26_safe_reference_call_registration.py": "0276410c7ce60c4979bd1d22708d2adbb2f2418b94beaac7d644fb59dab4968b",
@@ -2597,8 +2600,7 @@
     "tests/stdlib_s26_1_native_bytes.gst": "ef9a5e32e1e2e505153b893d2a1419542f9213b1397d4fd8efa3e51c6e68c65f",
     "tests/stdlib_s26_1_output_escape_rejected.gst": "bad9e675fddda4c0a7a8e7049588afc36016d5eced5f4c5d511a56f8a5dfdb91",
     "tests/stdlib_s26_1_roundtrip.gst": "4bb557603db847b7e4f5b7a44b86a7ed02bf11f9ffb94bd3a98bd518d99a4c20",
-    "tests/stdlib_s26_1_wrong_arena.gst": "e88b3177bd4784d3957dea2fa3ce135be90c0b5a6fcbad375dbc8dfe0790a791",
-    "scripts/phase26_release_bounded.py": "577994bb982f57bdcbacc003a5ff67c76bcb77c5c6dc9ede9ccf1a9eef22250e"
+    "tests/stdlib_s26_1_wrong_arena.gst": "e88b3177bd4784d3957dea2fa3ce135be90c0b5a6fcbad375dbc8dfe0790a791"
   },
   "origin_dispositions": {
     "safe": "scalar inputs and pure classified errors",
