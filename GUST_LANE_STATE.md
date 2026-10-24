@@ -1,3 +1,7 @@
+# Cranelift ACTIVE Phase26 remainder — 2026-10-24T11:41:35.467392+00:00
+
+Same compiler owner ea414019-6671-4c02-a629-b705e64769fb resumes canonical26.2–26.6 from35ebca4c on codex/phase26-2-linear-resource-enforcement. Prior first-release terminal superseded prospectively; FFI-R1–R6 DONE evidence remains frozen. Current patch enforces direct allocator invalidation with live branded resource obligations. OD23 slot ownership remains OPEN/unselected. Current next gate: maintained matrix, complete additive pin census, fixed point, reviews and owning exact-head CI/merge. No fixed /tmp reservation or CI observer.
+
 ## Active Cranelift — merged-wrapper R5/R6 qualification (2026-10-23)
 
 Owner: existing compiler agent ea414019-6671-4c02-a629-b705e64769fb.

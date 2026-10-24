@@ -5996,3 +5996,26 @@ reopen Phase 25 or revive its deleted C seed. The live-baseline audit in that
 plan identifies the first remaining Phase 26.1 obligation. Execute one bounded
 increment at a time under `AGENTS.md`'s shared-zone, validation, publication,
 and phase-closure policies. Phase 27 remains retired.
+
+## Phase 26 remainder activation — 2026-10-24
+
+The operator explicitly activated “drive the rest of phase 26 completion”.
+Authority: `/home/gust/phase26-recovery/phase26-remainder-activation-20261024/operator-activation-v1.json`,
+SHA256 `179096607de78adee63f02efc1c632aacc211f785ca1f6aec5f706b74534c8a4`.
+Canonical rows 26.2–26.6 above are active in their dependency order, with
+Stdlib owning 26.5 and Cranelift owning compiler prerequisites and the other
+rows. Completed FFI-R1–R6 first-release evidence on `35ebca4c` remains frozen.
+
+The same compiler owner resumes from that main on
+`codex/phase26-2-linear-resource-enforcement`. First gate: inventory actual
+metadata opt-in, resource registry, destructor/defer, index ownership, leak,
+and allocator-transfer enforcement; identify the first remaining coherent
+26.2 obligation without replaying implemented Phase 15/20/24 foundations.
+Then implement and qualify the complete selected patch through own exact-head
+CI, reviews, rules and merge, continuing the activated remainder afterward.
+OD23 stays OPEN: copied resource-slot observation/ownership is not selected by
+this activation. An actual new authority node requires the seven-point report
+and proposal; continue other authorized unblocked work under the normal ladder.
+The first-release terminal is superseded prospectively by this activation;
+its receipts and historical terminal are unchanged. General 26.1 work is
+re-entered only when a named admitted operation or later gate requires it.
