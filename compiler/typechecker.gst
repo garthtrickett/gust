@@ -1355,7 +1355,8 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
 // cannot establish that another allocator is unrelated to an owned value.
 type AllocatorIdentityProof[ctx] struct {
     identity: str,
-    unresolved: int
+    unresolved: int,
+    present: int
 }
 
 type AllocatorDependencies[ctx] struct {
@@ -13310,6 +13311,13 @@ func allocator_identity_proof(identity: str, unresolved: int, ctx: &Arena) Alloc
     mut proof: AllocatorIdentityProof[ctx];
     proof.identity = std.Clone(ctx, identity);
     proof.unresolved = unresolved;
+    proof.present = 1;
+    return proof;
+}
+
+func allocator_identity_absent(ctx: &Arena) AllocatorIdentityProof[ctx] {
+    mut proof := allocator_identity_proof("", 1, ctx);
+    proof.present = 0;
     return proof;
 }
 
@@ -13343,7 +13351,7 @@ func env_allocator_binding_proof(env: *TypeEnvironment[ctx], binding: str, ctx: 
         mut key := arena_lifecycle_binding_key(env, binding, ctx);
         mut global := (*env).arena_lifecycle_bindings.Get(key);
         if global.Ok { return allocator_identity_proof(global.Val, 0, ctx); }
-        return allocator_identity_proof("", 1, ctx);
+        return allocator_identity_absent(ctx);
     }
 }
 
@@ -13455,7 +13463,7 @@ func env_allocator_taint_observed_assignment(env: *TypeEnvironment[ctx], scope: 
 func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
-            return allocator_identity_proof("", 1, ctx);
+            return allocator_identity_absent(ctx);
         }
         mut current := (*env).current_allocator_scope;
         if current != empty[Index[Scope[ctx], ctx]] {
@@ -13493,12 +13501,30 @@ func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], e
         }
     }
     mut expression_key := env_allocator_storage_path(expr_idx, ctx);
+    // Presence, not a nonempty identity, distinguishes an explicit unknown
+    // field from a missing field that may inherit its root's known context.
+    mut declaration := env_allocator_binding_scope(env, expression_key, ctx);
+    if declaration != empty[Index[Scope[ctx], ctx]] {
+        mut exact := ctx[declaration].allocator_bindings.Get(expression_key);
+        if exact.Ok { return exact.Val; }
+    }
     mut proof := env_allocator_binding_proof(env, expression_key, ctx);
     if len(proof.identity) > 0 {
         return proof;
     }
     mut root_binding := get_root_variable(expr_idx, ctx);
     return env_allocator_binding_proof(env, root_binding, ctx);
+}
+
+func env_allocator_declaration_proof(initializer: Index[ast.Expression[ctx], ctx], source: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
+    mut proof := env_allocator_expression_proof(initializer, env, ctx);
+    if proof.present == 0 {
+        mut brand := typechecker_brand_identity_from_resolved_type(source, env, ctx);
+        if brand_identity_has_identity(brand) == 1 {
+            proof = env_allocator_binding_proof(env, brand.arena_identity, ctx);
+        }
+    }
+    return proof;
 }
 
 func env_arena_lifecycle_resolve_expression_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
@@ -16735,13 +16761,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             // Resolve the initializer before inserting the declaration: a new
             // binding may shadow the very outer alias used by its initializer.
-            mut declaration_allocator_proof := env_allocator_expression_proof(val_idx, env, ctx);
-            if len(declaration_allocator_proof.identity) == 0 {
-                mut declaration_brand := typechecker_brand_identity_from_resolved_type(val_type, env, ctx);
-                if brand_identity_has_identity(declaration_brand) == 1 {
-                    declaration_allocator_proof = env_allocator_binding_proof(env, declaration_brand.arena_identity, ctx);
-                }
-            }
+            mut declaration_allocator_proof := env_allocator_declaration_proof(val_idx, val_type, env, ctx);
 
             if env_allocator_type_has_observed_origin(val_type, env, ctx) == 0 {
                 declaration_allocator_proof = allocator_identity_proof("", 1, ctx);

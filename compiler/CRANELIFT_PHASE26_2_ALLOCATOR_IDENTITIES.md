@@ -57,8 +57,8 @@ still admit. The source language's existing brand restrictions do not supply an
 equal-root-set/swapped-field-origin construction; no new brand relationship is
 invented to manufacture one. Unknown-root copy controls do not by themselves
 isolate an explicitly unknown field from fallback to an equally unknown root.
-A separate internal proof-fact native control requires two exact successful
-checks (`1\n1\n`, exit zero) and covers that distinction against a known
+A separate internal proof-fact native control requires six exact successful
+checks (six `1` lines, exit zero) and covers that distinction against a known
 root and an absent-field fallback, without asserting that mixed metadata is a
 public source construction.
 
@@ -72,3 +72,8 @@ must retain its original dependencies. Scalar projections cannot inherit the
 allocator of their containing AST/collection storage. Unknown synthetic IDs
 remain uncertain bookkeeping and are never compared as known unequal origins.
 Arena bindings and captured metadata-resource constraints remain strict.
+
+Proof presence is independent of its identity string. An explicitly unknown
+empty-identity field cannot fall back to a known root, and declaration
+initialization cannot replace that observed uncertainty with its type's brand.
+The internal control tests both paths and the absent-fact positive counterparts.

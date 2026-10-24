@@ -113,7 +113,7 @@ def qualify(compiler, output, cases_path):
                         run_stdout_sha256=digest(proof / 'run.stdout'),
                         run_stderr_sha256=digest(proof / 'run.stderr'),
                         pass_result=execution.returncode == 0 and
-                        execution.stdout == b'1\n1\n' and not execution.stderr)
+                        execution.stdout == b'1\n1\n1\n1\n1\n1\n' and not execution.stderr)
     print(json.dumps(dict(internal_proof_facts=internal)), flush=True)
     after = {str(path): digest(path) for path in inputs}
     allocated = sum(path.stat().st_blocks * 512 for path in output.rglob('*')
