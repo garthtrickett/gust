@@ -8756,7 +8756,8 @@ func substitute_generics(env: *TypeEnvironment[ctx], t: ast.Type[ctx], map: std.
             while template_idx < len(template_keys) && resolved_nested_template == 0 {
                 mut nested_template_name := template_keys[template_idx];
                 mut nested_template_lookup := (*env).struct_templates.Get(nested_template_name);
-                if nested_template_lookup.Ok {
+                // Exact flattened names must first match this normalized prefix.
+                if nested_template_lookup.Ok && typechecker_matches_template_prefix(name, nested_template_name) == 1 {
                     mut nested_template := nested_template_lookup.Val;
                     mut nested_generics: std.Vector[str, ctx] := ctx[nested_template.generics];
                     mut placeholder_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
@@ -13824,11 +13825,6 @@ func typechecker_instantiate_protected_resource(source_name: str, actuals: std.V
 
 func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
-        // Primitive leaves resolve identically and carry no arena identity.
-        // Preserve Arena, placeholders, and composites on the full path.
-        if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 5 {
-            return t;
-        }
         if (*env).protected_resource_active_derivation == 1 {
             (*env).protected_resource_active_derivation = 0;
             mut substituted := substitute_generics(env, t, (*env).protected_resource_active_substitutions, ctx);
