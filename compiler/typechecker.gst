@@ -13393,7 +13393,7 @@ func env_arena_lifecycle_identity_from_type(env: *TypeEnvironment[ctx], resolved
 func env_allocator_expression_key(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     mut key := typechecker_resolution_scope_key(env, ctx);
     key = std.Concat(key, ":");
-    return std.Concat(key, env_resource_acquisition_identity(env, get_expression_span(expr_idx, ctx), ctx));
+    return std.Clone(ctx, std.Concat(key, env_resource_acquisition_identity(env, get_expression_span(expr_idx, ctx), ctx)));
 }
 
 func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
@@ -13567,14 +13567,13 @@ func env_resource_acquisition_allocator_dependencies(env: *TypeEnvironment[ctx],
 func env_validate_resource_return_allocator(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], expected: ast.Type[ctx], span: token.Span, ctx: &Arena) {
     unsafe {
         mut identity := env_resource_identity_for_expression(env, expression, ctx);
-        mut owner := (*env).resource_acquisition_obligations.Get(identity);
-        if owner.Ok == false { return; }
+        guard owner := (*env).resource_acquisition_obligations.Get(identity) else { return; }
         mut function_scope := (*env).function_allocator_scope;
         if function_scope == empty[Index[Scope[ctx], ctx]] { return; }
         // The signature's formal context belongs to the function boundary,
         // even when a body-local declaration shadows its source spelling.
         mut required := env_resource_allocator_dependencies(env, expected, ctx[function_scope].allocator_brands, 0, ctx);
-        mut actual := owner.Val.allocator_dependencies;
+        mut actual := owner.allocator_dependencies;
         mut actual_keys := actual.identities.Keys(ctx);
         mut mismatch := actual.unresolved;
         if required.unresolved == 1 { mismatch = 1; }
@@ -13646,7 +13645,7 @@ func env_allocator_record_call_result(env: *TypeEnvironment[ctx], expression: In
         if len(proof.identity) == 0 {
             // Preserve same-binding lifecycle checks without claiming that an
             // unknown factory result is disjoint from another live allocator.
-            proof.identity = std.Concat("allocator-unresolved:", key);
+            proof.identity = std.Clone(ctx, std.Concat("allocator-unresolved:", key));
             proof.unresolved = 1;
         }
         // Facts belong to the checked lexical Scope, which is fresh for each
