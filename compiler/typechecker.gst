@@ -13397,12 +13397,12 @@ func env_allocator_storage_path(expression: Index[ast.Expression[ctx], ctx], ctx
         if expression == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[expression];
         if value.tag == 0 { return std.Clone(ctx, value.Identifier.name); }
-        if value.tag == 4 { return env_allocator_storage_path(value.Move.expr, ctx); }
-        if value.tag == 5 { return env_allocator_storage_path(value.Take.expr, ctx); }
-        if value.tag == 6 { return env_allocator_storage_path(value.AddressOf.expr, ctx); }
-        if value.tag == 7 { return env_allocator_storage_path(value.Dereference.expr, ctx); }
-        if value.tag == 9 { return env_allocator_storage_path(value.AsCast.left, ctx); }
-        if value.tag == 14 { return env_allocator_storage_path(value.Query.terminal, ctx); }
+        if value.tag == 4 { return std.Clone(ctx, env_allocator_storage_path(value.Move.expr, ctx)); }
+        if value.tag == 5 { return std.Clone(ctx, env_allocator_storage_path(value.Take.expr, ctx)); }
+        if value.tag == 6 { return std.Clone(ctx, env_allocator_storage_path(value.AddressOf.expr, ctx)); }
+        if value.tag == 7 { return std.Clone(ctx, env_allocator_storage_path(value.Dereference.expr, ctx)); }
+        if value.tag == 9 { return std.Clone(ctx, env_allocator_storage_path(value.AsCast.left, ctx)); }
+        if value.tag == 14 { return std.Clone(ctx, env_allocator_storage_path(value.Query.terminal, ctx)); }
         if value.tag == 11 {
             mut parent := env_allocator_storage_path(value.Selector.left, ctx);
             if len(parent) > 0 { return std.Clone(ctx, std.Concat(std.Concat(parent, "."), value.Selector.right)); }
