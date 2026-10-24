@@ -11502,11 +11502,6 @@ func resource_type_payload_is_resource_tracking_eligible(env: *TypeEnvironment[c
 
 func env_tracking_resource_type_name_recursive(env: *TypeEnvironment[ctx], t: ast.Type[ctx], visited: *std.HashMap[str, int, ctx], ctx: &Arena) str {
     unsafe {
-        // Primitive leaves cannot own resources or record an arena identity.
-        // Keep Arena and every composite on the existing resolution path.
-        if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 5 {
-            return "";
-        }
         mut resolved := env_resolve_type(env, t, ctx);
         if type_is_resource(resolved, ctx) == 1 {
             mut payload_name := resource_type_payload_struct_name(resolved, ctx);
@@ -13829,6 +13824,11 @@ func typechecker_instantiate_protected_resource(source_name: str, actuals: std.V
 
 func env_resolve_type(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) ast.Type[ctx] {
     unsafe {
+        // Primitive leaves resolve identically and carry no arena identity.
+        // Preserve Arena, placeholders, and composites on the full path.
+        if t.tag == 0 || t.tag == 1 || t.tag == 2 || t.tag == 3 || t.tag == 5 {
+            return t;
+        }
         if (*env).protected_resource_active_derivation == 1 {
             (*env).protected_resource_active_derivation = 0;
             mut substituted := substitute_generics(env, t, (*env).protected_resource_active_substitutions, ctx);
