@@ -19,10 +19,10 @@ def qualify(compiler, output, cases_path):
     specification = json.loads(cases_path.read_text())
     cases = specification['cases']
     assert specification['schema'] == 'gust.allocator_identity.cases.v1'
-    assert len(cases) == len({case['name'] for case in cases}) == 41
+    assert len(cases) == len({case['name'] for case in cases}) == 43
     assert {mode: sum(case['mode'] == mode for case in cases)
             for mode in ('reject', 'native', 'frontend_accept')} == {
-                'reject': 20, 'native': 9, 'frontend_accept': 12}
+                'reject': 21, 'native': 10, 'frontend_accept': 12}
     budget = 64 * 1024 ** 2
     space = os.statvfs(ROOT)
     if space.f_bavail * space.f_frsize < budget + 2 * 1024 ** 3:

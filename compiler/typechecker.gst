@@ -13516,6 +13516,18 @@ func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], e
     return env_allocator_binding_proof(env, root_binding, ctx);
 }
 
+func env_allocator_annotation_requires_context(source: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut resolved := env_resolve_type(env, source, ctx);
+    if typechecker_is_arena_value_or_ref(resolved, ctx) == 1 { return 1; }
+    if len(env_tracking_resource_type_name(env, resolved, ctx)) > 0 { return 1; }
+    unsafe {
+        // Existing explicit reference contexts remain constraints; ordinary
+        // compiler values/collections do not become resource escape checks.
+        if resolved.tag == 11 || resolved.tag == 9 { return 1; }
+    }
+    return 0;
+}
+
 func env_allocator_declaration_proof(initializer: Index[ast.Expression[ctx], ctx], source: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
     mut proof := env_allocator_expression_proof(initializer, env, ctx);
     if proof.present == 0 {
@@ -16779,9 +16791,15 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     } else {
                         if declaration_allocator_proof.unresolved == 1 ||
                            std.str_eq(declared_allocator_proof.identity, declaration_allocator_proof.identity) == 0 {
-                            report_error(2,
-                                "Semantic Error: [BrandIdentityMismatch] Initializer does not preserve the annotation's lexical allocator origin",
-                                stmt.VarDecl.span, env, ctx);
+                            if env_allocator_annotation_requires_context(resolved_explicit, env, ctx) == 1 {
+                                report_error(2,
+                                    "Semantic Error: [BrandIdentityMismatch] Initializer does not preserve the annotation's lexical allocator origin",
+                                    stmt.VarDecl.span, env, ctx);
+                            } else {
+                                // Annotation does not prove the initializer's
+                                // origin: retain uncertainty for later owners.
+                                declaration_allocator_proof.unresolved = 1;
+                            }
                         }
                     }
                 }

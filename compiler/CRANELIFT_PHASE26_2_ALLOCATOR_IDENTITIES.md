@@ -26,9 +26,9 @@ OPEN and unselected.
 ## Qualification
 
 `python3 scripts/phase26_2_allocator_identity_guard.py` binds the maintained
-41-case source/support population, compiler and emitted artifacts. Twenty
+43-case source/support population, compiler and emitted artifacts. Twenty-one
 negative controls must fail at the shared frontend with their exact diagnostic
-before a deliberately unavailable backend driver can compile them. Nine safe
+before a deliberately unavailable backend driver can compile them. Ten safe
 native controls compile and execute with each recorded exact stdout and exit
 zero. Twelve field/parameter/branch controls prove frontend admission only by reaching the refusing
 driver; they make no native execution claim. This preserves separate acceptance,
@@ -77,3 +77,11 @@ Proof presence is independent of its identity string. An explicitly unknown
 empty-identity field cannot fall back to a known root, and declaration
 initialization cannot replace that observed uncertainty with its type's brand.
 The internal control tests both paths and the absent-fact positive counterparts.
+
+Ordinary compiler collection/value annotations preserve the initializer's
+observed context without granting new resource authority. A mismatch or unknown
+origin remains tainted for later acquisitions. Existing type/brand compatibility
+is unchanged; Arena, metadata-resource and resolved reference contexts retain
+their strict lexical constraints. The maintained collection admission control
+and annotation-to-resource refusal supplement self-source checking of all
+imported compiler functions.

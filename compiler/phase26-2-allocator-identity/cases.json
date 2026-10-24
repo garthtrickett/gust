@@ -317,6 +317,21 @@
       "source": "type Label[ctx] struct { value:str }\nfunc main() int {mut ctx:=os.Arena.New();mut label:Label[ctx];label.value=std.Clone(&ctx,\"before\");mut value:=label.value;value=\"static\";os.LogInt(len(value));return 0;}\n",
       "support": "",
       "expected_native_stdout": "6\n"
+    },
+    {
+      "name": "ordinary_collection_annotation",
+      "mode": "native",
+      "support": "",
+      "source": "func main() int {mut ctx:=os.Arena.New();mut values:std.Vector[int,ctx]:=std.VectorNew(&ctx);values.Push(1);mut slot:Index[std.Vector[int,ctx],ctx]:=os.ArenaAlloc(&ctx);ctx.Set(slot,values);mut copied:std.Vector[int,ctx]:=ctx[slot];os.LogInt(copied[0]);return 0;}\n",
+      "expected_native_stdout": "1\n"
+    },
+    {
+      "name": "ordinary_annotation_cannot_launder_alias",
+      "mode": "reject",
+      "support": "type ProtectedValue[ctx] struct {\n    value: int\n}\n\ntype ProtectedCapture[ctx] struct {\n    value: &ProtectedValue[ctx]\n}\n\n#[linear]\n#[destructor(destroy_mutex_owner)]\n#[opaque]\ntype MutexOwner[ctx] struct {\n    mutex: &std.Mutex[ProtectedValue[ctx], ctx],\n    protected: *ProtectedValue[ctx],\n    token: int\n}\n\n#[linear]\n#[destructor(destroy_guard)]\n#[opaque]\ntype Guard[ctx] struct {\n    protected: &ProtectedValue[ctx],\n    token: int\n}\n\n#[private]\nfunc destroy_guard(owner: Guard[ctx]) {\n    os.LogInt(owner.token);\n}\n\nfunc acquire(value: &ProtectedValue[ctx], token: int) Guard[ctx] {\n    mut owner: Guard[ctx];\n    owner.protected = value;\n    owner.token = token;\n    return owner;\n}\n\nfunc access(owner: &Guard[ctx]) &ProtectedValue[ctx] {\n    return owner.protected;\n}\n\nfunc ambiguous_access(first: &Guard[ctx], second: &Guard[ctx]) &ProtectedValue[ctx] {\n    return first.protected;\n}\n\nfunc consume(owner: Guard[ctx]) {\n    destroy_guard(owner);\n}\n\nfunc sink(value: &ProtectedValue[ctx]) int {\n    return value.value;\n}\n\n#[private]\nfunc destroy_mutex_owner(owner: MutexOwner[ctx]) {\n    unsafe {\n        (*owner.mutex).Unlock();\n    }\n    os.LogInt(owner.token);\n}\n\nfunc acquire_mutex_owner(mutex: &std.Mutex[ProtectedValue[ctx], ctx], token: int) MutexOwner[ctx] {\n    mut owner: MutexOwner[ctx];\n    unsafe {\n        mut raw_value := (*mutex).Lock();\n        owner.protected = raw_value;\n    }\n    owner.mutex = mutex;\n    owner.token = token;\n    return owner;\n}\n\nfunc mutex_access(owner: &MutexOwner[ctx]) &ProtectedValue[ctx] {\n    unsafe {\n        return &(*owner.protected);\n    }\n}\n",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {mut ctx:=os.Arena.New();mut outer:protected.ProtectedValue[ctx];outer.value=7;mut capture:protected.ProtectedCapture[ctx];capture.value=&outer;if 1 {mut ctx:=os.Arena.New();mut inner:protected.ProtectedValue[ctx];inner.value=8;mut other:protected.ProtectedCapture[ctx];other.value=&inner;capture=other;}mut copied:protected.ProtectedCapture[ctx]:=capture;mut owner:=protected.acquire(copied.value,41);ctx.Free();return 0;}\n",
+      "expected_diagnostic": "LinearResourceLeak",
+      "expected_message": "Allocator cannot be freed while resource"
     }
   ]
 }
