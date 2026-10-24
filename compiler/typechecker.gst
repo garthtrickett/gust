@@ -13620,6 +13620,46 @@ func env_capture_resource_field_allocator_constraints(env: *TypeEnvironment[ctx]
     return dependencies;
 }
 
+func env_validate_resource_field_allocator_assignment(env: *TypeEnvironment[ctx], destination_scope: Index[Scope[ctx], ctx], destination_path: str, actual_path: str, source: ast.Type[ctx], actual_root_brand: str, actual_root_proof: AllocatorIdentityProof[ctx], span: token.Span, visited: std.HashMap[str, int, ctx], ctx: &Arena) {
+    unsafe {
+        mut resolved := env_resolve_type(env, source, ctx);
+        if type_is_resource(resolved, ctx) == 1 { resolved = resource_type_payload(resolved, ctx); }
+        if resolved.tag != 8 { return; }
+        mut type_key := ast.serialize_type(resolved, ctx);
+        if visited.Get(type_key).Ok { return; }
+        mut nested_visited := typechecker_clone_int_map(visited, ctx);
+        nested_visited.Insert(std.Clone(ctx, type_key), 1);
+        guard layout := (*env).struct_registry.Get(resolved.Struct.struct_name) else { return; }
+        mut fields := typechecker_get_sorted_keys_type(&layout.fields, ctx);
+        mut i := 0;
+        while i < len(fields) {
+            guard field := layout.fields.Get(fields[i]) else { return; }
+            mut destination_field := std.Clone(ctx, std.Concat(std.Concat(destination_path, "."), fields[i]));
+            mut actual_field := std.Clone(ctx, std.Concat(std.Concat(actual_path, "."), fields[i]));
+            mut expected := ctx[destination_scope].allocator_bindings.Get(destination_field);
+            if expected.Ok {
+                mut actual := allocator_identity_proof("", 1, ctx);
+                mut actual_fact_present := 0;
+                mut actual_scope := env_allocator_binding_scope(env, actual_field, ctx);
+                if actual_scope != empty[Index[Scope[ctx], ctx]] {
+                    mut fact := ctx[actual_scope].allocator_bindings.Get(actual_field);
+                    if fact.Ok { actual = fact.Val; actual_fact_present = 1; }
+                }
+                mut brand := strip_brand_prefix(get_type_brand(field, env, ctx), ctx);
+                if actual_fact_present == 0 && std.str_eq(brand, actual_root_brand) == 1 { actual = actual_root_proof; }
+                if expected.Val.unresolved == 1 || actual.unresolved == 1 ||
+                   std.str_eq(expected.Val.identity, actual.identity) == 0 {
+                    report_error(2,
+                        "Semantic Error: [BrandIdentityMismatch] Aggregate assignment does not preserve a field's declared lexical allocator origin",
+                        span, env, ctx);
+                }
+            }
+            env_validate_resource_field_allocator_assignment(env, destination_scope, destination_field, actual_field, field, actual_root_brand, actual_root_proof, span, nested_visited, ctx);
+            i = i + 1;
+        }
+    }
+}
+
 func env_resource_expression_allocator_dependencies(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], ctx: &Arena) AllocatorDependencies[ctx] {
     unsafe {
         mut identity := env_resource_identity_for_expression(env, expression, ctx);
@@ -16932,6 +16972,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
             if assignment_allocator_scope != empty[Index[Scope[ctx], ctx]] &&
                len(env_tracking_resource_type_name(env, left_type, ctx)) > 0 {
+                mut assignment_field_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+                env_validate_resource_field_allocator_assignment(env, assignment_allocator_scope,
+                    assignment_lifecycle_binding, expression_to_string(val_idx, ctx), left_type,
+                    strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
+                    assignment_actual_allocator, stmt.Assignment.span, assignment_field_visited, ctx);
                 mut resource_constraint := ctx[assignment_allocator_scope].allocator_resources.Get(assignment_lifecycle_binding);
                 if resource_constraint.Ok {
                     mut actual_dependencies := env_resource_expression_allocator_dependencies(env, val_idx, ctx);
