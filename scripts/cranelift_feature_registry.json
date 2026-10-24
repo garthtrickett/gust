@@ -84264,7 +84264,7 @@
         },
         {
           "path": "compiler/phase26-release/release.json",
-          "digest": "eb21a83a1e6c649fad0fad9bce7df6a45c16184dcb8b5753f3d545d5671cc118"
+          "digest": "71937d679b9e61983776a81efc878952cdffbebfe235b27a9f87875e3e2b9afb"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
@@ -84279,7 +84279,7 @@
           "digest": "333d2e3e13b7ecba412826682d08d796626f44ee76843cdae9b87f7999276a9e"
         }
       ],
-      "text_owned_digest": "f0655dfa326a1f5fbf65865cb2bb026444c797499e9d4e954985a0e924ead44a",
+      "text_owned_digest": "7c6f4c6c833d972faed851274d7850993fb8d9e7f9ed0be0c880af53afd99c39",
       "projections": {
         "r4_text": "985e47ecc06fb82ffaf4d905d1d3b5e31eaad4c82085ab926c33ffa29833aed7",
         "spelling": "bc642c2bd07ff6605b45a1cc444993938b7882c2ff0ee2291591fb00d34f560f",
@@ -84288,7 +84288,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "a37bdb69aafacbad78e210e21e79c818608961189a7a84e982325e747f5c14ce",
-        "text": "51d442a2ecd41be3247a09c384b3ce34b7f0901579123470e32c21ae43fed702"
+        "text": "838dc9832a008a3370b81a840213fa260ba2a2a0dae6e102286ca7b1e6288d56"
       },
       "spelling_render_current_digest": "d7d04d874dbca34bd41506041806760084163cb3f7d2dba4dd9bdd20e7fa4e0b"
     }

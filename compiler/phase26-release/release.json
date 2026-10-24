@@ -2689,27 +2689,27 @@
       "disposition": "existing manual diagnostic; not release runtime evidence"
     },
     {
-      "test": "checked_collection::tests::growth_boundaries_use_allocator_bytes_without_i32_byte_ceiling",
+      "test": "full_program::checked_collection::tests::growth_boundaries_use_allocator_bytes_without_i32_byte_ceiling",
       "owner": "guard-cranelift-phase26-collection-validity",
       "disposition": "separate unchanged owning native guard"
     },
     {
-      "test": "checked_collection::tests::invalid_index_and_empty_pop_trap_before_access",
+      "test": "full_program::checked_collection::tests::invalid_index_and_empty_pop_trap_before_access",
       "owner": "guard-cranelift-phase26-collection-validity",
       "disposition": "separate unchanged owning native guard"
     },
     {
-      "test": "checked_collection::tests::operands_snapshot_after_a_value_operand_grows_the_same_receiver",
+      "test": "full_program::checked_collection::tests::operands_snapshot_after_a_value_operand_grows_the_same_receiver",
       "owner": "guard-cranelift-phase26-collection-validity",
       "disposition": "separate unchanged owning native guard"
     },
     {
-      "test": "checked_collection::tests::pop_preserves_a_live_reference_value_in_a_copy",
+      "test": "full_program::checked_collection::tests::pop_preserves_a_live_reference_value_in_a_copy",
       "owner": "guard-cranelift-phase26-collection-validity",
       "disposition": "separate unchanged owning native guard"
     },
     {
-      "test": "checked_collection::tests::valid_stride_growth_set_and_pop_preserve_copy",
+      "test": "full_program::checked_collection::tests::valid_stride_growth_set_and_pop_preserve_copy",
       "owner": "guard-cranelift-phase26-collection-validity",
       "disposition": "separate unchanged owning native guard"
     }
