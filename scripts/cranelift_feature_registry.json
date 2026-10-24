@@ -48067,7 +48067,7 @@
         {
           "path": "compiler/typechecker.gst",
           "previous_digest": "55c873b917efcce279abaf2446b1fb881b2f332cc9d2e4d01db485ee3cc7c416",
-          "current_digest": "96f21720930b4b8b9dbf21066ea146eb110d00da9a61550876ccf5e8565f53f5"
+          "current_digest": "7eaa122ac068a25fdd71b27e4d1918b8b532b8ad4b67cb1124f030c5efc7f2da"
         },
         {
           "path": "TASK.md",
@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "8c674a381935b0816525eff952f488ef1b08532b418d23d7d517db7f9f7a6eca",
-          "current_digest": "07bd089e3a91267f876e0b1c09fb5270b519ae5d670000ae6c50411940513dfc"
+          "current_digest": "5b11c12bd520b11ea914dc82147ad0a1f0939c735cbd6444334a25c40bbfdae6"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "b8e184fa43e4602cd6192ca5943ded75dff39e5dac7c6fd84fb25e21150373d3",
-          "current_digest": "a509f6710d6e13378d23dbccdd1bc112e10315dc59c46e756f70c959a2258208"
+          "current_digest": "da95bcedb4b484db53dbed4b2eae229058f662c4b397576b0c18662a55aeb9aa"
         }
       ],
       "added_files": [
@@ -48195,18 +48195,18 @@
         }
       ],
       "owned_text": {
-        "text": "fdd95772c3f94075cb425bd7bdc04da8e18001065a962687224be15131f352b9",
-        "r4_text": "6373e109f933074b4c8f881eeaec277adb0ac0f4830141011bedf8e29ed89f27"
+        "text": "5eae94bf9847f3bf3399f1e146ebd63792d2f3c6b3e36a652444413a7a251496",
+        "r4_text": "fb95ae2638d11024da0c4868a1724a58997779955544734d06396ca24e4be5e6"
       },
       "projections": {
-        "r4_text": "6e56016ea6217ad8435b6859695ca935eacd4d63a880ee3e40e3cf5bf5eac927",
+        "r4_text": "bb7eb9af5dcb64b0d71c0b62e37201369e44165cf79c5035695fd361e38c525b",
         "spelling": "d362225efb4d31415d39dd682f5f4db98e2ae32e1451dfea9602ac7e571bf742",
         "filename": "9a409e447cfa02b5571c28deafefb489bff9fed41213552fd2537db5f80ae6f2",
         "r3_record": "dc49608eea2633f4ef4e15cdb2045558cb0f38a30f1e0772294c60faa82cf8ed",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "5324bc854c1b6327cb992140773ad9a0d1c2ea36b1e5a3fa0010fd1ea6f972ce",
-        "text": "67f0c9b2d12e84f6efafa479f7b7340185816dafd98364f35a380a0a8525cf99"
+        "r4_record": "7fc223cba852bccbc597ac03fdf9637c0d9bbe937047c2cbf802f1d20d96b2dc",
+        "text": "7ad22c031457bfe05b3937f40101e5097a77cdce9610fd764bb0f205992c737d"
       },
       "spelling_render_current_digest": "3ed45b6e9e79c239946b4f9448f67ee4fec4a689145aa629818d97d22c7abfa7"
     },

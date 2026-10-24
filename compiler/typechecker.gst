@@ -4623,7 +4623,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
                 
                 if inner_type.tag == 4 &&
-                   env_validate_resource_allocator_invalidation(env, inner_idx, "move", expr.Move.span, ctx) == 0 {
+                   env_validate_resource_allocator_invalidation(env, inner_idx, "moved", expr.Move.span, ctx) == 0 {
                     return inner_type;
                 }
                 // Invalidate brand transitive use
@@ -6216,10 +6216,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
 
                 mut current_resources_clear := env_validate_resource_allocator_invalidation(
-                    env, arg0_idx, "GenerationalSwap current allocator", expr.Call.span, ctx
+                    env, arg0_idx, "swapped (GenerationalSwap current allocator)", expr.Call.span, ctx
                 );
                 mut next_resources_clear := env_validate_resource_allocator_invalidation(
-                    env, arg1_idx, "GenerationalSwap next allocator", expr.Call.span, ctx
+                    env, arg1_idx, "swapped (GenerationalSwap next allocator)", expr.Call.span, ctx
                 );
                 if current_resources_clear == 0 || next_resources_clear == 0 {
                     mut rejected_swap: ast.Type[ctx]; rejected_swap.tag = 3;
@@ -13206,7 +13206,7 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
             if obligation.state == 0 || obligation.state == 4 || obligation.state == 5 {
                 mut visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
                 if env_resource_type_uses_allocator(env, obligation.owned_type, identity, &visited, ctx) == 1 {
-                    mut message := std.Concat("Semantic Error: [LinearResourceLeak] Cannot ", operation);
+                    mut message := std.Concat("Semantic Error: [LinearResourceLeak] Allocator cannot be ", operation);
                     message = std.Concat(message, " while resource '");
                     message = std.Concat(message, obligation.storage_name);
                     message = std.Concat(message, "' still depends on allocator '");
@@ -13362,7 +13362,7 @@ func arena_lifecycle_operation_description(operation: str, ctx: &Arena) str {
 func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], operation: str, span: token.Span, ctx: &Arena) int {
     unsafe {
         if std.str_eq(operation, "free") == 1 && (*env).in_defer_expression == 0 &&
-           env_validate_resource_allocator_invalidation(env, expr_idx, "Free", span, ctx) == 0 {
+           env_validate_resource_allocator_invalidation(env, expr_idx, "freed", span, ctx) == 0 {
             return 0;
         }
         mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);

@@ -2340,7 +2340,7 @@
     "compiler/token.gst": "c9ae01b68effcde501c21a0305f091e2af436b1de2ce70da3506e90d3e431fa8",
     "compiler/type_diff_target.gst": "fef85ca78693ed2a91a3526be51ad893075af37fd2b5799edefbfc4f44c3d16e",
     "compiler/type_dump_entry.gst": "ddf26f754ce6293e75b7deb57dd71614170b124486c67f3fdd12bacd5187cdb9",
-    "compiler/typechecker.gst": "96f21720930b4b8b9dbf21066ea146eb110d00da9a61550876ccf5e8565f53f5",
+    "compiler/typechecker.gst": "7eaa122ac068a25fdd71b27e4d1918b8b532b8ad4b67cb1124f030c5efc7f2da",
     "compiler/typechecker_address_origin_borrowed_field_test_entry.gst": "85686d36013ba564be72a72531f16ace3212b4deb02ae1cb88bb9cee1cd9510f",
     "compiler/typechecker_address_origin_container_element_test_entry.gst": "774885983d86fd1bb5e1d60f75546086345d6d91c2bba32afd9193a52f9ab4cd",
     "compiler/typechecker_address_origin_local_stack_test_entry.gst": "8562c883c8e64c20194cc2d7ed3ef89732955725e7ae4487c5303eec39a40e4a",
