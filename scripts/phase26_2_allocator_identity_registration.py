@@ -24,6 +24,7 @@ CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
 ADDED = (BASELINE, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
     'compiler/phase26-2-allocator-identity/cases.json',
+    'compiler/phase26-2-allocator-identity/proof_facts.gst',
     '.github/workflows/phase26-2-allocator-identity.yml',
     'compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md')
 RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin dependencies.\n' + GUARD + ':\n'

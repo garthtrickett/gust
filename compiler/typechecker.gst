@@ -7118,6 +7118,14 @@ func check_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvir
         type_entry.end_offset = final_span.end.offset;
         type_entry.val_type = t;
         (*entry_ref).types.Push(type_entry);
+        // An unbranded/scalar projection observes no allocator merely because
+        // its containing AST or collection storage has one. Keep an explicit
+        // empty fact so later root fallback cannot invent that relationship.
+        if env_allocator_type_has_observed_origin(t, env, ctx) == 0 {
+            ctx[scope].allocator_expressions.Insert(
+                env_allocator_expression_key(expr_idx, env, ctx),
+                allocator_identity_proof("", 1, ctx));
+        }
         (*env).current_allocator_scope = parent_allocator_scope;
     }
     return t;
@@ -13418,6 +13426,32 @@ func env_allocator_expression_key(expr_idx: Index[ast.Expression[ctx], ctx], env
     return std.Clone(ctx, std.Concat(key, env_resource_acquisition_identity(env, get_expression_span(expr_idx, ctx), ctx)));
 }
 
+// Origin transport is broader than resource enforcement: ordinary branded
+// compiler values may carry a context without becoming linear or immutable.
+func env_allocator_type_has_observed_origin(source: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    mut identity := typechecker_brand_identity_from_resolved_type(source, env, ctx);
+    if identity.is_arena == 1 || brand_identity_has_identity(identity) == 1 { return 1; }
+    return 0;
+}
+
+func env_allocator_taint_observed_assignment(env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], path: str, actual: AllocatorIdentityProof[ctx], ctx: &Arena) {
+    unsafe {
+        mut root := env_resource_storage_root(path, ctx);
+        mut previous := ctx[scope].allocator_bindings.Get(root);
+        mut merged := actual;
+        if previous.Ok {
+            merged = previous.Val;
+            // Never refine a mutation or an ambiguous path back to a known
+            // origin. Earlier acquisitions retain their captured dependencies.
+            if previous.Val.unresolved == 1 || actual.unresolved == 1 ||
+               std.str_eq(previous.Val.identity, actual.identity) == 0 {
+                merged.unresolved = 1;
+            }
+        }
+        ctx[scope].allocator_bindings.Insert(std.Clone(ctx, root), merged);
+    }
+}
+
 func env_allocator_expression_proof(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
     unsafe {
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] {
@@ -13740,7 +13774,7 @@ func env_allocator_call_brand_proof(env: *TypeEnvironment[ctx], brand: str, sign
             if len(actual.identity) == 0 || actual.unresolved == 1 {
                 result.unresolved = 1;
             }
-            if len(actual.identity) > 0 {
+            if len(actual.identity) > 0 && actual.unresolved == 0 {
                 if len(result.identity) == 0 {
                     result.identity = std.Clone(ctx, actual.identity);
                 } else if std.str_eq(result.identity, actual.identity) == 0 {
@@ -16709,6 +16743,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 }
             }
 
+            if env_allocator_type_has_observed_origin(val_type, env, ctx) == 0 {
+                declaration_allocator_proof = allocator_identity_proof("", 1, ctx);
+            }
+
             if var_type_idx != empty[Index[ast.Type[ctx], ctx]] {
                 mut declared_allocator_brand := typechecker_brand_identity_from_resolved_type(resolved_explicit, env, ctx);
                 if brand_identity_has_identity(declared_allocator_brand) == 1 {
@@ -17002,10 +17040,15 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut assignment_expected_allocator := env_allocator_binding_proof(env, assignment_lifecycle_binding, ctx);
             mut assignment_actual_allocator := env_allocator_expression_proof(val_idx, env, ctx);
             mut assignment_allocator_scope := env_allocator_binding_scope(env, assignment_lifecycle_binding, ctx);
+            mut assignment_requires_allocator_constraint := typechecker_is_arena_value_or_ref(left_type, ctx);
+            if len(env_tracking_resource_type_name(env, left_type, ctx)) > 0 {
+                assignment_requires_allocator_constraint = 1;
+            }
             if assignment_allocator_scope != empty[Index[Scope[ctx], ctx]] &&
                std.str_eq(assignment_lifecycle_binding, env_resource_storage_root(assignment_lifecycle_binding, ctx)) == 0 {
                 mut field_constraint := ctx[assignment_allocator_scope].allocator_bindings.Get(assignment_lifecycle_binding);
                 if field_constraint.Ok {
+                    assignment_requires_allocator_constraint = 1;
                     if field_constraint.Val.unresolved == 1 {
                         report_error(2,
                             "Semantic Error: [BrandIdentityMismatch] Resource field assignment has an unresolved declared lexical allocator origin",
@@ -17038,13 +17081,21 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     }
                 }
             }
-            if len(assignment_expected_allocator.identity) > 0 && assignment_expected_allocator.unresolved == 0 {
+            if assignment_requires_allocator_constraint == 1 &&
+               len(assignment_expected_allocator.identity) > 0 && assignment_expected_allocator.unresolved == 0 {
                 if assignment_actual_allocator.unresolved == 1 ||
                    std.str_eq(assignment_expected_allocator.identity, assignment_actual_allocator.identity) == 0 {
                     report_error(2,
                         "Semantic Error: [BrandIdentityMismatch] Assignment does not preserve the binding's declared lexical allocator origin",
                         stmt.Assignment.span, env, ctx);
                 }
+            }
+
+            if assignment_requires_allocator_constraint == 0 &&
+               assignment_allocator_scope != empty[Index[Scope[ctx], ctx]] &&
+               env_allocator_type_has_observed_origin(left_type, env, ctx) == 1 {
+                env_allocator_taint_observed_assignment(env, assignment_allocator_scope,
+                    assignment_lifecycle_binding, assignment_actual_allocator, ctx);
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {

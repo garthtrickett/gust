@@ -263,7 +263,10 @@ def inversions():
         rejected('duplicated owned '+kind,
             lambda kind=kind,duplicate=duplicate:project(registry,kind,duplicate),
             'R4 '+kind+' live projection drifted')
-        foreign = next(p for p in values if p['path'] not in CHANGED + ADDED and p['path'] != STATE)
+        # A later enrolled path is owned by its successor, not foreign.
+        owned_chain = CHANGED + ADDED + (successor.CHANGED + successor.ADDED if successor.record(registry) else ())
+        foreign = next(p for p in values if p['path'] not in owned_chain and p['path'] != STATE)
+        print('foreign preservation probe '+kind+': '+foreign['path'], flush=True)
         mutated = copy.deepcopy(values)
         next(p for p in mutated if p['path'] == foreign['path'])['allocator_foreign_mutation'] = True
         result = project(registry,kind,mutated)
