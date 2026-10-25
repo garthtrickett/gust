@@ -145,3 +145,16 @@ launcher and continue under the unchanged 4 GiB release launcher. The three
 owning workflows keep their qualification steps at 4 GiB; profile-mixup and
 missing-trigger controls cover their actual physical bytes. Frozen release
 workflow assertions still run against the checked predecessor view.
+
+## Phase20 lifecycle evidence successor
+
+The two old declaration/assignment call anchors are retired additively.
+Current physical source and validator pins remain mandatory. A pure structural
+checker verifies pre-insertion capture, immutable identity/presence/uncertainty,
+nearest-declaration and exact-path lookup, strict assignment validation and
+conservative ordinary-alias mutation. The existing Phase20 authority, fixtures,
+parameter transport, inert observer and workflow checks remain executable.
+Twenty-two mechanism inversions, seven legacy checks and five decoded archive
+checks require expected-assertion rejection. An exact new predecessor archive
+retains the old validator; existing frozen archives are unchanged. These source
+checks supplement native controls and do not themselves prove runtime safety.

@@ -20,6 +20,10 @@ BASELINE = 'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz'
 BASELINE_SHA256 = '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b'
 PROFILE_BASELINE = 'compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz'
 PROFILE_BASELINE_SHA256 = '49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502'
+LIFECYCLE_BASELINE = 'compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor.json.gz'
+LIFECYCLE_BASELINE_SHA256 = '954b34d58a9bef15bdd4e0783e6ec5e878b6ae4e4a8482a266a49a78194a0c91'
+LIFECYCLE_CHANGED = ('scripts/phase20_arena_lifecycle.py',)
+LIFECYCLE_HELPER = 'scripts/phase26_2_allocator_lifecycle_evidence.py'
 PROFILE_CHANGED = ('.github/workflows/phase26-2-allocator-liveness.yml',
     '.github/workflows/phase26-release-closure.yml', 'scripts/phase26_release_registration.py')
 REGISTRY = ROOT / 'scripts/cranelift_feature_registry.json'
@@ -29,8 +33,8 @@ ANCESTOR_REGISTRATIONS = ('phase26_2_allocator_registration', 'phase26_release_r
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_2_allocator_registration.py',
     'compiler/phase26-release/release.json', 'compiler/phase26-release/reachable-audit.json',
-    *PROFILE_CHANGED)
-ADDED = (BASELINE, PROFILE_BASELINE, 'scripts/phase26_2_allocator_identity_registration.py',
+    *PROFILE_CHANGED, *LIFECYCLE_CHANGED)
+ADDED = (BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
     'compiler/phase26-2-allocator-identity/cases.json',
     'compiler/phase26-2-allocator-identity/proof_facts.gst',
@@ -85,12 +89,29 @@ def profile_baseline():
     return value
 
 
+@lru_cache(maxsize=1)
+def lifecycle_baseline():
+    raw = (ROOT / LIFECYCLE_BASELINE).read_bytes()
+    require(sha(raw) == LIFECYCLE_BASELINE_SHA256, 'lifecycle predecessor bytes drifted')
+    value = json.loads(gzip.decompress(raw))
+    previous = json.loads(base64.b64decode(baseline()['files']['scripts/cranelift_feature_registry.json']))
+    import phase26_2_allocator_lifecycle_evidence as evidence
+    require(value['schema'] == 'gust.allocator_lifecycle_evidence.predecessor.v1' and
+            value['base'] == BASE and set(value['files']) == set(LIFECYCLE_CHANGED) and
+            value['phase20_authority_sha256'] == fingerprint(previous['phase20_arena_lifecycle']) and
+            value['retired_anchors'] == list(evidence.RETIRED),
+            'lifecycle predecessor identity or file population drifted')
+    return value
+
+
 def base_bytes(path):
     files = baseline()['files']
     if path in files:
         return base64.b64decode(files[path], validate=True)
-    require(path in PROFILE_CHANGED, 'unknown predecessor file: ' + path)
-    return base64.b64decode(profile_baseline()['files'][path], validate=True)
+    if path in PROFILE_CHANGED:
+        return base64.b64decode(profile_baseline()['files'][path], validate=True)
+    require(path in LIFECYCLE_CHANGED, 'unknown predecessor file: ' + path)
+    return base64.b64decode(lifecycle_baseline()['files'][path], validate=True)
 
 
 def record(registry):
@@ -338,12 +359,90 @@ def workflow_profile(text, build_arguments, guard, trigger):
             'bootstrap/qualification workflow profile drifted')
 
 
+def lifecycle_evidence(registry, source):
+    """Reanchor only two old call coordinates after current physical pin checks."""
+    import phase26_2_allocator_lifecycle_evidence as evidence
+    row = identity(registry)
+    physical_files(registry, row)
+    pin = next(p for p in row['changed_files'] if p['path'] == 'compiler/typechecker.gst')
+    require(sha(source.encode()) == pin['current_digest'], 'current lifecycle source drifted')
+    try:
+        evidence.validate(source)
+    except ValueError as error:
+        require(False, str(error))
+    return evidence.RETIRED
+
+
+def lifecycle_legacy_inversions(registry, rejected):
+    """Keep old authority/fixture/inert checks executable in their exact base view."""
+    import phase20_arena_lifecycle as lifecycle
+    import phase26_2_allocator_lifecycle_evidence as evidence
+    from unittest.mock import patch
+    original = Path.read_text
+    previous = project_registry(registry)
+    predecessor = base_bytes('compiler/typechecker.gst').decode()
+    fixture = ROOT / previous['phase20_arena_lifecycle']['semantic_fixture']
+    fixture_text = fixture.read_text()
+
+    def check(value, source, semantic=fixture_text):
+        def read(path, *args, **kwargs):
+            if path == lifecycle.REGISTRY:
+                return json.dumps(value)
+            if path == lifecycle.TYPECHECKER:
+                return source
+            if path == fixture:
+                return semantic
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'read_text', read):
+            try:
+                return lifecycle.validate()
+            except lifecycle.Error as error:
+                raise SystemExit(str(error)) from error
+
+    check(previous, predecessor)
+    changed = copy.deepcopy(previous)
+    changed['phase20_arena_lifecycle']['observed_operations'].pop()
+    rejected('legacy operation coverage', lambda: check(changed, predecessor),
+             'arena lifecycle operation coverage drifted')
+    changed = copy.deepcopy(previous)
+    changed['phase20_arena_lifecycle']['identity_flows'].pop()
+    rejected('legacy identity flow coverage', lambda: check(changed, predecessor),
+             'arena lifecycle identity-flow coverage drifted')
+    parameter = 'env_arena_lifecycle_record_binding(env, param.name, param_arena_identity, ctx)'
+    require(predecessor.count(parameter) == 1, 'legacy parameter mutation did not move')
+    rejected('legacy parameter transport',
+             lambda: check(previous, predecessor.replace(parameter, 'omitted_parameter', 1)),
+             'arena lifecycle compiler evidence missing: '+parameter)
+    observer = evidence.function_source(predecessor, 'env_arena_lifecycle_observe_identity')
+    for label, addition in (
+            ('enforcing inert observer', 'report_error(2);'),
+            ('freed inert observer', 'state.state = arena_lifecycle_state_freed();')):
+        changed_observer = observer[:observer.rfind('}')] + addition + observer[observer.rfind('}'):]
+        changed_source = predecessor.replace(observer, changed_observer, 1)
+        require(changed_source != predecessor, 'legacy observer mutation did not move')
+        rejected('legacy '+label,
+                 lambda changed_source=changed_source: check(previous, changed_source),
+                 'Patch 20.4 inert observation primitive changed meaning')
+    require('"alias"' in fixture_text, 'legacy fixture mutation did not move')
+    rejected('legacy fixture coverage',
+             lambda: check(previous, predecessor, fixture_text.replace('"alias"', '"omitted"')),
+             'arena lifecycle semantic fixture coverage missing: "alias"')
+    rejected('missing successor cannot opt current source out',
+             lambda: check(previous, (ROOT/'compiler/typechecker.gst').read_text()),
+             'arena lifecycle compiler evidence missing: '+evidence.RETIRED[0])
+
+
 def validate():
     registry = json.loads(REGISTRY.read_text())
     row = identity(registry)
     require(project_registry(registry) == json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
             'allocator identity changed frozen predecessor or foreign registry rows')
     physical_files(registry, row)
+    import phase20_arena_lifecycle as lifecycle
+    try:
+        lifecycle.validate()
+    except lifecycle.Error as error:
+        require(False, str(error))
     for path, arguments, guard, trigger in WORKFLOWS:
         workflow_profile((ROOT/path).read_text(), arguments, guard, trigger)
     require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
@@ -359,6 +458,10 @@ def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
     from unittest.mock import patch
+    import phase26_2_allocator_lifecycle_evidence as lifecycle_evidence
+    for result in lifecycle_evidence.inversions((ROOT/'compiler/typechecker.gst').read_text(),
+            base_bytes('compiler/typechecker.gst').decode()):
+        print(result['label']+': '+result['outcome']+': '+result['assertion'], flush=True)
     def rejected(label,callback,expected):
         try:
             callback()
@@ -410,6 +513,23 @@ def inversions():
                 lambda changed=changed,arguments=arguments,guard=guard,trigger=trigger:
                     workflow_profile(changed, arguments, guard, trigger),
                 'bootstrap/qualification workflow profile drifted')
+    lifecycle_legacy_inversions(registry, rejected)
+    original_lifecycle = lifecycle_baseline()
+    for label, replacement in (
+            ('schema', {'schema': 'wrong'}),
+            ('base', {'base': 'wrong'}),
+            ('file population', {'files': {}}),
+            ('Phase20 authority', {'phase20_authority_sha256': '0'*64}),
+            ('retired conjunct population', {'retired_anchors': []})):
+        changed_lifecycle = copy.deepcopy(original_lifecycle)
+        changed_lifecycle.update(replacement)
+        lifecycle_baseline.cache_clear()
+        try:
+            with patch.object(gzip, 'decompress', return_value=json.dumps(changed_lifecycle).encode()):
+                rejected('lifecycle predecessor '+label, lifecycle_baseline,
+                         'lifecycle predecessor identity or file population drifted')
+        finally:
+            lifecycle_baseline.cache_clear()
     for path in CHANGED:
         rejected('substituted '+path,lambda path=path:prior_digest(registry,path,'0'*64), 'R4 changed file drifted')
         original = Path.read_bytes

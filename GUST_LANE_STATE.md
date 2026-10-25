@@ -1,3 +1,17 @@
+# Cranelift ACTIVE lifecycle evidence correction — 2026-10-25T22:18:04.011933+00:00
+
+Same selected lexical allocator proof prerequisite. Prior frozen ecfb full30
+completed/reaped before these edits. The exact former-CI guard failure remains
+preserved: old declaration/assignment call text no longer describes the current
+immutable proof transport. Additive recognition now checks current physical
+source and replacement mechanisms, retaining old lifecycle authority and checks.
+Private proposal controls/reviews passed; maintained integration, current committed
+reviews and every fresh native/full-pin/R5/fixedpoint/CI gate remain required.
+No source semantics, compiler production bytes, product4GiB limits, OD23 choice,
+historical first-release evidence, or previously frozen archives changed.
+
+---
+
 # Cranelift ACTIVE explicit-anchor successor — 2026-10-25T21:28:46.514962+00:00
 
 Same selected lexical allocator proof patch, base9df2. The original e717 matrix

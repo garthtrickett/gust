@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "824b7d16834f1c58ae48d5cc646ab3bbe74fd104c2bcd1124dc13a9b3b0a3937",
-          "current_digest": "95cadc092cbe1e87c0a18fa7c72ede715e26aeeb398c245b475d80468f4238d3"
+          "current_digest": "8a2bcff5e77bde7739f0e0cd9ab7573a1932fd35be74acf8be634979ddb41f82"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "a90a9db158f015d6346ca22c4271c45992223ab2850b8c7fc74898f18170c5e9",
-          "current_digest": "7c76855b9857ec83febfd6a0029e667a8b17b3c320096d76689bed5559716ede"
+          "current_digest": "d14bee49cb864a1e5a21b01fca9d050a138cc94042650126a02f7cd9c5be7d2e"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48113,6 +48113,11 @@
           "path": "scripts/phase26_release_registration.py",
           "previous_digest": "66f38d1af4934714aa0868d27f4351357735ce3306926c9d8a0dab89332f40ba",
           "current_digest": "65f7b14066707a5242c68db7bdd18921c1e74e8300f9bbd22c168ec7bfca6bd1"
+        },
+        {
+          "path": "scripts/phase20_arena_lifecycle.py",
+          "previous_digest": "68d837bad139a9b93cd653fba56ffbaf55b0e745eda0944a8d98d247f22214c2",
+          "current_digest": "2d80c6d2d52b8e15192bb48112cf410beab4a473735b6d2ec80d63089864bdf5"
         }
       ],
       "added_files": [
@@ -48125,8 +48130,16 @@
           "digest": "49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502"
         },
         {
+          "path": "compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor.json.gz",
+          "digest": "954b34d58a9bef15bdd4e0783e6ec5e878b6ae4e4a8482a266a49a78194a0c91"
+        },
+        {
+          "path": "scripts/phase26_2_allocator_lifecycle_evidence.py",
+          "digest": "dc9088e5620faa41f1d5645022aa0d647516c6b2239b719c0b8ddb3167cbad9e"
+        },
+        {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "482123f18e7a743c32eb1285e52b9470261a834cec6adefc07db385c6e9f2610"
+          "digest": "758aeb1e699e9316e2f09059ac8f40d5c413835d7c8705cc1bdc75e3b1c850ae"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48146,7 +48159,7 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
-          "digest": "b352540578780b0e1e8e3da7f305ad94627c50737e627bcc1b670c2125a73b7e"
+          "digest": "940a2a80adc70cce0c7a8d08e8e0adff56832a837464552c91ce868e67f63993"
         },
         {
           "path": "scripts/phase26_bootstrap_bounded.py",
@@ -48154,7 +48167,7 @@
         }
       ],
       "owned_text": {
-        "text": "c9685d902773f03417a27bd36adcf683a26f514325c37677789729de23c59da1",
+        "text": "94c84bdfdfc588ace557c864aa2e3d33dffee01e767a5eaf822d0ae9fa7fbdb0",
         "r4_text": "b244d2c54cb611296bc12744d889f77aa7daff0ac9c84bf82e3bf47d465299df"
       },
       "projections": {
@@ -48165,7 +48178,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "4cc4cbf9afae6dcbe857ffed9576b02a194c07e08d87e97fb0b0cecd65d9e3b5",
-        "text": "3bd632b38304263f2f59ca019a9a06a2bf5ad0cfd7c39bee76520f1a666136cb"
+        "text": "732bd8f0aa4c469e71f686bd9f94b5213b3a5524bcd3f509d63ffeea5423cb3c"
       },
       "spelling_render_current_digest": "6232c23cc4530f900c446f00272a0354172b319369018f951a885ba7040a0695"
     },
