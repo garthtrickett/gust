@@ -1029,7 +1029,7 @@
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz": "49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502",
     "compiler/phase26-2-allocator-identity/cases.json": "6b02c816c6d6009cafc45bf549f7da56d429b91bf367b42ac23281995c4e67c2",
     "compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz": "38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b",
-    "compiler/phase26-2-allocator-identity/proof_facts.gst": "e4b2b47105bcf4b39bc77fa9fc2259e3b9c321c4535068dda1a3d8603d0e67a6",
+    "compiler/phase26-2-allocator-identity/proof_facts.gst": "310961f77ef9205be719430268ba27543b1c296c1f4ca1169929cacf25f11af2",
     "compiler/phase26-2-allocator/predecessor-baseline.json.gz": "6fcb4133dead24f8e161339727105c5c61a728fa767e6d3a29bba468f326b7db",
     "compiler/phase26_2_allocator_aggregate.gst": "dfda43dd143281c6834436288bd4cb9e0409d3ee984ca16d255828f1bb300695",
     "compiler/phase26_2_allocator_alias_free.gst": "29c628dfb95701d4d34194ead2987288613bb0a483be4e8e9e62e70972d31bf0",

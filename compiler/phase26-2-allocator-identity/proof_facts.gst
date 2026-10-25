@@ -119,8 +119,9 @@ func main() int {
         if qualified_left.unresolved != 0 || qualified_right.unresolved != 0 { return 16; }
         if len(qualified_left.identities.Keys(&ctx)) != 1 ||
            len(qualified_right.identities.Keys(&ctx)) != 1 { return 17; }
-        if qualified_left.identities.Get("left-origin").Ok == 0 ||
-           qualified_right.identities.Get("right-origin").Ok == 0 { return 18; }
+        guard qualified_left_identity := qualified_left.identities.Get("left-origin") else { return 18; }
+        guard qualified_right_identity := qualified_right.identities.Get("right-origin") else { return 18; }
+        if qualified_left_identity != 1 || qualified_right_identity != 1 { return 18; }
         os.LogInt(1);
         if std.str_eq(checker.env_allocator_formal_brand(
             qualified_left_type, "unused", &env, &ctx), "left__brand") == 0 { return 19; }
