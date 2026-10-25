@@ -26,7 +26,8 @@ OPEN and unselected.
 ## Qualification
 
 `python3 scripts/phase26_2_allocator_identity_guard.py` binds the maintained
-45-case source/support population, compiler and emitted artifacts. Twenty-two
+45-case `explicit-arena-anchors-v2` source/support population, compiler and
+emitted artifacts. The original43 records are pinned unchanged. Twenty-two
 negative controls must fail at the shared frontend with their exact diagnostic
 before a deliberately unavailable backend driver can compile them. Eleven safe
 native controls compile and execute with each recorded exact stdout and exit
@@ -70,9 +71,29 @@ Allocator proof lookups use the complete explicit or registered type brand.
 They do not erase a prefix before `__`: `left__brand` and `right__brand`
 remain distinct lexical lookup keys. The additional internal controls check
 both distinct dependencies and the unchanged full formal-brand key. Two added
-source controls retain native success and shadow-assignment rejection when
-the caller brand name contains `__`; all original43 source controls remain. The frozen
+explicit-Arena source controls retain acquisition through a protected alias,
+destruction, native output `41`, allocator release and shadow-assignment
+rejection when the caller brand name contains `__`; all original43 source
+controls remain unchanged. The frozen
 Phase20 legacy-cleaner inventory and canonical brand semantics are unchanged.
+
+The first 45-case cohort failed its implicit qualified-brand positive before
+worker admission: the legacy general call normalizer derives `brand` from
+`left__brand`. The preserved904 frontend reproduces the same mismatch. Both
+original implicit source/support payloads and expectations remain in
+`cases.json` as **UNQUALIFIED** prerequisite evidence, excluded from successor
+passing counts. The original matrix FAIL is unchanged. Generic implicit-call
+normalization is separately routed as `P26-QUALIFIED-CALL-BRAND-NORMALIZATION`;
+this prerequisite does not implement or qualify it.
+
+The successor uses the existing explicit `&Arena` formal to anchor the source
+call. Baseline frontend admission and current native execution establish that
+route's admissibility. The internal exact-name assertions supply independent
+regression coverage: a private copy restoring exactly the eight retired proof
+wrappers compiles, then exits16 after ten successful outputs; the current copy
+exits0 with all twelve. Thus native admission alone is not claimed to detect
+suffix conflation. Neither the original implicit inference form nor a new brand
+relationship is accepted by that comparison.
 
 The original unmerged assignment-only `ProtectedValue` alias rejection exceeded
 26.2A's metadata opt-in: unannotated compiler values must bypass resource escape

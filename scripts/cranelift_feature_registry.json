@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "824b7d16834f1c58ae48d5cc646ab3bbe74fd104c2bcd1124dc13a9b3b0a3937",
-          "current_digest": "10e1a3feeefe1dcf3fe4f9dfaf9a7dfcfd2899e1c081b87c7001135425af8ff2"
+          "current_digest": "95cadc092cbe1e87c0a18fa7c72ede715e26aeeb398c245b475d80468f4238d3"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "a90a9db158f015d6346ca22c4271c45992223ab2850b8c7fc74898f18170c5e9",
-          "current_digest": "1a77e2738b0089bb9c6d806dd48f8da7a0508456f7349717a09378a38f83b8ac"
+          "current_digest": "7c76855b9857ec83febfd6a0029e667a8b17b3c320096d76689bed5559716ede"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48130,11 +48130,11 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
-          "digest": "ef95d7b95ea8daa9fce2494c70f160bc59ffa7189fa17b512fd0d16b529f3ccf"
+          "digest": "69d8ed30bc5ec40cbd13a808c8beec6df0359530abe533193113dd675433eaf8"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/cases.json",
-          "digest": "6b02c816c6d6009cafc45bf549f7da56d429b91bf367b42ac23281995c4e67c2"
+          "digest": "c412e8d5a60174915ce1f3f1e741415c7329d2e79f8c80184b8c685ecd0eb26f"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/proof_facts.gst",
@@ -48146,7 +48146,7 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
-          "digest": "e2f72bc0272783cf284f4001f1162e524a827dc607ace06d9817b80ddf534d25"
+          "digest": "b352540578780b0e1e8e3da7f305ad94627c50737e627bcc1b670c2125a73b7e"
         },
         {
           "path": "scripts/phase26_bootstrap_bounded.py",
@@ -48154,7 +48154,7 @@
         }
       ],
       "owned_text": {
-        "text": "c1d5df4afb325fe4454654581f6f2d9b8a7e9a25fc48e771e5e2e994d9d8017c",
+        "text": "c9685d902773f03417a27bd36adcf683a26f514325c37677789729de23c59da1",
         "r4_text": "b244d2c54cb611296bc12744d889f77aa7daff0ac9c84bf82e3bf47d465299df"
       },
       "projections": {
@@ -48165,7 +48165,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "4cc4cbf9afae6dcbe857ffed9576b02a194c07e08d87e97fb0b0cecd65d9e3b5",
-        "text": "600ef64c90c1c8ced5805592cdf1ec4b1f99259563fcb393019d837d766806d9"
+        "text": "3bd632b38304263f2f59ca019a9a06a2bf5ad0cfd7c39bee76520f1a666136cb"
       },
       "spelling_render_current_digest": "6232c23cc4530f900c446f00272a0354172b319369018f951a885ba7040a0695"
     },

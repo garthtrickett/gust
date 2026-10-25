@@ -1,3 +1,19 @@
+# Cranelift ACTIVE explicit-anchor successor — 2026-10-25T21:28:46.514962+00:00
+
+Same selected lexical allocator proof patch, base9df2. The original e717 matrix
+remains FAIL44/45; internal12 native assertions passed. Both current and preserved
+904 frontends reject the implicit qualified-brand positive before worker entry.
+General call normalization is separately routed, not changed within this patch.
+Existing Spec and Standards reviewers accept transparent scope isolation: retain
+all original43 records and both failed implicit payloads/expectations; qualify a
+separately named explicit-Arena successor. Private baseline/current anchored
+controls and an exact eight-wrapper native inversion passed, job reaped0.
+Maintained successor and additive enrollment now need committed reviews and all
+fresh local/native/R5/fixedpoint/pin/authoritative-CI gates. No pass carry-forward,
+CI polling/push, OD23 selection or historical first-release rewrite.
+
+---
+
 # Cranelift ACTIVE corrected-source qualification — 2026-10-25T03:03:22.108205+00:00
 
 Same selected lexical proof patch: presence-sensitive fallback/internal10 and

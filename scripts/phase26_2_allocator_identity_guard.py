@@ -15,14 +15,34 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def qualify(compiler, output, cases_path):
-    specification = json.loads(cases_path.read_text())
+def validate_specification(specification):
     cases = specification['cases']
+    # This successor isolates proof metadata using an already admitted Arena argument.
+    # Preserve the failed implicit-call expectations; they are not passing cases.
+    canonical = lambda value: hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    assert specification['qualification_cohort'] == 'explicit-arena-anchors-v2'
+    assert canonical(cases[:43]) == 'c56b5477786b161a694caf97dc032b70b4f407ef58bfe4c4ed30909a9a421c97', 'original43 payload drift'
+    pending = specification['unqualified_source_prerequisites']
+    assert pending['key'] == 'P26-QUALIFIED-CALL-BRAND-NORMALIZATION'
+    assert pending['status'].startswith('UNQUALIFIED;'), 'pending implicit qualification drift'
+    assert canonical(pending['original_cases']) == '41b5232e78ee1730ae9492bb0bbc83ec9ad189fd14f6e0c44bec4f4410e7c521', 'original implicit payload drift'
+    assert [case['name'] for case in cases[-2:]] == [
+        'qualified_brand_explicit_arena_native',
+        'qualified_brand_explicit_arena_shadow_assignment']
     assert specification['schema'] == 'gust.allocator_identity.cases.v1'
     assert len(cases) == len({case['name'] for case in cases}) == 45
     assert {mode: sum(case['mode'] == mode for case in cases)
             for mode in ('reject', 'native', 'frontend_accept')} == {
                 'reject': 22, 'native': 11, 'frontend_accept': 12}
+    return cases, pending
+
+
+def qualify(compiler, output, cases_path):
+    specification = json.loads(cases_path.read_text())
+    cases, pending = validate_specification(specification)
+    canonical = lambda value: hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     budget = 64 * 1024 ** 2
     space = os.statvfs(ROOT)
     if space.f_bavail * space.f_frsize < budget + 2 * 1024 ** 3:
@@ -124,13 +144,17 @@ def qualify(compiler, output, cases_path):
               and internal['pass_result'])
     report = dict(utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                   status='PASS lexical allocator identity matrix' if passed else 'FAIL',
+                  qualification_cohort=specification['qualification_cohort'],
+                  unqualified_source_prerequisite=dict(
+                      key=pending['key'], status=pending['status'],
+                      original_cases_sha256=canonical(pending['original_cases'])),
                   source_before=before, source_after=after,
                   compiler_sha256=compiler_hash, cases=records, internal_proof_facts=internal,
                   owned_output_budget_bytes=budget,
                   owned_allocated_end_bytes=allocated,
                   limits='No OD23 slot admission, deferred exit-order, or '
                          'runtime claim for frontend-only controls; no native '
-                         'support claim for the original main-only scalar '
+                         'support claim for implicit qualified-call inference or the original main-only scalar '
                          'projection or collection-annotation forms')
     (output / 'result.json').write_text(json.dumps(report, indent=2) + '\n')
     if not passed:
