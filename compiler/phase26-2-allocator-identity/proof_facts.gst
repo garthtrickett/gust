@@ -75,6 +75,33 @@ func main() int {
             empty[Index[ast.Expression[ctx], ctx]], field_type, &env, &ctx);
         if absent_declared.unresolved != 0 || std.str_eq(absent_declared.identity, "known-root") == 0 { return 10; }
         os.LogInt(1);
+
+        // A lexical dependency lookup must preserve explicit unknown facts.
+        env.struct_linear_resource.Insert("Field", 1);
+        mut substitutions: std.HashMap[str, checker.AllocatorIdentityProof[ctx], ctx] := std.HashMapNew(&ctx);
+        ctx[scope].bindings.Insert("brand", field_type);
+        ctx[scope].allocator_bindings.Insert("brand", checker.allocator_identity_proof("", 1, &ctx));
+        mut explicit_unknown := checker.env_resource_allocator_dependencies(&env, field_type, substitutions, 1, &ctx);
+        if explicit_unknown.unresolved != 1 || len(explicit_unknown.identities.Keys(&ctx)) != 0 { return 11; }
+        os.LogInt(1);
+        ctx[scope].allocator_bindings.Insert("brand", checker.allocator_identity_proof("known-origin", 0, &ctx));
+        mut known := checker.env_resource_allocator_dependencies(&env, field_type, substitutions, 1, &ctx);
+        guard known_identity := known.identities.Get("known-origin") else { return 12; }
+        if known.unresolved != 0 || len(known.identities.Keys(&ctx)) != 1 || known_identity != 1 { return 12; }
+        os.LogInt(1);
+        // Preserve the existing absent-formal convention independently.
+        mut absent_scope := checker.scope_new(empty[Index[checker.Scope[ctx], ctx]], &ctx);
+        env.current_allocator_scope = absent_scope;
+        mut absent_proof := checker.env_allocator_binding_proof(&env, "brand", &ctx);
+        if absent_proof.present != 0 { return 13; }
+        mut formal := checker.env_resource_allocator_dependencies(&env, field_type, substitutions, 1, &ctx);
+        guard formal_identity := formal.identities.Get(checker.arena_lifecycle_identity_for_binding(&env, "brand", &ctx)) else { return 14; }
+        if formal.unresolved != 0 || len(formal.identities.Keys(&ctx)) != 1 || formal_identity != 1 { return 14; }
+        os.LogInt(1);
+        ctx[absent_scope].bindings.Insert("brand", field_type);
+        mut shadowed := checker.env_resource_allocator_dependencies(&env, field_type, substitutions, 1, &ctx);
+        if shadowed.unresolved != 1 || len(shadowed.identities.Keys(&ctx)) != 0 { return 15; }
+        os.LogInt(1);
     }
     return 0;
 }

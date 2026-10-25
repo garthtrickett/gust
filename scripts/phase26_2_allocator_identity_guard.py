@@ -29,7 +29,8 @@ def qualify(compiler, output, cases_path):
         raise SystemExit('allocator identity matrix disk admission refused')
     output.mkdir(exist_ok=False, parents=True)
     proof_source = ROOT / 'compiler/phase26-2-allocator-identity/proof_facts.gst'
-    inputs = [cases_path, Path(__file__), ROOT / 'compiler/typechecker.gst', proof_source]
+    inputs = [cases_path, Path(__file__), ROOT / 'compiler/typechecker.gst', proof_source,
+              ROOT / 'scripts/phase26_bootstrap_bounded.py']
     before = {str(path): digest(path) for path in inputs}
     compiler_hash = digest(compiler)
     records = []
@@ -113,7 +114,7 @@ def qualify(compiler, output, cases_path):
                         run_stdout_sha256=digest(proof / 'run.stdout'),
                         run_stderr_sha256=digest(proof / 'run.stderr'),
                         pass_result=execution.returncode == 0 and
-                        execution.stdout == b'1\n1\n1\n1\n1\n1\n' and not execution.stderr)
+                        execution.stdout == b'1\n' * 10 and not execution.stderr)
     print(json.dumps(dict(internal_proof_facts=internal)), flush=True)
     after = {str(path): digest(path) for path in inputs}
     allocated = sum(path.stat().st_blocks * 512 for path in output.rglob('*')

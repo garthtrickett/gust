@@ -18,22 +18,36 @@ GUARD = 'guard-cranelift-phase26-2-allocator-identities'
 STATE = 'GUST_LANE_STATE.md'
 BASELINE = 'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz'
 BASELINE_SHA256 = '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b'
+PROFILE_BASELINE = 'compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz'
+PROFILE_BASELINE_SHA256 = '49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502'
+PROFILE_CHANGED = ('.github/workflows/phase26-2-allocator-liveness.yml',
+    '.github/workflows/phase26-release-closure.yml', 'scripts/phase26_release_registration.py')
 REGISTRY = ROOT / 'scripts/cranelift_feature_registry.json'
 ANCESTOR_REGISTRATIONS = ('phase26_2_allocator_registration', 'phase26_release_registration',
     'phase26_readonly_input_copy_registration', 'phase26_ticket_composition_registration',
     'phase26_imported_native_registration', 'phase26_ticket_publication_registration')
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_2_allocator_registration.py',
-    'compiler/phase26-release/release.json', 'compiler/phase26-release/reachable-audit.json')
-ADDED = (BASELINE, 'scripts/phase26_2_allocator_identity_registration.py',
+    'compiler/phase26-release/release.json', 'compiler/phase26-release/reachable-audit.json',
+    *PROFILE_CHANGED)
+ADDED = (BASELINE, PROFILE_BASELINE, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
     'compiler/phase26-2-allocator-identity/cases.json',
     'compiler/phase26-2-allocator-identity/proof_facts.gst',
     '.github/workflows/phase26-2-allocator-identity.yml',
-    'compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md')
+    'compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md',
+    'scripts/phase26_bootstrap_bounded.py')
+BOOTSTRAP = 'scripts/phase26_bootstrap_bounded.py'
+WORKFLOWS = (
+    ('.github/workflows/phase26-release-closure.yml', 'make gust',
+     'guard-cranelift-phase26-release-closure', 'scripts/phase26_*.py'),
+    ('.github/workflows/phase26-2-allocator-liveness.yml', 'make -j2 gust',
+     'guard-cranelift-phase26-2-allocator-liveness', BOOTSTRAP),
+    ('.github/workflows/phase26-2-allocator-identity.yml', 'make -j2 gust', GUARD, BOOTSTRAP))
 RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin dependencies.\n' + GUARD + ':\n'
     '    python3 scripts/phase26_2_allocator_identity_registration.py validate\n'
     '    python3 scripts/phase26_2_allocator_identity_registration.py inversions\n'
+    '    python3 scripts/phase26_bootstrap_bounded.py inversions\n'
     '    python3 scripts/phase26_2_allocator_identity_guard.py\n')
 
 
@@ -59,8 +73,24 @@ def baseline():
     return value
 
 
+@lru_cache(maxsize=1)
+def profile_baseline():
+    raw = (ROOT / PROFILE_BASELINE).read_bytes()
+    require(sha(raw) == PROFILE_BASELINE_SHA256, 'bootstrap profile predecessor bytes drifted')
+    value = json.loads(gzip.decompress(raw))
+    require(value['schema'] == 'gust.bootstrap_profile.predecessor.v1' and
+            value['base'] == BASE and value['predecessor_baseline_sha256'] == BASELINE_SHA256 and
+            set(value['files']) == set(PROFILE_CHANGED),
+            'bootstrap profile predecessor identity or file population drifted')
+    return value
+
+
 def base_bytes(path):
-    return base64.b64decode(baseline()['files'][path], validate=True)
+    files = baseline()['files']
+    if path in files:
+        return base64.b64decode(files[path], validate=True)
+    require(path in PROFILE_CHANGED, 'unknown predecessor file: ' + path)
+    return base64.b64decode(profile_baseline()['files'][path], validate=True)
 
 
 def record(registry):
@@ -298,12 +328,24 @@ def build_record():
             spelling.manifest_summary(sites)).encode()))
 
 
+def workflow_profile(text, build_arguments, guard, trigger):
+    bootstrap = 'run: python3 ' + BOOTSTRAP + ' ' + build_arguments
+    qualification = 'run: python3 scripts/phase26_release_bounded.py just ' + guard
+    require(text.count(bootstrap) == 1 and text.count(qualification) == 1 and
+            text.count("      - '" + trigger + "'") == 2 and
+            'run: python3 ' + BOOTSTRAP + ' just ' not in text and
+            'if: false' not in text and 'timeout-minutes: 60' in text,
+            'bootstrap/qualification workflow profile drifted')
+
+
 def validate():
     registry = json.loads(REGISTRY.read_text())
     row = identity(registry)
     require(project_registry(registry) == json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
             'allocator identity changed frozen predecessor or foreign registry rows')
     physical_files(registry, row)
+    for path, arguments, guard, trigger in WORKFLOWS:
+        workflow_profile((ROOT/path).read_text(), arguments, guard, trigger)
     require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
     levels = json.loads((ROOT/'scripts/cranelift_test_levels.json').read_text())
     require(levels['guards'].pop(GUARD,None)==2 and levels==json.loads(base_bytes('scripts/cranelift_test_levels.json')),
@@ -326,6 +368,48 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    profile = profile_baseline()
+    profile_mutations = []
+    for field, value in (('schema', 'other'), ('base', '0' * 40),
+                         ('predecessor_baseline_sha256', '0' * 64)):
+        changed = copy.deepcopy(profile)
+        changed[field] = value
+        profile_mutations.append((field, changed))
+    changed = copy.deepcopy(profile)
+    changed['files'].pop(PROFILE_CHANGED[0])
+    profile_mutations.append(('omitted predecessor file', changed))
+    changed = copy.deepcopy(profile)
+    changed['files']['foreign'] = ''
+    profile_mutations.append(('extra predecessor file', changed))
+    for label, changed in profile_mutations:
+        profile_baseline.cache_clear()
+        try:
+            # Keep the immutable raw-byte check, then exercise the independent
+            # decoded authority checks without modifying either archive.
+            with patch.object(gzip, 'decompress', return_value=json.dumps(changed).encode()):
+                rejected('bootstrap predecessor ' + label, profile_baseline,
+                    'bootstrap profile predecessor identity or file population drifted')
+        finally:
+            profile_baseline.cache_clear()
+    for path, arguments, guard, trigger in WORKFLOWS:
+        workflow = (ROOT/path).read_text()
+        bootstrap = 'run: python3 ' + BOOTSTRAP + ' ' + arguments
+        qualification = 'run: python3 scripts/phase26_release_bounded.py just ' + guard
+        for label, changed in (
+                ('unbounded bootstrap', workflow.replace(bootstrap, 'run: ' + arguments, 1)),
+                ('old bootstrap cap', workflow.replace(bootstrap,
+                    'run: python3 scripts/phase26_release_bounded.py ' + arguments, 1)),
+                ('qualification at bootstrap cap', workflow.replace(qualification,
+                    'run: python3 ' + BOOTSTRAP + ' just ' + guard, 1)),
+                ('omitted bootstrap trigger', workflow.replace("      - '" + trigger + "'\n", '', 1)),
+                ('duplicated bootstrap', workflow + '\n' + bootstrap),
+                ('disabled qualification', workflow.replace('    if: github.actor',
+                    '    if: false # github.actor', 1))):
+            require(changed != workflow, 'workflow inversion did not move: ' + path + ' ' + label)
+            rejected(path + ' ' + label,
+                lambda changed=changed,arguments=arguments,guard=guard,trigger=trigger:
+                    workflow_profile(changed, arguments, guard, trigger),
+                'bootstrap/qualification workflow profile drifted')
     for path in CHANGED:
         rejected('substituted '+path,lambda path=path:prior_digest(registry,path,'0'*64), 'R4 changed file drifted')
         original = Path.read_bytes

@@ -219,7 +219,7 @@ def validate():
         prior_digest(registry, pin["path"], sha((ROOT / pin["path"]).read_bytes()))
     for pin in row["added_files"]:
         require(pin["digest"] == successor.prior_digest(registry, pin["path"], sha((ROOT / pin["path"]).read_bytes())), "release closure added file drifted: " + pin["path"])
-    workflow = (ROOT / WORKFLOW).read_text()
+    workflow = successor.prior_bytes(registry, WORKFLOW, (ROOT / WORKFLOW).read_bytes()).decode()
     workflow_identity(workflow)
     require(successor.prior_bytes(registry, "justfile", (ROOT / "justfile").read_bytes()) == base_bytes("justfile") + RECIPE.encode(), "release closure owning recipe drifted")
     levels = json.loads(successor.prior_bytes(registry, "scripts/cranelift_test_levels.json", (ROOT / "scripts/cranelift_test_levels.json").read_bytes()))
@@ -370,7 +370,9 @@ def inversions():
     rejected("foreign ticket mutation", lambda: require(
         project_registry(changed) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
         "release closure changed frozen predecessor"), "release closure changed frozen predecessor")
-    workflow = (ROOT / WORKFLOW).read_text()
+    # Exercise the frozen workflow contract on its predecessor view. Current
+    # physical bootstrap/qualification profiles are checked by the successor.
+    workflow = successor.prior_bytes(registry, WORKFLOW, (ROOT / WORKFLOW).read_bytes()).decode()
     for label, changed in (
         ("omitted owning command", workflow.replace("run: python3 scripts/phase26_release_bounded.py just " + GUARD, "run: true", 1)),
         ("duplicated owning command", workflow.replace("run: python3 scripts/phase26_release_bounded.py just " + GUARD,

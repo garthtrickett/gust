@@ -1,3 +1,135 @@
+# Cranelift ACTIVE corrected-source qualification — 2026-10-25T03:03:22.108205+00:00
+
+Same selected lexical proof patch: presence-sensitive fallback/internal10 and
+bootstrap-only6GiB/Swap0 helper plus three workflow profiles and additive archive.
+Enrollment generation-v10 PASS: only3declared JSON changes, source/tools stable.
+NEW preservation-v2 completed6verified copies, including31db/0bf/a6a installed
+oldtools and exact source-binding metadata. Refused empty-v1 remains historical.
+The prerequisite before future tool replacement is now satisfied; no rebuild or
+corrected-source qualification is claimed. Next: commit exact complete successor,
+existing independent committed reviews, focused profile/registration controls,
+actual6GiBbootstrap, current internal10/native43+18/Resource/strict/fullpins/R5/FP,
+own exact-head CI/reviews/rules/merge and fullactivated26.2–26.6 continuation.
+Protected4GiB files byte-identical; historicalDONEfrozen, OD23 OPEN/unselected.
+No cleanup/transfer/newcapacityrequest, semantic stack, fixed/tmp or CIobserver.
+
+---
+
+# Cranelift ACTIVE changed-capacity enrollment — 2026-10-25T03:00:54.643656+00:00
+
+Same owner/worktree/branch938/base9df2 resumes selected presence/profile patch.
+Prior bounded wait invalidated prospectively. Generation-only v10 uses unchanged
+1GiB/1CPU/Swap0/64MiB growth/2GiB disk reserve, fresh actual peer/DB admission,
+13 prepared-source and tool/protected-file integrity. No tool replacement; NEW
+preservation-v2 remains mandatory before rebuild. Only the three declared
+registry/release JSON outputs may change. No qualification/pass carry-forward,
+cleanup, transfer, new capacity request, semantic stack or OD23 selection.
+
+---
+
+# Cranelift bounded wait after actual narrow admission refusal — 2026-10-25T02:18:47.523671+00:00
+
+Same compiler owner resumed the selected presence/profile gate at938/base9df2.
+Only additive generation was attempted, with no tool replacement prerequisite
+bypassed. Tracked work1792894676960 / PID4170838 naturally ended75 and its
+paired wait was reaped. At actual admission02:17:57Z RAM headroom after all
+job/peer/external-DB growth and1.5GiB reserve was 3300286464 bytes, but disk
+available 2135769088 was 78823424 bytes short of unchanged64MiB+2GiB reserve.
+No generation command ran; registry/release JSON remains byte-identical to938.
+13 prepared nonoperational source hashes, installed31db/0bf/a6a tools and
+protected4GiB release files remain unchanged. Refused preservation-v1 stays
+empty; no preservation-v2 or compiler/tool overwrite occurred.
+
+Written bounded wait: no live job/wait/CI observer or fixed-/tmp family. Do not
+retry the unchanged refusal. Resume this same owner only on materially changed
+actual admission; generation may precede preservation, but NEW preservation-v2
+must complete before tool replacement. Generated bindings remain stale for the
+presence fix/profile changes; actual controls/committed reviews/full pins/R5/FP/
+CI/merge remain pending. Continue the full activated26.2–26.6 afterward. No new
+capacity request, cleanup, transfer, reserve/budget waiver or semantic stack.
+Historical first-release DONE remains frozen; Phase26 ACTIVE/OPEN, OD23 OPEN.
+
+---
+
+# Cranelift ACTIVE narrow enrollment admission — 2026-10-25T02:17:56.808243+00:00
+
+Same owner resumes the selected presence/profile prerequisite at HEAD938/base9df2.
+Prior bounded wait is invalidated prospectively. Only additive enrollment generation
+is being considered under fresh 1GiB/1CPU/Swap0, 64MiB growth plus2GiB disk reserve.
+No compiler tool replacement: preservation-v2 must still pass its separate gate.
+Generation binds13 prepared nonoperational files, protects4GiB release files and
+installed31db/0bf/a6a tools, and may change only the three declared registry/release
+JSON outputs. This is generation only, not qualification or publication. All fresh
+reviews, controls, full pins, R5/FP/CI/merge remain required; Phase26 and OD23 OPEN.
+
+---
+
+# Cranelift bounded wait after resumed integration check — 2026-10-25T01:32:17.655700+00:00
+
+Same compiler owner resumed the activated Phase26.2–26.6 continuation in
+`p26-scoped-ticket-publication`, branch `codex/phase26-2-allocator-proof-identities`,
+HEAD938/base9df2. Resumption invalidated the prior idle terminal prospectively.
+The complete 14-path source/profile preparation is unchanged; both existing
+Spec and Standards reviewers found no remaining concrete WIP source defect.
+This does not close the dependency-presence P2 qualification gate: corrected
+internal10/native controls and all fresh committed-head gates remain pending.
+
+Fresh available disk: 2052628480 bytes. Unchanged preservation requires
+2281701376 bytes and generation 2214592512 bytes;
+both refused before copies/commands. This supersedes the prior wait snapshot's
+marginal generation-only reading; no stale space reading authorizes a start.
+Installed31db/0bf/a6a tools and empty refused preservation-v1 remain unchanged.
+Protected release bounded/closure/regression implementations remain byte-identical.
+Generated enrollment deliberately remains938 and is stale for the dirty successor.
+
+Written bounded wait: no live job/wait, fixed-/tmp family or CI observer. Resume
+this same owner on actual admission: NEW preservation-v2 before any tool overwrite;
+complete additive generation/commit and final committed reviews; actual6GiB/Swap0
+bootstrap profile checks and corrected-source/internal10/43+18/Resource controls;
+strict timing/full pins/R5/fixedpoint; then own exact-head CI/reviews/rules/merge.
+No cleanup, transfer, new capacity request, partial publication or semantic stack.
+Other current roadmap items depend on this prerequisite or unselected authority;
+standing containment proposals remain unselected. Historical first-release DONE
+is frozen, full Phase26 remains ACTIVE/OPEN, and OD23 remains OPEN/unselected.
+
+---
+
+# Cranelift bounded wait — 2026-10-25T01:25:56.542935+00:00
+
+Phase26.2–26.6 remain activated and OPEN. First-release FFI-R1–R6 historical
+DONE is unchanged; OD23 remains OPEN/unselected. Same compiler owner, branch
+`codex/phase26-2-allocator-proof-identities`, HEAD `9386740f`, base `9df2eb10`.
+
+The frozen 938 census completed 28/28 PASS with source stability and exit0;
+43 maintained cases plus internal6, allocator18 and three Resource contracts
+also passed on the installed 938-bound tools. Whole-patch review then reproduced
+a separate dependency-presence P2. Its uncommitted source correction preserves
+explicit unknown and shadow-without-fact, with four added internal controls.
+Bootstrap-only 6 GiB/Swap0/CPU<=2 integration and additive predecessor bytes are
+prepared; the release 4 GiB launcher is byte-identical. Both provisional source
+reviews have no remaining findings. Synthetic profile/path controls pass only;
+no new reader/build/native/registration/R5/fixedpoint/CI qualification is claimed.
+
+Bounded independent source preparation is exhausted. Actual disk admission
+blocks tool preservation, enrollment generation and subsequent producing jobs;
+128 MiB+2 GiB reserve preservation preflight refused before any tool copy.
+Its shell sequencing mistake was reconciled separately. Installed31db/0bf/a6a
+tools remain unchanged and must not be overwritten before admitted preservation
+into a NEW successor directory. The empty refused v1 directory stays historical.
+Generated registry/release pins deliberately remain at938 and are not accepted
+for the new working sources. No live job/wait, fixed-/tmp guard or CI observer.
+
+Resume THIS owner when actual space permits the unchanged gates: verify source
+integrity; invalidate this wait prospectively; preserve old tools; resync/commit
+complete enrollment; committed reviews; actual 6 GiB bootstrap/reader controls;
+self-source/internal10/43+18/Resource regressions, strict timing/full pins, R5
+and fixedpoint; then own exact-head draft CI/reviews/rules/merge and continue
+canonical remainder. No new capacity request, cleanup, semantic selection or
+partial publication is made. Standing containment proposals are unselected;
+other semantic patches cannot stack on this unmerged prerequisite.
+
+---
+
 # Cranelift ACTIVE allocator proof qualification — 2026-10-25T00:18:11.613395+00:00
 
 Same compiler owner; branch codex/phase26-2-allocator-proof-identities, actual worktree /home/gust/code/worktrees/gust/p26-scoped-ticket-publication. Rebuilt888 compiler passed self-source and internal six native checks. Original43 matrix FAILED on two pre-existing main-only native routing boundaries; exact predecessor classification and all failed sources retained outside the tree. Two meaningful existing-cohort helper controls retain all operations and exact6/1 outputs; original main-only forms are not qualified. Current correction is test construction/evidence scope only; compiler/MIR/runtime and test memory assertions unchanged. Next: enrollment resync, independent committed reviews, complete native matrix/current-head source/pin/R5/fixedpoint qualification then own exact-head CI/merge. No CI observer or fixed /tmp reservation; full Phase26.2–26.6 and OD23 remain OPEN. First-release DONE evidence remains frozen.

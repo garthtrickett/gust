@@ -13594,7 +13594,9 @@ func env_resource_collect_allocator_dependencies(env: *TypeEnvironment[ctx], sou
                     proof = actual.Val;
                 } else if lexical_parameters == 1 {
                     proof = env_allocator_binding_proof(env, brand, ctx);
-                    if len(proof.identity) == 0 {
+                    // Only absent formal metadata may use the existing spelling
+                    // convention. Explicit uncertainty must remain unresolved.
+                    if proof.present == 0 {
                         proof = allocator_identity_proof(arena_lifecycle_identity_for_binding(env, brand, ctx), 0, ctx);
                     }
                 }

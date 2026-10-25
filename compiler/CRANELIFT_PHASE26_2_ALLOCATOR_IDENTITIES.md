@@ -61,8 +61,8 @@ still admit. The source language's existing brand restrictions do not supply an
 equal-root-set/swapped-field-origin construction; no new brand relationship is
 invented to manufacture one. Unknown-root copy controls do not by themselves
 isolate an explicitly unknown field from fallback to an equally unknown root.
-A separate internal proof-fact native control requires six exact successful
-checks (six `1` lines, exit zero) and covers that distinction against a known
+A separate internal proof-fact native control requires ten exact successful
+checks (ten `1` lines, exit zero) and covers that distinction against a known
 root and an absent-field fallback, without asserting that mixed metadata is a
 public source construction.
 
@@ -101,3 +101,18 @@ routing identically before and after this patch and remain preserved as failed
 evidence. They are not qualified by the helper controls, and native routing is
 unchanged. An additional aggregate-parameter proposal also remains outside the
 qualified native cohort.
+
+Dependency collection also preserves explicitly unknown lexical proofs. The
+internal controls distinguish an explicit unknown, a known lexical origin, the
+existing absent-formal convention, and a shadowing declaration with no fact.
+
+The operator-approved 6 GiB execution override applies only to the clean N-1
+bootstrap. Its independent launcher requires effective 6 GiB, zero swap and a
+CPU quota at most two CPUs, strips Make overrides, and permits only canonical
+`make gust` argument vectors. CI enters a transient scope and restores the
+original non-root identity before repository code. Existing scoped execution
+uses the same verified limits. Qualification commands are refused by this
+launcher and continue under the unchanged 4 GiB release launcher. The three
+owning workflows keep their qualification steps at 4 GiB; profile-mixup and
+missing-trigger controls cover their actual physical bytes. Frozen release
+workflow assertions still run against the checked predecessor view.

@@ -6032,3 +6032,11 @@ unknown bookkeeping IDs cannot establish inequality. Arena/resource constraints
 and already-captured acquisition dependencies remain enforced. Preserve the
 failed draft evidence and qualify both self-source admission and actual resource
 use through a mutated alias before publication.
+
+The lexical-proof prerequisite also carries the operator's prospective 6 GiB
+bootstrap execution override, with Swap0 and existing CPU/disk/reserve policy.
+Use an independent bootstrap-only profile for canonical Make commands; preserve
+the release launcher's 4 GiB product/qualification assertions byte-for-byte.
+Qualify actual profile limits and both scoped/CI execution paths, command and
+environment restrictions, and current-workflow profile-mixup refusals. An
+up-to-date local Make command is not a clean bootstrap-memory qualification.
