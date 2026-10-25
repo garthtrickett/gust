@@ -26,9 +26,9 @@ OPEN and unselected.
 ## Qualification
 
 `python3 scripts/phase26_2_allocator_identity_guard.py` binds the maintained
-43-case source/support population, compiler and emitted artifacts. Twenty-one
+45-case source/support population, compiler and emitted artifacts. Twenty-two
 negative controls must fail at the shared frontend with their exact diagnostic
-before a deliberately unavailable backend driver can compile them. Ten safe
+before a deliberately unavailable backend driver can compile them. Eleven safe
 native controls compile and execute with each recorded exact stdout and exit
 zero. Twelve field/parameter/branch controls prove frontend admission only by reaching the refusing
 driver; they make no native execution claim. This preserves separate acceptance,
@@ -61,10 +61,18 @@ still admit. The source language's existing brand restrictions do not supply an
 equal-root-set/swapped-field-origin construction; no new brand relationship is
 invented to manufacture one. Unknown-root copy controls do not by themselves
 isolate an explicitly unknown field from fallback to an equally unknown root.
-A separate internal proof-fact native control requires ten exact successful
-checks (ten `1` lines, exit zero) and covers that distinction against a known
+A separate internal proof-fact native control requires twelve exact successful
+checks (twelve `1` lines, exit zero) and covers that distinction against a known
 root and an absent-field fallback, without asserting that mixed metadata is a
 public source construction.
+
+Allocator proof lookups use the complete explicit or registered type brand.
+They do not erase a prefix before `__`: `left__brand` and `right__brand`
+remain distinct lexical lookup keys. The additional internal controls check
+both distinct dependencies and the unchanged full formal-brand key. Two added
+source controls retain native success and shadow-assignment rejection when
+the caller brand name contains `__`; all original43 source controls remain. The frozen
+Phase20 legacy-cleaner inventory and canonical brand semantics are unchanged.
 
 The original unmerged assignment-only `ProtectedValue` alias rejection exceeded
 26.2A's metadata opt-in: unannotated compiler values must bypass resource escape

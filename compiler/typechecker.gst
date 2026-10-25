@@ -13586,7 +13586,7 @@ func env_resource_collect_allocator_dependencies(env: *TypeEnvironment[ctx], sou
         if resolved.tag != 8 { return; } // owned structs; no reference/Index ownership
         mut name := resolved.Struct.struct_name;
         if env_struct_has_resource_tracking_metadata(env, name, ctx) == 1 {
-            mut brand := strip_brand_prefix(get_type_brand(resolved, env, ctx), ctx);
+            mut brand := get_type_brand(resolved, env, ctx);
             if len(brand) > 0 {
                 mut proof := allocator_identity_proof("", 1, ctx);
                 mut actual := substitutions.Get(brand);
@@ -13684,7 +13684,7 @@ func env_capture_resource_field_allocator_constraints(env: *TypeEnvironment[ctx]
             mut field_path := std.Clone(ctx, std.Concat(std.Concat(path, "."), fields[i]));
             mut actual_path := "";
             if len(source_path) > 0 { actual_path = std.Clone(ctx, std.Concat(std.Concat(source_path, "."), fields[i])); }
-            mut brand := strip_brand_prefix(get_type_brand(field, env, ctx), ctx);
+            mut brand := get_type_brand(field, env, ctx);
             mut proof := allocator_identity_proof("", 1, ctx);
             mut source_fact_present := 0;
             if len(brand) > 0 {
@@ -13739,7 +13739,7 @@ func env_validate_resource_field_allocator_assignment(env: *TypeEnvironment[ctx]
                     mut fact := ctx[actual_scope].allocator_bindings.Get(actual_field);
                     if fact.Ok { actual = fact.Val; actual_fact_present = 1; }
                 }
-                mut brand := strip_brand_prefix(get_type_brand(field, env, ctx), ctx);
+                mut brand := get_type_brand(field, env, ctx);
                 if actual_fact_present == 0 && std.str_eq(brand, actual_root_brand) == 1 { actual = actual_root_proof; }
                 if expected.Val.unresolved == 1 || actual.unresolved == 1 ||
                    std.str_eq(expected.Val.identity, actual.identity) == 0 {
@@ -13798,7 +13798,7 @@ func env_validate_resource_return_allocator(env: *TypeEnvironment[ctx], expressi
 
 func env_allocator_formal_brand(parameter: ast.Type[ctx], name: str, env: *TypeEnvironment[ctx], ctx: &Arena) str {
     if typechecker_is_arena_value_or_ref(parameter, ctx) == 1 { return name; }
-    return strip_brand_prefix(get_type_brand(parameter, env, ctx), ctx);
+    return get_type_brand(parameter, env, ctx);
 }
 
 func env_allocator_call_brand_proof(env: *TypeEnvironment[ctx], brand: str, signature: FunctionSignature[ctx], arguments: std.Vector[ast.Expression[ctx], ctx], span: token.Span, ctx: &Arena) AllocatorIdentityProof[ctx] {
@@ -13837,7 +13837,7 @@ func env_allocator_record_call_result(env: *TypeEnvironment[ctx], expression: In
         mut current := (*env).current_allocator_scope;
         if current == empty[Index[Scope[ctx], ctx]] { return; }
         mut key := env_allocator_expression_key(expression, env, ctx);
-        mut brand := strip_brand_prefix(get_type_brand(signature.return_type, env, ctx), ctx);
+        mut brand := get_type_brand(signature.return_type, env, ctx);
         mut proof := allocator_identity_proof("", 1, ctx);
         if std.str_eq(callee, "os_Arena_New") == 1 ||
            std.str_eq(callee, "os.Arena.New") == 1 ||
@@ -16541,7 +16541,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         mut parameter_field_proof := env_allocator_binding_proof(env, field_parameter.name, ctx);
                         env_capture_resource_field_allocator_constraints(env, child_scope,
                             field_parameter.name, "", parameter_field_type,
-                            strip_brand_prefix(get_type_brand(parameter_field_type, env, ctx), ctx),
+                            get_type_brand(parameter_field_type, env, ctx),
                             parameter_field_proof, parameter_field_proof, 0,
                             parameter_field_visited, ctx);
                     }
@@ -16824,7 +16824,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 if val_idx != empty[Index[ast.Expression[ctx], ctx]] { field_constraint_initialized = 1; }
                 env_capture_resource_field_allocator_constraints(env, scope, name,
                     env_allocator_storage_path(val_idx, ctx), val_type,
-                    strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
+                    get_type_brand(val_type, env, ctx),
                     declaration_allocator_proof, declaration_allocator_proof,
                     field_constraint_initialized, field_constraint_visited, ctx);
             }
@@ -17101,7 +17101,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut assignment_field_visited: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
                 env_validate_resource_field_allocator_assignment(env, assignment_allocator_scope,
                     assignment_lifecycle_binding, env_allocator_storage_path(val_idx, ctx), left_type,
-                    strip_brand_prefix(get_type_brand(val_type, env, ctx), ctx),
+                    get_type_brand(val_type, env, ctx),
                     assignment_actual_allocator, stmt.Assignment.span, assignment_field_visited, ctx);
                 mut resource_constraint := ctx[assignment_allocator_scope].allocator_resources.Get(assignment_lifecycle_binding);
                 if resource_constraint.Ok {

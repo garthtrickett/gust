@@ -19,10 +19,10 @@ def qualify(compiler, output, cases_path):
     specification = json.loads(cases_path.read_text())
     cases = specification['cases']
     assert specification['schema'] == 'gust.allocator_identity.cases.v1'
-    assert len(cases) == len({case['name'] for case in cases}) == 43
+    assert len(cases) == len({case['name'] for case in cases}) == 45
     assert {mode: sum(case['mode'] == mode for case in cases)
             for mode in ('reject', 'native', 'frontend_accept')} == {
-                'reject': 21, 'native': 10, 'frontend_accept': 12}
+                'reject': 22, 'native': 11, 'frontend_accept': 12}
     budget = 64 * 1024 ** 2
     space = os.statvfs(ROOT)
     if space.f_bavail * space.f_frsize < budget + 2 * 1024 ** 3:
@@ -114,7 +114,7 @@ def qualify(compiler, output, cases_path):
                         run_stdout_sha256=digest(proof / 'run.stdout'),
                         run_stderr_sha256=digest(proof / 'run.stderr'),
                         pass_result=execution.returncode == 0 and
-                        execution.stdout == b'1\n' * 10 and not execution.stderr)
+                        execution.stdout == b'1\n' * 12 and not execution.stderr)
     print(json.dumps(dict(internal_proof_facts=internal)), flush=True)
     after = {str(path): digest(path) for path in inputs}
     allocated = sum(path.stat().st_blocks * 512 for path in output.rglob('*')

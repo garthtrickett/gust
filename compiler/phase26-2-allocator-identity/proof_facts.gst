@@ -102,6 +102,29 @@ func main() int {
         mut shadowed := checker.env_resource_allocator_dependencies(&env, field_type, substitutions, 1, &ctx);
         if shadowed.unresolved != 1 || len(shadowed.identities.Keys(&ctx)) != 0 { return 15; }
         os.LogInt(1);
+
+        // Exact registered names remain distinct even when their suffix agrees.
+        mut qualified_left_type := checker.make_type_struct("Field", "left__brand", &ctx);
+        mut qualified_right_type := checker.make_type_struct("Field", "right__brand", &ctx);
+        ctx[absent_scope].bindings.Insert("left__brand", qualified_left_type);
+        ctx[absent_scope].bindings.Insert("right__brand", qualified_right_type);
+        ctx[absent_scope].allocator_bindings.Insert("left__brand",
+            checker.allocator_identity_proof("left-origin", 0, &ctx));
+        ctx[absent_scope].allocator_bindings.Insert("right__brand",
+            checker.allocator_identity_proof("right-origin", 0, &ctx));
+        mut qualified_left := checker.env_resource_allocator_dependencies(
+            &env, qualified_left_type, substitutions, 1, &ctx);
+        mut qualified_right := checker.env_resource_allocator_dependencies(
+            &env, qualified_right_type, substitutions, 1, &ctx);
+        if qualified_left.unresolved != 0 || qualified_right.unresolved != 0 { return 16; }
+        if len(qualified_left.identities.Keys(&ctx)) != 1 ||
+           len(qualified_right.identities.Keys(&ctx)) != 1 { return 17; }
+        if qualified_left.identities.Get("left-origin").Ok == 0 ||
+           qualified_right.identities.Get("right-origin").Ok == 0 { return 18; }
+        os.LogInt(1);
+        if std.str_eq(checker.env_allocator_formal_brand(
+            qualified_left_type, "unused", &env, &ctx), "left__brand") == 0 { return 19; }
+        os.LogInt(1);
     }
     return 0;
 }
