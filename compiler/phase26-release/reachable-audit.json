@@ -2470,7 +2470,7 @@
     "scripts/phase25_native_fixed_point.sh": "3a8d714e54c8f12a602f9e295d3349b3c473919f5116d08389fc57f4efe2f91f",
     "scripts/phase26_2_allocator_guard.py": "8954d334eefd0e07a5323205ad10f394a947f52f3932c7447d44ec6a644a26c1",
     "scripts/phase26_2_allocator_identity_guard.py": "d6b20576b48225c4ce3926465047a2fe5c24d2291645222b208210590e511a04",
-    "scripts/phase26_2_allocator_identity_registration.py": "a9a961fc19298a2488c3f8590646efffd55a0ba0bebb04bbb9aa72b10326076c",
+    "scripts/phase26_2_allocator_identity_registration.py": "7d3a5d2f8a61dbea38ddbc05a8889b07ddf85712bd7b1388499c9d5d77d996b0",
     "scripts/phase26_2_allocator_registration.py": "72782cd3cde7187fbcd2ba206131943011ce6ad2a9870187b5f90f34c6fa730a",
     "scripts/phase26_arithmetic_zero_evidence.sh": "36ac18f19e898cf197bc673f5a3c553dacdc2ee4e7ad15c938415a726c214203",
     "scripts/phase26_arithmetic_zero_registration.py": "d4ddda2ed007735d28d3916d2c723de8c9fd1449eb42b82d848bc925d1e7c0ca",

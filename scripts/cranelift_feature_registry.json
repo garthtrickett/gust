@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "824b7d16834f1c58ae48d5cc646ab3bbe74fd104c2bcd1124dc13a9b3b0a3937",
-          "current_digest": "e0f1157f4d83d56927680209f1d73d6ce361df69e3ffafcc188212ed3a9c8479"
+          "current_digest": "963e4737d0bdfc24083064fe7e700445d9e4a4836f4f7d8e9b1a52698b14f63a"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "a90a9db158f015d6346ca22c4271c45992223ab2850b8c7fc74898f18170c5e9",
-          "current_digest": "450d5a39dacf32f101ca60295ca831d01ed9f03d2ac34872dd25471b5f9ea12f"
+          "current_digest": "4c4307f882a207a3be47594da786dda4e181a71c04e01db9f99cb2cdce6459da"
         }
       ],
       "added_files": [
@@ -48107,7 +48107,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "a9a961fc19298a2488c3f8590646efffd55a0ba0bebb04bbb9aa72b10326076c"
+          "digest": "7d3a5d2f8a61dbea38ddbc05a8889b07ddf85712bd7b1388499c9d5d77d996b0"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48131,7 +48131,7 @@
         }
       ],
       "owned_text": {
-        "text": "25a68bfb5ffa4a887c0858fb8a0352a423da82a68d7c356832c2c6c266d41573",
+        "text": "f64ef8f4e4c7ff0c40f8681385fa33e7d5b403dd65ebaf7e6967720995ee19c9",
         "r4_text": "43d4cb93c1dd6f787dbb5fe19a388b02477b339711fa8dc85c5e23b80efce0da"
       },
       "projections": {
@@ -48142,7 +48142,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "f74409832208af94f3b3f41d7a788b5eeca780efebd615d1f61ce61fb8eae418",
-        "text": "78dd71ffd4129c0fb02e05ebd3775607f29a9676983a41a96aac39d03b8520da"
+        "text": "b21731bbd29de922e2821ff4844f76fcfdb8ec8459c43a03d10a22f5edf248b7"
       },
       "spelling_render_current_digest": "5764f1abb0839db62990d14fcac6086d7cb7d468d57546f99962c45babf32819"
     },
