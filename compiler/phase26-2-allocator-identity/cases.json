@@ -314,7 +314,7 @@
     {
       "name": "scalar_projection_assignment",
       "mode": "native",
-      "source": "type Label[ctx] struct { value:str }\nfunc main() int {mut ctx:=os.Arena.New();mut label:Label[ctx];label.value=std.Clone(&ctx,\"before\");mut value:=label.value;value=\"static\";os.LogInt(len(value));return 0;}\n",
+      "source": "type Label[ctx] struct { value:str }\nfunc overwrite_projected_view(ctx:&Arena) int {mut label:Label[ctx];label.value=std.Clone(ctx,\"before\");mut value:=label.value;value=\"static\";return len(value); }\nfunc main() int {mut ctx:=os.Arena.New();os.LogInt(overwrite_projected_view(&ctx));return 0;}\n",
       "support": "",
       "expected_native_stdout": "6\n"
     },
@@ -322,7 +322,7 @@
       "name": "ordinary_collection_annotation",
       "mode": "native",
       "support": "",
-      "source": "func main() int {mut ctx:=os.Arena.New();mut values:std.Vector[int,ctx]:=std.VectorNew(&ctx);values.Push(1);mut slot:Index[std.Vector[int,ctx],ctx]:=os.ArenaAlloc(&ctx);ctx.Set(slot,values);mut copied:std.Vector[int,ctx]:=ctx[slot];os.LogInt(copied[0]);return 0;}\n",
+      "source": "func copied_vector_value(ctx:&Arena) int {mut values:std.Vector[int,ctx]:=std.VectorNew(ctx);values.Push(1);mut slot:Index[std.Vector[int,ctx],ctx]:=os.ArenaAlloc(ctx);ctx.Set(slot,values);mut copied:std.Vector[int,ctx]:=ctx[slot];return copied[0];}\nfunc main() int {mut ctx:=os.Arena.New();os.LogInt(copied_vector_value(&ctx));return 0;}\n",
       "expected_native_stdout": "1\n"
     },
     {

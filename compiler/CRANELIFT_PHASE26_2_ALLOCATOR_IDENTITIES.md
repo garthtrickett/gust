@@ -89,3 +89,15 @@ is unchanged; Arena, metadata-resource and resolved reference contexts retain
 their strict lexical constraints. The maintained collection admission control
 and annotation-to-resource refusal supplement self-source checking of all
 imported compiler functions.
+
+The scalar-projection and ordinary-collection native positives perform their
+actual operations in meaningful branded helpers and use the results from main.
+Every operation and exact output (`6` and `1`) is retained. Both forms execute
+on the merged predecessor and corrected compiler; the faulty draft still rejects
+the scalar assignment. The collection positive alone is an admissibility
+control, while the compiler self-source and internal checks cover the actual
+annotation/proof regressions. The original main-only constructions fail native
+routing identically before and after this patch and remain preserved as failed
+evidence. They are not qualified by the helper controls, and native routing is
+unchanged. An additional aggregate-parameter proposal also remains outside the
+qualified native cohort.

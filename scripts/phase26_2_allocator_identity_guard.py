@@ -128,7 +128,9 @@ def qualify(compiler, output, cases_path):
                   owned_output_budget_bytes=budget,
                   owned_allocated_end_bytes=allocated,
                   limits='No OD23 slot admission, deferred exit-order, or '
-                         'runtime claim for frontend-only controls')
+                         'runtime claim for frontend-only controls; no native '
+                         'support claim for the original main-only scalar '
+                         'projection or collection-annotation forms')
     (output / 'result.json').write_text(json.dumps(report, indent=2) + '\n')
     if not passed:
         raise SystemExit('allocator identity matrix failed')
