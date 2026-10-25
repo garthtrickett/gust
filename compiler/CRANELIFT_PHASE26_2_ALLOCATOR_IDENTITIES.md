@@ -158,3 +158,23 @@ Twenty-two mechanism inversions, seven legacy checks and five decoded archive
 checks require expected-assertion rejection. An exact new predecessor archive
 retains the old validator; existing frozen archives are unchanged. These source
 checks supplement native controls and do not themselves prove runtime safety.
+
+## Primitive Arena field observations
+
+Restore mutable primitive lifecycle observations in a separate per-declaration
+Scope map. Immutable allocator proofs and resource dependency/invalidation
+functions do not read that map. Field assignments retain the RHS primitive
+identity, owned Struct value copies snapshot recorded descendants, and ancestor
+replacement explicitly invalidates unmatched descendants. Exact empty observations
+reject lifecycle operations rather than falling through to stale/root facts.
+Arena value aliases retain primitive identity; this adds no reference target,
+callee effect, loop, resource ownership, brand, ABI or OD23 inference.
+
+The owning matrix additionally compiles a native parser/typechecker unit and
+requires 18 controls: field Free/use, overwrite, self/value copy, copy snapshots,
+known/unknown replacement, Arena value aliases, lexical shadows, nested fields
+and prefix-neighbor isolation. The unit executes; its source snippets never
+lower or execute. All 45 existing cases, 12 internal proof checks and the two
+visibly unqualified implicit-call payloads remain required unchanged. Preparation
+and source enrollment are not native qualification; fresh build, owning guards,
+matrices, pins, fixed point, R5 and authoritative CI remain mandatory.

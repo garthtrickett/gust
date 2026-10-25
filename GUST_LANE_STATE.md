@@ -1,3 +1,15 @@
+# Cranelift ACTIVE primitive lifecycle correction — 2026-10-25T23:30:59.761849+00:00
+
+Prior e74 full47 completed/reaped 47PASS; actual field Free/use rejection
+still blocks publication. Integrating reviewed primitive-only observations and
+18 required parser/typechecker regression controls. Mutable primitive facts
+never establish resource proof authority. Source enrollment only; committed
+reviews, fresh bootstrap/native/original owning guards/fullpins/R5/FP/CI remain
+mandatory. Installed tools and protected product4GiB checks remain unchanged.
+Full Phase26.2–26.6 active; OD23 OPEN/unselected; first-release DONE frozen.
+
+---
+
 # Cranelift ACTIVE lifecycle evidence correction — 2026-10-25T22:18:04.011933+00:00
 
 Same selected lexical allocator proof prerequisite. Prior frozen ecfb full30

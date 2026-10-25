@@ -38,6 +38,8 @@ ADDED = (BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, LIFECYCLE_HELPER, 'scri
     'scripts/phase26_2_allocator_identity_guard.py',
     'compiler/phase26-2-allocator-identity/cases.json',
     'compiler/phase26-2-allocator-identity/proof_facts.gst',
+    'compiler/phase26-2-allocator-identity/primitive_fields.gst',
+    'compiler/phase26-2-allocator-identity/primitive_cases.json',
     '.github/workflows/phase26-2-allocator-identity.yml',
     'compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md',
     'scripts/phase26_bootstrap_bounded.py')

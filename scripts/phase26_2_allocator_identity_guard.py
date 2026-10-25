@@ -38,6 +38,57 @@ def validate_specification(specification):
     return cases, pending
 
 
+def qualify_primitive_observations(compiler, output, source, specification):
+    """Execute the compiler unit; source snippets themselves never execute."""
+    cases = json.loads(specification.read_text())
+    assert cases['schema'] == 'gust.primitive_arena_observations.cases.v1'
+    rows = cases['cases']
+    assert len(rows) == len({row['name'] for row in rows}) == 18
+    directory = output / 'primitive-lifecycle-controls'
+    directory.mkdir()
+    binary = directory / 'checker-unit'
+    command = [str(compiler), '--backend', 'cranelift', '-o', str(binary), str(source)]
+    result = subprocess.run(command, cwd=ROOT, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, timeout=120)
+    (directory / 'compile.stdout').write_bytes(result.stdout)
+    (directory / 'compile.stderr').write_bytes(result.stderr)
+    report = dict(source_sha256=digest(source), specification_sha256=digest(specification),
+                  command=command, compile_exit=result.returncode,
+                  stdout_sha256=digest(directory / 'compile.stdout'),
+                  stderr_sha256=digest(directory / 'compile.stderr'),
+                  compiler_unit_executed=False, user_programs_executed=False,
+                  cases=[], pass_result=False)
+    if result.returncode != 0 or not binary.is_file():
+        return report
+    report['elf_sha256'] = digest(binary)
+    report['compiler_unit_executed'] = True
+    for case in rows:
+        case_dir = directory / case['name']
+        case_dir.mkdir()
+        snippet = case_dir / 'source.gst'
+        snippet.write_text(case['source'])
+        process = subprocess.run([str(binary), case['source']], cwd=case_dir,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+        (case_dir / 'stdout').write_bytes(process.stdout)
+        (case_dir / 'stderr').write_bytes(process.stderr)
+        expected = case['expected_candidate']
+        lines = process.stdout.splitlines()
+        passed = (process.returncode == 0 and not process.stderr and
+                  (process.stdout == b'ACCEPTED\n' if expected == 'ACCEPTED' else
+                   bool(lines) and all(('[' + expected + ']').encode() in line for line in lines)))
+        record = dict(case=case['name'], expected=expected, unit_exit=process.returncode,
+                      source_sha256=digest(snippet), stdout_sha256=digest(case_dir / 'stdout'),
+                      stderr_sha256=digest(case_dir / 'stderr'), pass_result=passed,
+                      verdict=('ACCEPTED' if process.returncode == 0 and process.stdout == b'ACCEPTED\n'
+                               else 'REJECTED (expected assertion)' if passed
+                               else 'REJECTED (different assertion)'), user_program_executed=False)
+        report['cases'].append(record)
+        print(json.dumps(dict(primitive_lifecycle_control=record)), flush=True)
+        (directory / 'partial-results.json').write_text(json.dumps(report, indent=2) + '\n')
+    report['pass_result'] = all(row['pass_result'] for row in report['cases'])
+    return report
+
+
 def qualify(compiler, output, cases_path):
     specification = json.loads(cases_path.read_text())
     cases, pending = validate_specification(specification)
@@ -49,7 +100,10 @@ def qualify(compiler, output, cases_path):
         raise SystemExit('allocator identity matrix disk admission refused')
     output.mkdir(exist_ok=False, parents=True)
     proof_source = ROOT / 'compiler/phase26-2-allocator-identity/proof_facts.gst'
+    primitive_source = ROOT / 'compiler/phase26-2-allocator-identity/primitive_fields.gst'
+    primitive_cases = ROOT / 'compiler/phase26-2-allocator-identity/primitive_cases.json'
     inputs = [cases_path, Path(__file__), ROOT / 'compiler/typechecker.gst', proof_source,
+              primitive_source, primitive_cases,
               ROOT / 'scripts/phase26_bootstrap_bounded.py']
     before = {str(path): digest(path) for path in inputs}
     compiler_hash = digest(compiler)
@@ -136,12 +190,13 @@ def qualify(compiler, output, cases_path):
                         pass_result=execution.returncode == 0 and
                         execution.stdout == b'1\n' * 12 and not execution.stderr)
     print(json.dumps(dict(internal_proof_facts=internal)), flush=True)
+    primitive = qualify_primitive_observations(compiler, output, primitive_source, primitive_cases)
     after = {str(path): digest(path) for path in inputs}
     allocated = sum(path.stat().st_blocks * 512 for path in output.rglob('*')
                     if path.is_file())
     passed = (before == after and compiler_hash == digest(compiler)
               and allocated <= budget and all(row['pass'] for row in records)
-              and internal['pass_result'])
+              and internal['pass_result'] and primitive['pass_result'])
     report = dict(utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                   status='PASS lexical allocator identity matrix' if passed else 'FAIL',
                   qualification_cohort=specification['qualification_cohort'],
@@ -150,6 +205,7 @@ def qualify(compiler, output, cases_path):
                       original_cases_sha256=canonical(pending['original_cases'])),
                   source_before=before, source_after=after,
                   compiler_sha256=compiler_hash, cases=records, internal_proof_facts=internal,
+                  primitive_lifecycle_controls=primitive,
                   owned_output_budget_bytes=budget,
                   owned_allocated_end_bytes=allocated,
                   limits='No OD23 slot admission, deferred exit-order, or '

@@ -1370,7 +1370,8 @@ type Scope[ctx] struct {
     allocator_bindings: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
     allocator_brands: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
     allocator_expressions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
-    allocator_resources: std.HashMap[str, AllocatorDependencies[ctx], ctx]
+    allocator_resources: std.HashMap[str, AllocatorDependencies[ctx], ctx],
+    primitive_arena_observations: std.HashMap[str, str, ctx]
 }
 
 type StructTemplate[ctx] struct {
@@ -7769,6 +7770,7 @@ func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ct
         scope_ref_new.parent = parent;
         scope_ref_new.bindings = std.HashMapNew(ctx);
         scope_ref_new.allocator_bindings = std.HashMapNew(ctx);
+        scope_ref_new.primitive_arena_observations = std.HashMapNew(ctx);
         scope_ref_new.allocator_brands = std.HashMapNew(ctx);
         scope_ref_new.allocator_expressions = std.HashMapNew(ctx);
         scope_ref_new.allocator_resources = std.HashMapNew(ctx);
@@ -13539,7 +13541,79 @@ func env_allocator_declaration_proof(initializer: Index[ast.Expression[ctx], ctx
     return proof;
 }
 
+// Preserve Phase20 primitive field-alias observations separately from declared
+// allocator proofs. These facts may restrict primitive lifecycle operations;
+// they never establish resource ownership, dependencies, or disjointness.
+func env_arena_lifecycle_capture_field_observations(env: *TypeEnvironment[ctx], expression: Index[ast.Expression[ctx], ctx], value_type: ast.Type[ctx], ctx: &Arena) std.HashMap[str, str, ctx] {
+    mut result: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
+    unsafe {
+        mut resolved := env_resolve_type(env, value_type, ctx);
+        // A value copy snapshots headers; a checked reference is not a copy.
+        if resolved.tag != 8 { return result; }
+        mut path := env_allocator_storage_path(expression, ctx);
+        mut declaration := env_allocator_binding_scope(env, path, ctx);
+        if declaration == empty[Index[Scope[ctx], ctx]] { return result; }
+        mut prefix := std.Clone(ctx, std.Concat(path, "."));
+        mut keys := ctx[declaration].primitive_arena_observations.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            if len(keys[i]) >= len(prefix) && std.str_eq(std.str_slice(keys[i], 0, len(prefix)), prefix) == 1 {
+                guard identity := ctx[declaration].primitive_arena_observations.Get(keys[i]) else { return result; }
+                result.Insert(std.Clone(ctx, std.str_slice(keys[i], len(path), len(keys[i]))), std.Clone(ctx, identity));
+            }
+            i = i + 1;
+        }
+    }
+    return result;
+}
+
+func env_arena_lifecycle_store_field_observations(env: *TypeEnvironment[ctx], path: str, fields: std.HashMap[str, str, ctx], ctx: &Arena) {
+    mut keys := fields.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        guard identity := fields.Get(keys[i]) else { return; }
+        env_arena_lifecycle_record_field_observation(env, std.Clone(ctx, std.Concat(path, keys[i])), identity, ctx);
+        i = i + 1;
+    }
+}
+
+func env_arena_lifecycle_record_field_observation(env: *TypeEnvironment[ctx], path: str, identity: str, ctx: &Arena) {
+    unsafe {
+        mut declaration := env_allocator_binding_scope(env, path, ctx);
+        if declaration == empty[Index[Scope[ctx], ctx]] { return; }
+        ctx[declaration].primitive_arena_observations.Insert(std.Clone(ctx, path), std.Clone(ctx, identity));
+        if len(identity) > 0 { env_arena_lifecycle_ensure(env, identity, ctx); }
+    }
+}
+
+func env_arena_lifecycle_invalidate_field_observations(env: *TypeEnvironment[ctx], path: str, ctx: &Arena) {
+    unsafe {
+        mut declaration := env_allocator_binding_scope(env, path, ctx);
+        if declaration == empty[Index[Scope[ctx], ctx]] { return; }
+        mut prefix := std.Clone(ctx, std.Concat(path, "."));
+        mut keys := ctx[declaration].primitive_arena_observations.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            if std.str_eq(keys[i], path) == 1 ||
+               (len(keys[i]) >= len(prefix) && std.str_eq(std.str_slice(keys[i], 0, len(prefix)), prefix) == 1) {
+                // Keep an explicit unknown. Never fall through to an obsolete
+                // field value or infer an Arena from its holder's storage.
+                ctx[declaration].primitive_arena_observations.Insert(std.Clone(ctx, keys[i]), "");
+            }
+            i = i + 1;
+        }
+    }
+}
+
 func env_arena_lifecycle_resolve_expression_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        mut path := env_allocator_storage_path(expr_idx, ctx);
+        mut declaration := env_allocator_binding_scope(env, path, ctx);
+        if declaration != empty[Index[Scope[ctx], ctx]] {
+            mut observed := ctx[declaration].primitive_arena_observations.Get(path);
+            if observed.Ok { return std.Clone(ctx, observed.Val); }
+        }
+    }
     return env_allocator_expression_proof(expr_idx, env, ctx).identity;
 }
 
@@ -13910,6 +13984,17 @@ func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: 
         if std.str_eq(operation, "free") == 1 && (*env).in_defer_expression == 0 &&
            env_validate_resource_allocator_invalidation(env, expr_idx, "freed", span, ctx) == 0 {
             return 0;
+        }
+        mut primitive_path := env_allocator_storage_path(expr_idx, ctx);
+        mut primitive_scope := env_allocator_binding_scope(env, primitive_path, ctx);
+        if primitive_scope != empty[Index[Scope[ctx], ctx]] {
+            mut primitive_observation := ctx[primitive_scope].primitive_arena_observations.Get(primitive_path);
+            if primitive_observation.Ok {
+                if len(primitive_observation.Val) == 0 {
+                    report_error(2, "Semantic Error: [BrandIdentityMismatch] Arena lifecycle operation has an unresolved field observation", span, env, ctx);
+                    return 0;
+                }
+            }
         }
         mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);
         if std.str_eq(identity, "") == 1 {
@@ -16775,6 +16860,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             // Resolve the initializer before inserting the declaration: a new
             // binding may shadow the very outer alias used by its initializer.
+            mut primitive_declaration_fields := env_arena_lifecycle_capture_field_observations(env, val_idx, val_type, ctx);
+            mut primitive_declaration_identity := "";
+            if val_type.tag == 4 && val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                primitive_declaration_identity = env_arena_lifecycle_resolve_expression_identity(val_idx, env, ctx);
+            }
             mut declaration_allocator_proof := env_allocator_declaration_proof(val_idx, val_type, env, ctx);
 
             if env_allocator_type_has_observed_origin(val_type, env, ctx) == 0 {
@@ -16882,6 +16972,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // Preserve uncertainty as well as identity. A missing fact must
             // never become a known allocator merely through a copied spelling.
             env_allocator_record_binding(env, name, declaration_allocator_proof, ctx);
+            env_arena_lifecycle_store_field_observations(env, name, primitive_declaration_fields, ctx);
+            if val_type.tag == 4 && val_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                env_arena_lifecycle_record_field_observation(env, name, primitive_declaration_identity, ctx);
+            }
             if declaration_has_resource_dependencies {
                 ctx[scope].allocator_resources.Insert(std.Clone(ctx, name), declaration_resource_dependencies);
             }
@@ -17076,6 +17170,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 report_error(2, msg, get_expression_span(val_idx, ctx), env, ctx);
             }
 
+            mut primitive_assignment_fields := env_arena_lifecycle_capture_field_observations(env, val_idx, val_type, ctx);
+            mut primitive_assignment_identity := "";
+            if typechecker_is_arena_value_or_ref(left_type, ctx) == 1 {
+                primitive_assignment_identity = env_arena_lifecycle_resolve_expression_identity(val_idx, env, ctx);
+            }
             mut assignment_lifecycle_binding := env_allocator_storage_path(left_idx, ctx);
             mut assignment_expected_allocator := env_allocator_binding_proof(env, assignment_lifecycle_binding, ctx);
             mut assignment_actual_allocator := env_allocator_expression_proof(val_idx, env, ctx);
@@ -17136,6 +17235,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                env_allocator_type_has_observed_origin(left_type, env, ctx) == 1 {
                 env_allocator_taint_observed_assignment(env, assignment_allocator_scope,
                     assignment_lifecycle_binding, assignment_actual_allocator, ctx);
+            }
+
+            env_arena_lifecycle_invalidate_field_observations(env, assignment_lifecycle_binding, ctx);
+            env_arena_lifecycle_store_field_observations(env, assignment_lifecycle_binding, primitive_assignment_fields, ctx);
+            if left_type.tag == 4 ||
+               (typechecker_is_arena_value_or_ref(left_type, ctx) == 1 && std.str_eq(assignment_lifecycle_binding, env_resource_storage_root(assignment_lifecycle_binding, ctx)) == 0) {
+                env_arena_lifecycle_record_field_observation(env, assignment_lifecycle_binding, primitive_assignment_identity, ctx);
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {

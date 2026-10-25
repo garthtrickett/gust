@@ -1,0 +1,96 @@
+{
+  "status": "REQUIRED candidate controls; source snippets are parsed/typechecked by the native compiler unit, never lowered or executed",
+  "cases": [
+    {
+      "name": "legacy_field_free_clone",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; holder.arena.Free(); mut value := std.Clone(first,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "same_origin_overwrite",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; holder.arena = first; holder.arena.Free(); mut value := std.Clone(first,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "different_origin_first_live",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; holder.arena = second; holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_candidate": "ACCEPTED"
+    },
+    {
+      "name": "different_origin_second_freed",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; holder.arena = second; holder.arena.Free(); mut value := std.Clone(second,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "holder_self_copy",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; holder = holder; holder.arena.Free(); mut value := std.Clone(first,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "holder_value_copy",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut copied := holder; copied.arena.Free(); mut value := std.Clone(first,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "holder_copy_snapshot",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut copied := holder; holder.arena = second; copied.arena.Free(); mut value := std.Clone(second,\"live\"); }",
+      "expected_candidate": "ACCEPTED"
+    },
+    {
+      "name": "holder_known_replacement",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut other: Holder; other.arena = second; holder = other; holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_candidate": "ACCEPTED"
+    },
+    {
+      "name": "holder_known_replacement_free",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut other: Holder; other.arena = second; holder = other; holder.arena.Free(); mut value := std.Clone(second,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "value_alias_declaration",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := holder.arena; alias.Free(); mut value := std.Clone(first,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "value_alias_assignment",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := holder.arena; holder.arena = second; alias = holder.arena; alias.Free(); mut value := std.Clone(second,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "shadow_holder",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { mut holder: Holder; holder.arena = second; holder.arena.Free(); } holder.arena.Free(); }",
+      "expected_candidate": "ACCEPTED"
+    },
+    {
+      "name": "inner_writes_outer_holder",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_candidate": "ACCEPTED"
+    },
+    {
+      "name": "shadow_allocator",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { mut first := os.Arena.New(); mut temporary: Holder; temporary.arena = first; temporary.arena.Free(); } mut value := std.Clone(first,\"live\"); }",
+      "expected_candidate": "ACCEPTED"
+    },
+    {
+      "name": "unknown_rhs",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut unknown: Arena; holder.arena = unknown; holder.arena.Free(); }",
+      "expected_candidate": "BrandIdentityMismatch"
+    },
+    {
+      "name": "unknown_replacement",
+      "source": "type Holder struct { arena: Arena } func empty_holder() Holder { mut value: Holder; return value; } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; holder = empty_holder(); holder.arena.Free(); }",
+      "expected_candidate": "BrandIdentityMismatch"
+    },
+    {
+      "name": "nested_field",
+      "source": "type Holder struct { arena: Arena } type Nested struct { child: Holder } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut nested: Nested; nested.child.arena = first; nested.child.arena.Free(); mut value := std.Clone(first,\"freed\"); }",
+      "expected_candidate": "ArenaUseAfterFree"
+    },
+    {
+      "name": "prefix_neighbor",
+      "source": "type Holder struct { arena: Arena } type Pair struct { child: Holder, child2: Holder } func empty_holder() Holder { mut value: Holder; return value; } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut nested: Pair; nested.child.arena = first; nested.child2.arena = second; nested.child = empty_holder(); nested.child2.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_candidate": "ACCEPTED"
+    }
+  ],
+  "schema": "gust.primitive_arena_observations.cases.v1"
+}
