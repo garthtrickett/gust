@@ -54,7 +54,11 @@
     {
       "name": "value_alias_assignment",
       "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := holder.arena; holder.arena = second; alias = holder.arena; alias.Free(); mut value := std.Clone(second,\"freed\"); }",
-      "expected_candidate": "ArenaUseAfterFree"
+      "expected_candidate": "ArenaUseAfterFree",
+      "expected_auxiliary_errors": [
+        "Semantic Error: Reassignment of immutable allocator binding 'alias' is strictly prohibited"
+      ],
+      "scope": "Compound rejection during error recovery; not admitted alias reassignment or valid assignment transport proof"
     },
     {
       "name": "shadow_holder",

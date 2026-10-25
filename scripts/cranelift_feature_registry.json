@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "824b7d16834f1c58ae48d5cc646ab3bbe74fd104c2bcd1124dc13a9b3b0a3937",
-          "current_digest": "8101015d530da3b5c3ebf41378e8055c5dddb279aa7e95aa4368f853c45f4bff"
+          "current_digest": "f7dca137737ec3fee7191f38c33913d6060b7019690aa6f482ee05f605995435"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "a90a9db158f015d6346ca22c4271c45992223ab2850b8c7fc74898f18170c5e9",
-          "current_digest": "238f41be9d5ddf98b91c6678772ef367d1f0bfc6e644c69b56271768f4ccb893"
+          "current_digest": "6710820b68cb0e7c4f9f7aa53cbe35835f58df04de0ba32d44b814bed619bcb3"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48143,7 +48143,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
-          "digest": "896e8e2c3ae1d121e3ec96df01826991654283e8123175ddd6bd7bb2c5ecc477"
+          "digest": "776eff850d8536df2d2cb1c79faced7dafe065fd4d9d8a5abd3a4efbf40e42b7"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/cases.json",
@@ -48159,7 +48159,7 @@
         },
         {
           "path": "compiler/phase26-2-allocator-identity/primitive_cases.json",
-          "digest": "4c3f157888a55e16f71ee85c9cf6ba3cfd04b5c10438b0d4987a39701130c6cd"
+          "digest": "801ac83a7ae27da62931caf267e2e33074e8cf032a501b644f0911d827ac0bb0"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-identity.yml",
@@ -48167,7 +48167,7 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
-          "digest": "95a0f66662535142b2e778e108ac48a6d12648f21d63491e30440603c62373bf"
+          "digest": "3f4e004ba4d89b83e6b7891dce9be6c207a93f922ecdfda75d027f0b96114c4a"
         },
         {
           "path": "scripts/phase26_bootstrap_bounded.py",
@@ -48175,7 +48175,7 @@
         }
       ],
       "owned_text": {
-        "text": "597547e84ca7d6aca82da47e7cbe4f99a7aeaade999c1af7dded9cc398476e83",
+        "text": "a7c691058d446d46f80e3b0093c3f9e208a4a9c189640881980e2a51cd2f7f6b",
         "r4_text": "0089f8342b0b17f7934106ef9de10f4540b79e33b4071bc9c69def843a11051a"
       },
       "projections": {
@@ -48186,7 +48186,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "8d2f9b5ff3118f193122a21e32707d682d443095d984ba1dadc845574b0a27c1",
-        "text": "2eafd5be58378ec68905c66b5639f9e8291ac3e6157335de51da0f88f6dc9718"
+        "text": "8260c142c52d2dd30ff1a99f80d990debcc2a0a574b945e70e97948f16fbb243"
       },
       "spelling_render_current_digest": "5626839aeea22e03cd722d3e6243af7ace8fdc8d511436805f713885bd83d9b4"
     },

@@ -178,3 +178,12 @@ lower or execute. All 45 existing cases, 12 internal proof checks and the two
 visibly unqualified implicit-call payloads remain required unchanged. Preparation
 and source enrollment are not native qualification; fresh build, owning guards,
 matrices, pins, fixed point, R5 and authoritative CI remain mandatory.
+
+The alias-reassignment snippet is a compound rejection: the unchanged primitive
+immutable-binding rule rejects assignment before error recovery also observes
+the required use-after-free. Require both the exact legacy immutable error and
+one use-after-free diagnostic, with no missing, duplicate or unrelated output.
+The identical predecessor snippet emits both diagnostics too. This case proves
+rejection only; supported transport is covered by alias declaration, field
+overwrite and value-copy cases. Earlier private substring-level evidence is
+retained separately and is not the maintained strict matrix result.

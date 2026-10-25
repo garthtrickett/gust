@@ -38,6 +38,25 @@ def validate_specification(specification):
     return cases, pending
 
 
+def primitive_observation_output_matches(case, exit_code, stdout, stderr):
+    """Require one primary diagnostic and each declared exact auxiliary once."""
+    if exit_code != 0 or stderr:
+        return False
+    auxiliary = case.get('expected_auxiliary_errors', [])
+    expected = case['expected_candidate']
+    if expected == 'ACCEPTED':
+        return not auxiliary and stdout == b'ACCEPTED\n'
+    lines = stdout.splitlines()
+    if len(lines) != 1 + len(auxiliary):
+        return False
+    for message in auxiliary:
+        encoded = message.encode()
+        if lines.count(encoded) != 1:
+            return False
+        lines.remove(encoded)
+    return len(lines) == 1 and ('[' + expected + ']').encode() in lines[0]
+
+
 def qualify_primitive_observations(compiler, output, source, specification):
     """Execute the compiler unit; source snippets themselves never execute."""
     cases = json.loads(specification.read_text())
@@ -72,11 +91,11 @@ def qualify_primitive_observations(compiler, output, source, specification):
         (case_dir / 'stdout').write_bytes(process.stdout)
         (case_dir / 'stderr').write_bytes(process.stderr)
         expected = case['expected_candidate']
-        lines = process.stdout.splitlines()
-        passed = (process.returncode == 0 and not process.stderr and
-                  (process.stdout == b'ACCEPTED\n' if expected == 'ACCEPTED' else
-                   bool(lines) and all(('[' + expected + ']').encode() in line for line in lines)))
-        record = dict(case=case['name'], expected=expected, unit_exit=process.returncode,
+        passed = primitive_observation_output_matches(
+            case, process.returncode, process.stdout, process.stderr)
+        record = dict(case=case['name'], expected=expected,
+                      expected_auxiliary_errors=case.get('expected_auxiliary_errors', []),
+                      unit_exit=process.returncode,
                       source_sha256=digest(snippet), stdout_sha256=digest(case_dir / 'stdout'),
                       stderr_sha256=digest(case_dir / 'stderr'), pass_result=passed,
                       verdict=('ACCEPTED' if process.returncode == 0 and process.stdout == b'ACCEPTED\n'

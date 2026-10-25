@@ -1,3 +1,17 @@
+# Cranelift ACTIVE compound diagnostic correction — 2026-10-25T23:41:59.026201+00:00
+
+Primitive native checker comparison completed, with the private substring result
+preserved. The alias-reassignment source rejects under the inherited immutable
+binding rule before the required use-after-free during error recovery. Its
+maintained control now requires both diagnostics exactly once and no unrelated
+output. Source and primary expectation unchanged; this is not admitted assignment
+transport. All18 retained outputs and9 refusal mutations checked offline.
+Production compiler and installed tools unchanged by this expectation correction.
+Fresh committed reviews/bootstrap/owning guards/native/fullpins/R5/FP/CI remain
+required. Full Phase26.2–26.6 active; OD23 OPEN/unselected.
+
+---
+
 # Cranelift ACTIVE primitive lifecycle correction — 2026-10-25T23:30:59.761849+00:00
 
 Prior e74 full47 completed/reaped 47PASS; actual field Free/use rejection
