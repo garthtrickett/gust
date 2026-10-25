@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release.json",
           "previous_digest": "824b7d16834f1c58ae48d5cc646ab3bbe74fd104c2bcd1124dc13a9b3b0a3937",
-          "current_digest": "963e4737d0bdfc24083064fe7e700445d9e4a4836f4f7d8e9b1a52698b14f63a"
+          "current_digest": "3355766771fd417e769910cade32ddc4a296c815eac9299a13da6275de2ee6c8"
         },
         {
           "path": "compiler/phase26-release/reachable-audit.json",
           "previous_digest": "a90a9db158f015d6346ca22c4271c45992223ab2850b8c7fc74898f18170c5e9",
-          "current_digest": "4c4307f882a207a3be47594da786dda4e181a71c04e01db9f99cb2cdce6459da"
+          "current_digest": "f22c6e695d69dc53fdb09d6ca20a0c7cdf162f28ac81337e5edf517aa8605fa9"
         }
       ],
       "added_files": [
@@ -48111,11 +48111,11 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
-          "digest": "d6b20576b48225c4ce3926465047a2fe5c24d2291645222b208210590e511a04"
+          "digest": "f2f4b0cebe06ddcca60a45e0e3a30d6d39b36320f927dd37f208c5f0a5d9cf13"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/cases.json",
-          "digest": "4c781e906fcc587a471632dddf42d8171756c61f484e461288b12629690723d8"
+          "digest": "091d99ea2e77ffd7628897f1648d5d657b9c6636e96690a67d523fb875ae7b17"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/proof_facts.gst",
@@ -48127,11 +48127,11 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
-          "digest": "3ecd43c9145ac776c00d9256bf44e9aeb22664de558211b89dc47cc310313730"
+          "digest": "7fdd509ef24ab83358708ab42dad7c0951c9eb0d28647d70e205e29d8fd58d33"
         }
       ],
       "owned_text": {
-        "text": "f64ef8f4e4c7ff0c40f8681385fa33e7d5b403dd65ebaf7e6967720995ee19c9",
+        "text": "f149b953c79093c072f3867a15200b0c1844dc1eff5650869a9c0d5454b8dad7",
         "r4_text": "43d4cb93c1dd6f787dbb5fe19a388b02477b339711fa8dc85c5e23b80efce0da"
       },
       "projections": {
@@ -48142,7 +48142,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "f74409832208af94f3b3f41d7a788b5eeca780efebd615d1f61ce61fb8eae418",
-        "text": "b21731bbd29de922e2821ff4844f76fcfdb8ec8459c43a03d10a22f5edf248b7"
+        "text": "9e557cd8d34b0af5075119becffc81b3dc43c21f61ad57eb842be1d10b5583cd"
       },
       "spelling_render_current_digest": "5764f1abb0839db62990d14fcac6086d7cb7d468d57546f99962c45babf32819"
     },
