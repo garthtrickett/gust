@@ -5,6 +5,7 @@ on:
     paths:
       - 'compiler/**'
       - 'scripts/phase26_2_*.py'
+      - 'scripts/phase26_bootstrap_bounded.py'
       - 'scripts/phase26_release_registration.py'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_test_levels.json'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'compiler/**'
       - 'scripts/phase26_2_*.py'
+      - 'scripts/phase26_bootstrap_bounded.py'
       - 'scripts/phase26_release_registration.py'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_test_levels.json'
@@ -48,7 +50,7 @@ jobs:
       - name: Use existing pinned native toolchain
         run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-2-toolchain
       - name: Build current native compiler from the verified previous-release bridge
-        run: python3 scripts/phase26_release_bounded.py make -j2 gust
+        run: python3 scripts/phase26_bootstrap_bounded.py make -j2 gust
       - name: Qualify direct allocator invalidation and preserved cleanup
         run: python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-2-allocator-liveness
       - name: Retain qualification and rejection evidence

@@ -56,7 +56,7 @@ jobs:
       - name: Pin the enrolled production toolchain
         run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-release-toolchain
       - name: Build current native compiler
-        run: python3 scripts/phase26_release_bounded.py make gust
+        run: python3 scripts/phase26_bootstrap_bounded.py make gust
       - name: Reproduce exact public native package inputs
         run: |
           mkdir -p build/guards/phase26_r3_zlib_adapter

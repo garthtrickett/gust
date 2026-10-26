@@ -24615,3 +24615,10 @@ guard-cranelift-phase26-2-allocator-liveness:
     python3 scripts/phase26_2_allocator_registration.py validate
     python3 scripts/phase26_2_allocator_registration.py inversions
     python3 scripts/phase26_2_allocator_guard.py
+
+# Lexical allocator proof identities and immutable actual-origin dependencies.
+guard-cranelift-phase26-2-allocator-identities:
+    python3 scripts/phase26_2_allocator_identity_registration.py validate
+    python3 scripts/phase26_2_allocator_identity_registration.py inversions
+    python3 scripts/phase26_bootstrap_bounded.py inversions
+    python3 scripts/phase26_2_allocator_identity_guard.py
