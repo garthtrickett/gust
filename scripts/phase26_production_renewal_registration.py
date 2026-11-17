@@ -51,6 +51,7 @@ ADDED = tuple(HISTORY + name for name in (
     "compiler/experiments/cranelift/production/github-provenance.json",
     "compiler/experiments/cranelift/production/github-enrollment.json",
     "compiler/experiments/cranelift/production/renewal-assembly.json",
+    "compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz",
     "compiler/phase26-release/release-epoch2.json",
     "compiler/phase26-release/reachable-audit-epoch2.json",
     "scripts/phase26_production_renewal.py",
@@ -62,6 +63,9 @@ RECIPE = ("\n# Selected epoch2 worker renewal; no package-supplied trust updates
     "    python3 scripts/phase26_production_renewal_registration.py inversions\n"
     "    python3 scripts/phase26_production_renewal.py validate\n")
 WORKFLOW = ".github/workflows/phase26-release-closure.yml"
+STDLIB_WORKFLOW = ".github/workflows/stdlib-s26-native-bytes.yml"
+SOURCE_ARCHIVE = "compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz"
+SOURCE_SHA256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
 WORKFLOW_STEP = ("      - name: Validate selected production trust renewal\n"
                  "        run: just " + GUARD + "\n")
 
@@ -277,6 +281,7 @@ def build_record():
 def generate():
     import phase26_production_renewal as renewal
     renewal.validate()  # Requires real signature and actual valid wall-clock interval.
+    check_source_archive()
     registry = json.loads(REGISTRY.read_text())
     require(not record(registry), "generation requires an unregistered current successor")
     require(registry == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
@@ -311,21 +316,46 @@ def generate():
     print("EPOCH2_EXACT_ADDITIVE_ENROLLMENT_GENERATED; not qualification")
 
 
+def check_source_archive():
+    archive = ROOT / SOURCE_ARCHIVE
+    require(archive.is_file() and not archive.is_symlink() and
+            archive.resolve().is_relative_to(ROOT.resolve()),
+            "vendored signed source is not a regular owned file")
+    require(sha(archive.read_bytes()) == SOURCE_SHA256,
+            "vendored signed source archive digest drifted")
+    manifest = (ROOT / "compiler/experiments/cranelift/production/manifest.txt").read_text()
+    require(manifest.splitlines().count(
+        "artifact: source|zlib-1.3.2.tar.gz|" + SOURCE_SHA256) == 1,
+        "vendored source differs from the signed manifest input")
+
+
+def source_workflow(path, directory):
+    previous = base_bytes(path).decode()
+    fetch = ("          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \\\n"
+             "            --retry 3 --max-time 90 https://zlib.net/zlib-1.3.2.tar.gz \\\n"
+             "            --output " + directory + "/zlib-1.3.2.tar.gz\n")
+    argument = "            " + directory + "/zlib-1.3.2.tar.gz \\\n"
+    require(previous.count(fetch) == previous.count(argument) == 1,
+            "renewal predecessor source workflow anchors drifted")
+    return previous.replace(fetch, "", 1).replace(
+        argument, "            " + SOURCE_ARCHIVE + " \\\n", 1)
+
+
 def check_workflow_caller():
-    previous = base_bytes(WORKFLOW).decode()
-    old_url = "https://zlib.net/zlib-1.3.2.tar.gz"
-    new_url = "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+    previous = source_workflow(WORKFLOW, "build/guards/phase26_r3_zlib_adapter")
     anchor = "      - name: Build current native compiler\n"
-    require(previous.count(old_url) == previous.count(anchor) == 1,
-            "renewal predecessor workflow anchors drifted")
-    expected = previous.replace(old_url, new_url).replace(anchor, WORKFLOW_STEP + anchor)
+    require(previous.count(anchor) == 1, "renewal predecessor workflow anchor drifted")
+    expected = previous.replace(anchor, WORKFLOW_STEP + anchor, 1)
     require((ROOT / WORKFLOW).read_text() == expected,
             "renewal owning workflow caller drifted")
-
+    require((ROOT / STDLIB_WORKFLOW).read_text() ==
+            source_workflow(STDLIB_WORKFLOW, "build/guards/stdlib_s26_1_package"),
+            "renewal Stdlib workflow source route drifted")
 
 def validate():
     import phase26_production_renewal as renewal
     renewal.validate()
+    check_source_archive()
     registry = json.loads(REGISTRY.read_text())
     row = identity(registry)
     require(project_registry(registry) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
@@ -452,6 +482,83 @@ def workflow_caller_controls():
     print("RENEWAL_ACTUAL_WORKFLOW_CALLER_CONTROLS_PASS; full inversions remain required", flush=True)
 
 
+def source_delivery_controls():
+    """The signed source and both retired network routes remain fail-closed."""
+    from unittest.mock import patch
+    import subprocess
+    import tempfile
+    check_source_archive()
+    check_workflow_caller()
+    archive = ROOT / SOURCE_ARCHIVE
+    original_read, original_file = Path.read_bytes, Path.is_file
+    original_link, original_resolve = Path.is_symlink, Path.resolve
+
+    def rejected(label, callback, expected):
+        try:
+            callback()
+        except SystemExit as error:
+            require(expected in str(error),
+                    label + ": REJECTED (different assertion): " + str(error))
+            print(label + ": REJECTED (expected assertion)", flush=True)
+        else:
+            raise SystemExit(label + ": ACCEPTED")
+
+    for label, method, replacement, expected in (
+        ("missing signed source", "is_file",
+         lambda p: False if p == archive else original_file(p),
+         "vendored signed source is not a regular owned file"),
+        ("substituted signed source", "read_bytes",
+         lambda p: b"wrong source" if p == archive else original_read(p),
+         "vendored signed source archive digest drifted"),
+        ("symlink signed source", "is_symlink",
+         lambda p: True if p == archive else original_link(p),
+         "vendored signed source is not a regular owned file"),
+        ("escaped signed source", "resolve",
+         lambda p, *a, **kw: ROOT.parent / "outside-source" if p == archive else original_resolve(p, *a, **kw),
+         "vendored signed source is not a regular owned file"),
+    ):
+        with patch.object(Path, method, replacement):
+            rejected(label, check_source_archive, expected)
+
+    original_text = Path.read_text
+    for path, expected in (
+        (WORKFLOW, "renewal owning workflow caller drifted"),
+        (STDLIB_WORKFLOW, "renewal Stdlib workflow source route drifted"),
+    ):
+        old = base_bytes(path).decode().replace(
+            "https://zlib.net/zlib-1.3.2.tar.gz",
+            "https://zlib.net/fossils/zlib-1.3.2.tar.gz")
+        if path == WORKFLOW:
+            old = old.replace("      - name: Build current native compiler\n",
+                              WORKFLOW_STEP + "      - name: Build current native compiler\n", 1)
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                          old if p == ROOT / path else original_text(p, *a, **kw)):
+            rejected("retired network source " + path, check_workflow_caller, expected)
+        wrong_argument = original_text(ROOT / path).replace(
+            SOURCE_ARCHIVE, "build/guards/unqualified-source.tar.gz")
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                          wrong_argument if p == ROOT / path else original_text(p, *a, **kw)):
+            rejected("unqualified source argument " + path, check_workflow_caller, expected)
+
+    # Invalid gzip cannot reach a compiler even if a future edit removes the
+    # digest gate. Require its exact diagnostic, not a later tar rejection.
+    parent = ROOT / "build/guards"
+    parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="renewal-source-", dir=parent) as raw:
+        directory = Path(raw)
+        bad = directory / "wrong.tar.gz"
+        bad.write_bytes(b"not the enrolled source archive\n")
+        output = directory / "must-not-build"
+        result = subprocess.run(["bash", "scripts/phase26_r3_zlib_adapter.sh",
+                                 str(bad), str(output)], cwd=ROOT, capture_output=True, text=True)
+        require(result.returncode == 1 and
+                "Phase 26 zlib source archive digest mismatch" in result.stderr and
+                not output.exists(), "unchanged R3 digest-first refusal drifted")
+    check_source_archive()
+    check_workflow_caller()
+    print("EPOCH2_SIGNED_SOURCE_DELIVERY_CONTROLS_PASS", flush=True)
+
+
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
@@ -486,7 +593,8 @@ def inversions():
     for path in ADDED:
         with patch.object(Path, "read_bytes", lambda p, path=path:
                 original_read(p) + b"\n" if p == ROOT / path else original_read(p)):
-            expected = "immutable epoch1 history" if path.startswith(HISTORY) else "renewal added file drifted"
+            expected = ("vendored signed source archive digest drifted" if path == SOURCE_ARCHIVE else
+                        "immutable epoch1 history" if path.startswith(HISTORY) else "renewal added file drifted")
             rejected("physical added substitution " + path, validate, expected)
     values = current_projections()
     for kind in identity(registry)["projections"]:
@@ -527,10 +635,12 @@ def inversions():
     predecessor_record_control()
     fixture_inventory_controls()
     workflow_caller_controls()
+    source_delivery_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
 if __name__ == "__main__":
     {"generate": generate, "validate": validate, "inversions": inversions,
      "predecessor-record-control": predecessor_record_control,
-     "workflow-caller-controls": workflow_caller_controls}[sys.argv[1]]()
+     "workflow-caller-controls": workflow_caller_controls,
+     "source-delivery-controls": source_delivery_controls}[sys.argv[1]]()

@@ -57,11 +57,8 @@ jobs:
       - name: Build the exact public native package inputs
         run: |
           mkdir -p build/guards/stdlib_s26_1_package
-          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
-            --retry 3 --max-time 90 https://zlib.net/fossils/zlib-1.3.2.tar.gz \
-            --output build/guards/stdlib_s26_1_package/zlib-1.3.2.tar.gz
           bash scripts/phase26_r3_zlib_adapter.sh \
-            build/guards/stdlib_s26_1_package/zlib-1.3.2.tar.gz \
+            compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz \
             build/guards/stdlib_s26_1_package/zlib-build
           python3 scripts/phase26_production_package.py \
             build/guards/stdlib_s26_1_package/zlib-build/package \
