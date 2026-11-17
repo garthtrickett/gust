@@ -67,3 +67,25 @@ this source record. Final registration, production/public/R5/fixed-point checks,
 artifact parity, reviews/rules and merge are mandatory. PR619 is held until this
 separate predecessor merges, then rebased. The full activated Phase26 remainder
 and OD23 remain open.
+# Cold-build execution environment
+
+The owning workflow measures paging before its actual native compiler build.
+It keeps the existing protected 4 GiB/two-CPU command and cgroup paging policy.
+The chosen precondition prepares 1200 MiB of effective available paging, checks
+at least 1152 MiB at payload entry, and permits at most a 1280 MiB job-owned
+file to cover the shortfall and filesystem rounding. These are bounded operating
+choices, not a universal compiler requirement or an explanation of the earlier
+CI kill. Existing paging is preserved; swap is never counted as build RAM.
+
+Provisioning requires live hosted-worker ancestry and matching public repository,
+run attempt, job, runner and exact checkout-tree metadata. Shared hosts may use
+existing capacity but cannot provision paging through this helper. Allocation
+counts with build outputs against the unchanged 2 GiB growth budget and 2 GiB
+disk reserve. The file becomes root-owned mode 0600 before activation.
+
+The controller retains resource and termination metadata separately from the
+qualified archive. Only the exact owned inode may be released, after confirmed
+payload termination and before the unchanged R5 recipe. Cleanup failures retain
+the file, fail the build and prevent R5. Artifact patterns contain metadata and
+logs only; paging contents are never uploaded. Epoch-1 evidence, the signed
+package, quota assertions and release-test expectations remain unchanged.

@@ -58,7 +58,7 @@ jobs:
       - name: Validate selected production trust renewal
         run: just guard-cranelift-phase26-production-renewal
       - name: Build current native compiler
-        run: python3 scripts/phase26_release_bounded.py make gust
+        run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution
       - name: Reproduce exact public native package inputs
         run: |
           mkdir -p build/guards/phase26_r3_zlib_adapter
@@ -67,6 +67,16 @@ jobs:
             build/guards/phase26_r3_zlib_adapter/build
       - name: Qualify first-release compiler, runtime, fixed point, production and public interface
         run: python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-release-closure
+      - name: Retain bounded cold-build environment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase26-release-execution-environment
+          if-no-files-found: error
+          path: |
+            build/guards/phase26_release_execution/*.json
+            build/guards/phase26_release_execution/*.jsonl
+            build/guards/phase26_release_execution/*.log
       - name: Retain exact-source qualification and failure evidence
         if: always()
         uses: actions/upload-artifact@v4

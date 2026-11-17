@@ -56,6 +56,9 @@ ADDED = tuple(HISTORY + name for name in (
     "compiler/phase26-release/reachable-audit-epoch2.json",
     "scripts/phase26_production_renewal.py",
     "scripts/phase26_production_renewal_registration.py",
+    "scripts/phase26_release_execution.py",
+    "scripts/phase26_release_paging.py",
+    "scripts/phase26_release_execution_controls.py",
     "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
 )
 RECIPE = ("\n# Selected epoch2 worker renewal; no package-supplied trust updates.\n" + GUARD + ":\n"
@@ -68,6 +71,18 @@ SOURCE_ARCHIVE = "compiler/experiments/cranelift/production/source/zlib-1.3.2.ta
 SOURCE_SHA256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
 WORKFLOW_STEP = ("      - name: Validate selected production trust renewal\n"
                  "        run: just " + GUARD + "\n")
+EXECUTION_BUILD = "        run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution\n"
+EXECUTION_METADATA = (
+    "      - name: Retain bounded cold-build environment evidence\n"
+    "        if: always()\n"
+    "        uses: actions/upload-artifact@v4\n"
+    "        with:\n"
+    "          name: phase26-release-execution-environment\n"
+    "          if-no-files-found: error\n"
+    "          path: |\n"
+    "            build/guards/phase26_release_execution/*.json\n"
+    "            build/guards/phase26_release_execution/*.jsonl\n"
+    "            build/guards/phase26_release_execution/*.log\n")
 
 
 def require(ok, message):
@@ -346,6 +361,12 @@ def check_workflow_caller():
     anchor = "      - name: Build current native compiler\n"
     require(previous.count(anchor) == 1, "renewal predecessor workflow anchor drifted")
     expected = previous.replace(anchor, WORKFLOW_STEP + anchor, 1)
+    build = "        run: python3 scripts/phase26_release_bounded.py make gust\n"
+    artifact = "      - name: Retain exact-source qualification and failure evidence\n"
+    require(expected.count(build) == expected.count(artifact) == 1,
+            "renewal predecessor execution anchors drifted")
+    expected = expected.replace(build, EXECUTION_BUILD, 1).replace(
+        artifact, EXECUTION_METADATA + artifact, 1)
     require((ROOT / WORKFLOW).read_text() == expected,
             "renewal owning workflow caller drifted")
     require((ROOT / STDLIB_WORKFLOW).read_text() ==
@@ -581,6 +602,37 @@ def source_delivery_controls():
     print("EPOCH2_SIGNED_SOURCE_DELIVERY_CONTROLS_PASS", flush=True)
 
 
+def execution_environment_controls():
+    """Actual helper controls plus the exact build and metadata caller edges."""
+    from unittest.mock import patch
+    import phase26_release_execution
+    phase26_release_execution.controls()
+    check_workflow_caller()
+    original = Path.read_text
+    current = original(ROOT / WORKFLOW)
+    mutations = (
+        ("unprepared protected build", current.replace(EXECUTION_BUILD,
+            "        run: python3 scripts/phase26_release_bounded.py make gust\n", 1)),
+        ("omitted environment failure evidence", current.replace(EXECUTION_METADATA, "", 1)),
+        ("paging contents in artifact", current.replace(
+            "build/guards/phase26_release_execution/*.json\n",
+            "build/guards/phase26_release_execution_paging/*\n", 1)),
+    )
+    for label, mutated in mutations:
+        require(mutated != current, label + ": control did not change its mechanism")
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                mutated if p == ROOT / WORKFLOW else original(p, *a, **kw)):
+            try:
+                check_workflow_caller()
+            except SystemExit as error:
+                require("renewal owning workflow caller drifted" in str(error),
+                        label + ": REJECTED (different assertion): " + str(error))
+                print(label + ": REJECTED (expected assertion)", flush=True)
+            else:
+                raise SystemExit(label + ": ACCEPTED")
+    print("EPOCH2_EXECUTION_ENVIRONMENT_CALLER_CONTROLS_PASS", flush=True)
+
+
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
@@ -658,6 +710,7 @@ def inversions():
     fixture_inventory_controls()
     workflow_caller_controls()
     source_delivery_controls()
+    execution_environment_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
