@@ -283,6 +283,8 @@ def generate():
                 "operational source pin re-admitted")
         pins[path] = sha((ROOT / path).read_bytes())
     authority["snapshot"] = json.loads((renewal.PROFILE / "snapshot.json").read_text())
+    authority["artifacts"] = [[p["kind"], p["name"], p["sha256"]] for p in
+                              json.loads((renewal.PROFILE / "renewal-assembly.json").read_text())["artifacts"]]
     authority["renewal_status"] = "SIGNED; actual qualification and exact-head CI remain required"
     authority["production_files"] = {name: sha((renewal.PROFILE / name).read_bytes())
                                     for name in ("manifest.txt", "manifest.sig", "public-identity.json")}
