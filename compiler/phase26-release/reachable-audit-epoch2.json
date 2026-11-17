@@ -2460,11 +2460,11 @@
     "docs/FIRST_RELEASE_FFI_CONTRACT.md": "1aaf23267dbb615b6b7ae805b7c8ad434fc9db9e3ab104bf23a24db137b4ed32",
     "docs/PHASE26_PACKAGE_TRUST_DECISION.md": "246747764bd4b93c52fb447f3a16304bcce32a7a4e51c39f8a105a531f9da113",
     "docs/PHASE26_TAGGED_RESULT_DECISION.md": "3893e741512da5fecd3b2716514599a2d27f5d671d0202821918a48ac738bfb8",
-    "scripts/fixture_reachability.py": "b8f51d07c1ede2d19ea6bad72d8d59e4e8c1cfa87a463feaeb691ed638683f81",
+    "scripts/fixture_reachability.py": "da2fa61f61487e344eda95060a263c301e564c7f500be1b9440155db8cf15818",
     "scripts/fixture_reachability_allowlist.json": "ccecd2a0b36323415bff9b40ebd27dba7f3ba3cca9ffdf5601bee95c2701e0ac",
     "scripts/phase25_native_fixed_point.sh": "3a8d714e54c8f12a602f9e295d3349b3c473919f5116d08389fc57f4efe2f91f",
     "scripts/phase26_2_allocator_guard.py": "8954d334eefd0e07a5323205ad10f394a947f52f3932c7447d44ec6a644a26c1",
-    "scripts/phase26_2_allocator_registration.py": "3be13e6ed2e576182c84bf3a2baec1bba5f5b6d5dc6898c71ef800a51a680111",
+    "scripts/phase26_2_allocator_registration.py": "dd45c1d703396d38b9f8ed0ed79faa0bd6bda427b36f7b26597ed5fa0c6a2f44",
     "scripts/phase26_arithmetic_zero_evidence.sh": "36ac18f19e898cf197bc673f5a3c553dacdc2ee4e7ad15c938415a726c214203",
     "scripts/phase26_arithmetic_zero_registration.py": "d4ddda2ed007735d28d3916d2c723de8c9fd1449eb42b82d848bc925d1e7c0ca",
     "scripts/phase26_bool_literal_zero_evidence.sh": "6d4abb2220a8b6d42123b49a21481f6a0eedf84c3dac6b67df9bd06367b6e8f3",
@@ -2639,9 +2639,10 @@
     "compiler/experiments/cranelift/production/epoch1/manifest.sig": "ca663c4013fa5e793652e0759ea7b9f79cd204c01a00c830cc6d168e42ab7d39",
     "scripts/phase26_github_package_candidate.py": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732",
     "scripts/phase26_github_issue.py": "cc9c7c4e8fb921261ee91f391ca67ec5b70af5f839c8fc406259561655e5785a",
-    "scripts/phase26_production_renewal.py": "97a4c8fe965bc77129de61877e88250b6897db8b8bf18adf00937da5a64a777f",
-    "scripts/phase26_production_renewal_registration.py": "748dfff3ac5bc0c8bd0fd202fd7327f93d93580c9b1bd2e0bdb546bfd4d6fc5f",
-    "compiler/experiments/cranelift/production/github-provenance.json": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8"
+    "scripts/phase26_production_renewal.py": "4852a9ede4e34ece51f37c155bff8ccf494fbf42b41403516d3a88ed908203f4",
+    "scripts/phase26_production_renewal_registration.py": "63a89c1d2c07eb57b177182460400d6b405106574dd6c906ec67a4f737081399",
+    "compiler/experiments/cranelift/production/github-provenance.json": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8",
+    "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v3.json.gz": "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c"
   },
   "origin_dispositions": {
     "safe": "scalar inputs and pure classified errors",
