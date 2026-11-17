@@ -2615,7 +2615,7 @@
     "scripts/stdlib_s26_1_native_bytes.py": "be80ab5f864e920210af50894159994ab575f64df21e573454c960eac0caf206",
     "src/runtime-rs/Cargo.lock": "65e13335a4568954a7d1fe2f39c08e7a92647cd9c501b3f8ef849d3a53f69afa",
     "src/runtime-rs/Cargo.toml": "07130488aef51434b50e72c5661368b4b8266bf1f28d9e3fdc79bb24e771b170",
-    "src/runtime-rs/abi-tests/abi_smoke.c": "8b40457d08dca78e780a9630d70bd92880ea57d869f3593b9972a3ec0892321a",
+    "src/runtime-rs/abi-tests/abi_smoke.c": "66188f243c3eb1732971d6dd03ca11bcb5530aeee35536ddab1c3d74f6464d70",
     "src/runtime-rs/src/arena.rs": "2d4907b7d597924cc2cf500ed1df5c416c20c0a8e2e5914dd120edb9c2d120a4",
     "src/runtime-rs/src/collections.rs": "985ad92fdff23c360424b224b0fc5a96a1826e38b030486a87b4c195f7a08c96",
     "src/runtime-rs/src/ffi_call_region.rs": "1116a996173f2b793cba5b96a0d2e749017994531220fb7a3c9249b9a16bbf4a",
@@ -2648,10 +2648,11 @@
     "compiler/experiments/cranelift/production/epoch1/manifest.sig": "ca663c4013fa5e793652e0759ea7b9f79cd204c01a00c830cc6d168e42ab7d39",
     "scripts/phase26_github_package_candidate.py": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732",
     "scripts/phase26_github_issue.py": "cc9c7c4e8fb921261ee91f391ca67ec5b70af5f839c8fc406259561655e5785a",
-    "scripts/phase26_production_renewal.py": "4852a9ede4e34ece51f37c155bff8ccf494fbf42b41403516d3a88ed908203f4",
-    "scripts/phase26_production_renewal_registration.py": "b32f31f5e5d9901111fa9caef28f2723afb63c0591c438157f0f582f70334410",
+    "scripts/phase26_production_renewal.py": "98734ad4ef5a590fb3486b5a1c660f2df93e268a81cc687cd73b3b1ee24c9732",
+    "scripts/phase26_production_renewal_registration.py": "1de66aee712d63675fa7886652b61d90602e2833c52f8cc08ad889c1eaabae80",
     "compiler/experiments/cranelift/production/github-provenance.json": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8",
-    "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v3.json.gz": "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c"
+    "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v3.json.gz": "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c",
+    "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v4.json.gz": "5da70567528d2e2f3b70ca7bd3028816819d2ecdca0ae250ef8e4e61d82b6bc5"
   },
   "snapshot": {
     "signer": "gust-github-release-1",
