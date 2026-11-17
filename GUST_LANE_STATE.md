@@ -695,3 +695,54 @@ selects extra semantics or retired bootstrap work. No unrelated busywork is
 started. OD23 remains OPEN/unselected; frozen first-release history unchanged.
 Original startup symlink, installed480 tools and dirty prototype are preserved.
 This wait is invalidated prospectively when the actual handoff resumes work.
+
+
+# Cranelift selected renewal — actual GitHub signing boundary
+
+Written 2026-11-17T10:50:59.334004+00:00. Same owner, same activated Phase26 remainder.
+The earlier signature wait was invalidated prospectively to carry out the
+operator's concrete GitHub signing direction. That finite assessment is now
+complete; no signing key/signature or GitHub configuration was changed.
+
+Actual authenticated API reads: garthtrickett3760677, repository1263612197,
+admin/push allowed. Complete metadata:0 Actions secrets,0 environments,
+172 registered workflows;168 main workflow sources bound to GitHub blobs.
+No enrolled-key signer, attestation, external reusable signer or self-hosted
+job was identified in those current sources. Four non-main registered paths
+are listed separately, not counted as inspected current definitions.
+No secret values or local private keys were requested/read. No Actions run
+was dispatched or existing failed CI polled. This is not a whole-host key
+absence claim. GitHub account permission does not supply enrolled private key.
+
+Prepared/reviewed exact-key workflow proposal: fixed actual1964-byte a910
+message, known6778 public key, actual seven-day clock, exact owner/repository/
+ref/attempt, no checkout, private key confined to remote step, sanitized
+private diagnostics and only verified raw64-byte public signature uploaded.
+It is not installed/executed: the proposed enrolled-key secret does not exist
+and this direction does not authorize creating/uploading it.
+
+A reviewed seven-point alternative proposes an explicitly selected GitHub-
+generated one-shot Ed25519 release identity, preserving raw64/offline source-
+pinned verification. Actual public-key selection and fresh candidate assembly
+are required. No key was generated, no source enrollment changed, and this
+alternative remains UNSELECTED. Sigstore is a different/larger verifier
+protocol and is not substituted for the enrolled signature.
+
+Packet YAML/bash/AST/message/custody consistency PASS; all4069 nonoperational
+source hashes and the original required-production missing-signature FAIL101
+remain unchanged. Actual metadata and packet jobs finished/reaped0.
+
+Concrete pending input: select the reviewed different GitHub Ed25519 identity,
+or provision the existing enrolled key through an operator-controlled GitHub
+interface. The specific route-selection question is pending; no further generic
+renewal authorization is requested. Until then, no unchanged signing check,
+key generation, secret/configuration mutation, public workflow deployment,
+full production qualification or CI publication is performed.
+
+On actual selected/provisioned route: review exact implementation/provenance,
+execute genuine signing, independently verify signature, then complete all
+current-source/native/production/public/protected4GiB R5/nativeFP/full exact-
+head CI/artifact/review/rules/merge gates. Only after the separate renewal
+merges rebase held PR619/480 and continue original activated Phase26.2–26.6.
+The continuation ladder remains as recorded in the previous terminal; no
+unrelated semantics/retired route/busy documentation is activated. OD23 OPEN.
