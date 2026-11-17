@@ -439,6 +439,19 @@ def inversions():
         import phase26_2_allocator_registration as predecessor
         rejected("foreign mutation through predecessor validator", predecessor.validate,
                  "allocator changed frozen predecessor or foreign registry rows")
+    # Isolate the predecessor's own whole-record check: the real upstream
+    # physical and text checks were exercised above and remain active below.
+    foreign_record = copy.deepcopy(predecessor.baseline()["projections"]["r4_record"])
+    next(p for p in foreign_record["changed_files"] if p["path"] == STATE)[
+        "current_digest"] = sha((ROOT / STATE).read_bytes())
+    next(p for p in foreign_record["changed_files"] if p["path"] != STATE)[
+        "current_digest"] = "0" * 64
+    original_project = project
+    with patch.dict(globals(), project=lambda registry, kind, value:
+            copy.deepcopy(value) if kind == "r4_record" else original_project(registry, kind, value)):
+        rejected("predecessor nested foreign record after STATE normalization",
+                 lambda: predecessor.project(registry, "r4_record", foreign_record),
+                 "live projection drifted (allocator successor)")
     fixture_inventory_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 

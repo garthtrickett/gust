@@ -132,6 +132,9 @@ def canonical_projection(kind, current):
                 states[0]['current_digest'] in (sha((ROOT / STATE).read_bytes()), old_state['current_digest']),
                 'R4 r4_record live projection drifted (allocator successor)')
         states[0]['current_digest'] = old_state['current_digest']
+        # A complete previous normal form must not acquire a newer text edge.
+        if result == previous:
+            return result
         import phase26_r3_zlib_adapter_registration as r3
         import phase26_r4_collection_registration as r4
         raw = r4.owned_text(r3.raw_text_surfaces())
