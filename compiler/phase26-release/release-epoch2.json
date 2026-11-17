@@ -2636,7 +2636,7 @@
     "compiler/experiments/cranelift/production/epoch1/manifest.txt": "eba10d837fcaaaca525359dbaed8f953493ce3407b8149ebea8e526d524e3ab1",
     ".github/workflows/phase26-github-release-signing.yml": "08fcd2c55537be5fc0a4827444fb04318ef31b26f587d22347fb386e02c15388",
     "compiler/experiments/cranelift/production/renewal-assembly.json": "dc7f07028e12be02876e00829893d148f3024c973cc8a4392c37e66882098ef9",
-    "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md": "6f6c25c25a68807ab2684a40102a24b8ee6204add69665f93d1155651ab23176",
+    "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md": "d576afbdfd68609be4bb1a5093c77184dcaa9493de876cffdf3ecf9d406f8bae",
     "compiler/experiments/cranelift/production/github-enrollment.json": "88c0383460139f00728c5c8df74a60629c0015bd10f2e30ebfa6df4ce26b8cfe",
     "compiler/experiments/cranelift/production/epoch1/snapshot.json": "810b6ca7660b7c3ad36ebf1c1bae4c03fea247e1f3a5e0dd867a079ebdca6c79",
     "scripts/cranelift_test_levels.json": "7707595d94dd1c64f4a918d2a677bac5392e5216049f1ceda78567093c65decb",
@@ -2649,7 +2649,7 @@
     "scripts/phase26_github_package_candidate.py": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732",
     "scripts/phase26_github_issue.py": "cc9c7c4e8fb921261ee91f391ca67ec5b70af5f839c8fc406259561655e5785a",
     "scripts/phase26_production_renewal.py": "4852a9ede4e34ece51f37c155bff8ccf494fbf42b41403516d3a88ed908203f4",
-    "scripts/phase26_production_renewal_registration.py": "0f37971965a706af8cff19e26fb5672b4b92dbced022a94f837439c240184912",
+    "scripts/phase26_production_renewal_registration.py": "5dc427df0be202e38ff0e1bb7bf868adcf386e4aa0f399752dc976467bf37cf0",
     "compiler/experiments/cranelift/production/github-provenance.json": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8",
     "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v3.json.gz": "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c"
   },

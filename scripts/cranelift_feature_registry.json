@@ -48209,11 +48209,11 @@
         },
         {
           "path": "compiler/phase26-release/release-epoch2.json",
-          "digest": "2becd06bca8f2e3a6cb8df2fbe35b2223adabacfc2eb927043b92fb453616de2"
+          "digest": "9b8e956c0fa0a73e45acafb88a539654dcdb6498067719d1f327cbeeeab46593"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
-          "digest": "18aca665b024db96297fccabf71339d1acf2f0a03c1f7539cb26be9c7f75a635"
+          "digest": "018d7908ea989f132808e45eaa274cd857befe1dd14038cecc69246eef3c3865"
         },
         {
           "path": "scripts/phase26_production_renewal.py",
@@ -48221,15 +48221,15 @@
         },
         {
           "path": "scripts/phase26_production_renewal_registration.py",
-          "digest": "0f37971965a706af8cff19e26fb5672b4b92dbced022a94f837439c240184912"
+          "digest": "5dc427df0be202e38ff0e1bb7bf868adcf386e4aa0f399752dc976467bf37cf0"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
-          "digest": "6f6c25c25a68807ab2684a40102a24b8ee6204add69665f93d1155651ab23176"
+          "digest": "d576afbdfd68609be4bb1a5093c77184dcaa9493de876cffdf3ecf9d406f8bae"
         }
       ],
       "owned_text": {
-        "text": "70e1518e5daf5a99e0d451c7581fe2ead4f57b12a82a6032e47686aac710d146",
+        "text": "0f3ebfd2788468d76bc06a5992ca4c7f33baeb2c563350ed62566f913474d634",
         "r4_text": "62107e511ef55ee8188fca97591158d00bf2449c02e66c9978efd64be269217d"
       },
       "projections": {
@@ -48240,7 +48240,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "72e0b1941031878e128e2adcf3d1bfb01b048d2b8b7bdc209e159801cde7708c",
-        "text": "1b2c59bb26484f76b8928326ffbd9ffdf2807fd0176976577b89f9a1867ebbe1"
+        "text": "1b8fa0ec5c32ffd9a3abac0691d88e117c76df4af46f1d9579b4afdcf0a1499c"
       },
       "spelling_render_current_digest": "daab8f7fb0577dd259105e925da52014ff8fbdf390572f61a2148616dbf4a1af"
     },
