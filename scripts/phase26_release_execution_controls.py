@@ -13,13 +13,14 @@ import phase26_release_execution as execution
 import phase26_release_paging as paging
 
 
-def rejected(label, function, expected=ValueError):
+def rejected(label, function, diagnostic, expected=ValueError):
     try:
         function()
     except expected as error:
-        if expected is ValueError and not str(error).startswith("release execution environment:"):
+        message = "release execution environment: " + diagnostic if expected is ValueError else diagnostic
+        if str(error) != message:
             raise ValueError(label + ": REJECTED (different assertion): " + str(error)) from error
-        print(label + ": REJECTED (expected control)")
+        print(label + ": REJECTED (expected assertion)")
     else:
         raise ValueError(label + ": ACCEPTED")
 
@@ -30,6 +31,21 @@ def controls():
         1152*1024**2, 1200*1024**2, 1280*1024**2)
     assert paging.GROWTH_BUDGET == paging.DISK_RESERVE == 2147483648
     assert paging.COMMAND == ["python3", "scripts/phase26_release_bounded.py", "make", "gust"]
+    try:
+        rejected("harness-different", lambda: paging.require(False, "other boundary"), "intended boundary")
+    except ValueError as error:
+        assert str(error) == ("harness-different: REJECTED (different assertion): "
+                              "release execution environment: other boundary")
+    else:
+        raise ValueError("rejection harness folded a different assertion into PASS")
+    try:
+        rejected("harness-accepted", lambda: None, "intended boundary")
+    except ValueError as error:
+        assert str(error) == "harness-accepted: ACCEPTED"
+    else:
+        raise ValueError("rejection harness folded acceptance into rejection")
+    rejected("harness-expected", lambda: paging.require(False, "intended boundary"), "intended boundary")
+    print("REJECTION_HARNESS_THREE_OUTCOMES_PASS")
     head, base, merge, tree = (character*40 for character in "abct")
     env = dict(GITHUB_ACTIONS="true", RUNNER_ENVIRONMENT="github-hosted", RUNNER_OS="Linux",
         GITHUB_REPOSITORY="garthtrickett/gust", GITHUB_REPOSITORY_ID="1263612197",
@@ -55,15 +71,23 @@ def controls():
     for name, value in (("GITHUB_ACTIONS", "false"), ("RUNNER_ENVIRONMENT", "self-hosted"),
         ("GITHUB_REPOSITORY_ID", "1"), ("GITHUB_JOB", "other"), ("GITHUB_RUN_ID", "43"),
         ("GITHUB_RUN_ATTEMPT", "1"), ("RUNNER_NAME", "other")):
-        rejected("hosted identity " + name, lambda n=name, v=value: validate(e=dict(env, **{n: v})))
-    rejected("environment flags without worker ancestry", lambda: validate(w=dict(worker, executable="/usr/bin/python3")))
-    rejected("foreign checkout tree", lambda: validate(c=dict(checkout, tree="f"*40)))
+        diagnostic = ("owning runner/job provenance mismatch" if name == "RUNNER_NAME" else
+            "owning public run provenance mismatch" if name in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT") else
+            "not the owning hosted runner")
+        rejected("hosted identity " + name, lambda n=name, v=value: validate(e=dict(env, **{n: v})), diagnostic)
+    rejected("environment flags without worker ancestry", lambda: validate(w=dict(worker, executable="/usr/bin/python3")),
+             "no live hosted worker ancestor")
+    rejected("foreign checkout tree", lambda: validate(c=dict(checkout, tree="f"*40)),
+             "checkout differs from the exact owning source tree")
     rejected("unauthenticated merge parents", lambda: validate(e=merged_env,
-        c=dict(merged_checkout, parents=["f"*40, head])))
-    rejected("historical job attempt", lambda: validate(j=dict(job, run_attempt=1)))
-    rejected("foreign runner", lambda: validate(j=dict(job, runner_id=0)))
-    rejected("substituted owning workflow", lambda: validate(r=dict(run, path="other.yml")))
-    rejected("ambiguous current jobs", lambda: paging.validate_runner_evidence(env, worker, run, [job, job], checkout))
+        c=dict(merged_checkout, parents=["f"*40, head])), "checkout is not the authenticated owning merge tree")
+    rejected("historical job attempt", lambda: validate(j=dict(job, run_attempt=1)),
+             "ambiguous or absent current owning job")
+    rejected("foreign runner", lambda: validate(j=dict(job, runner_id=0)), "owning runner/job provenance mismatch")
+    rejected("substituted owning workflow", lambda: validate(r=dict(run, path="other.yml")),
+             "owning public run provenance mismatch")
+    rejected("ambiguous current jobs", lambda: paging.validate_runner_evidence(env, worker, run, [job, job], checkout),
+             "ambiguous or absent current owning job")
     old = {"/existing": dict(kind="file", size_bytes=1024, used_bytes=0, priority=-2)}
     assert paging.preserved_swaps(old, {"/existing": dict(old["/existing"], used_bytes=512)})
     assert not paging.preserved_swaps(old, {})
@@ -90,7 +114,8 @@ def controls():
                 if accept:
                     assert execution.scope_state(unit, case)["LoadState"] == "not-found"
                 else:
-                    rejected("unconfirmed scope query " + str(number), lambda: execution.scope_state(unit, case))
+                    rejected("unconfirmed scope query " + str(number), lambda: execution.scope_state(unit, case),
+                             "scope state is UNCONFIRMED")
             raw = json.loads((case/"control-plane.jsonl").read_text())
             assert raw["confirmed"] == accept and raw["stderr"] == stderr
         with patch.object(paging, "ROOT", root), patch.object(paging, "swap_rows", return_value={}), \
@@ -103,7 +128,8 @@ def controls():
             case = output/"outside-ci"
             case.mkdir()
             owned = paging.Paging(case, 0)
-            rejected("no shared-host provisioning", lambda: owned.prepare(None))
+            rejected("no shared-host provisioning", lambda: owned.prepare(None),
+                     "insufficient existing paging outside ephemeral owning CI")
             assert not owned.file.exists()
             case = output/"partial-allocation"
             case.mkdir()
@@ -112,9 +138,11 @@ def controls():
                            job=dict(job, id=100), run=run)
             with patch.object(paging, "hosted_runner", return_value=context), \
                  patch.object(os, "posix_fallocate", side_effect=OSError("controlled allocation failure")):
-                rejected("partial allocation fails closed", lambda: owned.prepare(context), OSError)
+                rejected("partial allocation fails closed", lambda: owned.prepare(context),
+                         "controlled allocation failure", OSError)
             assert owned.file.is_file() and owned.identity is not None
-            rejected("unconfirmed payload retains owned file", lambda: owned.cleanup(False))
+            rejected("unconfirmed payload retains owned file", lambda: owned.cleanup(False),
+                     "payload emptiness is unconfirmed; paging retained")
             assert owned.file.is_file()
             owned.cleanup(True)
             assert not owned.file.exists()
@@ -131,13 +159,14 @@ def controls():
             owned.file.rename(kept)
             owned.file.write_bytes(b"substitute")
             owned.file.chmod(0o600)
-            rejected("substituted paging inode retained", lambda: owned.cleanup(True))
+            rejected("substituted paging inode retained", lambda: owned.cleanup(True), "owned paging identity changed")
             assert kept.read_bytes() == b"owned control" and owned.file.read_bytes() == b"substitute"
             owned.file.unlink()
             kept.rename(owned.file)
             with patch.object(paging, "swap_rows", return_value={str(owned.file): dict(used_bytes=0)}), \
                  patch.object(paging, "checked_run", side_effect=subprocess.CalledProcessError(1, ["CONTROLLED_SWAPOFF"])):
-                rejected("swapoff failure retains file", lambda: owned.cleanup(True), subprocess.CalledProcessError)
+                rejected("swapoff failure retains file", lambda: owned.cleanup(True),
+                         str(subprocess.CalledProcessError(1, ["CONTROLLED_SWAPOFF"])), subprocess.CalledProcessError)
             assert owned.file.read_bytes() == b"owned control"
         case = output/"actual-owned-orphan"
         case.mkdir()
