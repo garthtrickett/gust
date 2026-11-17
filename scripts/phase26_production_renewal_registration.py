@@ -89,7 +89,43 @@ def identity(registry):
             [p["path"] for p in row["changed_files"]] == list(CHANGED) and
             [p["path"] for p in row["added_files"]] == list(ADDED),
             "renewal identity or file population drifted")
+    require((ROOT / STATE).is_file() and (ROOT / STATE).stat().st_size > 0,
+            "operational lane state is absent")
     return row
+
+
+def check_files(registry):
+    row = identity(registry)
+    for pin in row["changed_files"]:
+        require(pin["previous_digest"] == sha(base_bytes(pin["path"])) and
+                sha((ROOT / pin["path"]).read_bytes()) == pin["current_digest"],
+                "R4 changed file drifted: " + pin["path"] + " (epoch2 renewal)")
+    for pin in row["added_files"]:
+        require(sha((ROOT / pin["path"]).read_bytes()) == pin["digest"],
+                "renewal added file drifted: " + pin["path"])
+
+
+def frozen_ancestor_images(kind):
+    # Complete, hash-checked archived images only. Repeated old normalizers
+    # must not promote an older image back to the immediate predecessor.
+    import importlib
+    values = [baseline()["projections"][kind]]
+    for name in ("phase26_2_allocator_registration", "phase26_release_registration",
+                 "phase26_readonly_input_copy_registration", "phase26_ticket_composition_registration",
+                 "phase26_imported_native_registration", "phase26_ticket_publication_registration"):
+        values.append(importlib.import_module(name).baseline()["projections"][kind])
+    if kind == "r4_record":
+        require(isinstance(current, dict) and set(current) == set(previous) and
+                isinstance(current.get("changed_files"), list) and
+                sum(isinstance(p, dict) and p.get("path") == STATE
+                    for p in current["changed_files"]) == 1,
+                "R4 r4_record live projection drifted (renewal)")
+        for value in list(values):
+            live_state = copy.deepcopy(value)
+            next(p for p in live_state["changed_files"] if p["path"] == STATE)[
+                "current_digest"] = sha((ROOT / STATE).read_bytes())
+            values.append(live_state)
+    return values
 
 
 def canonical_projection(kind, current):
@@ -152,16 +188,27 @@ def project(registry, kind, current):
     row = identity(registry)
     previous = baseline()["projections"][kind]
     require(type(current) is type(previous), "R4 " + kind + " live projection drifted (renewal)")
-    current = canonical_projection(kind, current)
+    # Ancestor acceptance is never a physical rollback escape hatch.
+    check_files(registry)
     if kind in ("text", "r4_text"):
+        require(all(isinstance(p, dict) and "path" in p for p in current),
+                "R4 " + kind + " live projection drifted (renewal)")
         owned = set(CHANGED + ADDED)
         subset = [p for p in current if p["path"] in owned]
+        ancestor_subsets = [[p for p in value if p["path"] in owned]
+                            for value in frozen_ancestor_images(kind)]
+        if any(subset == value for value in ancestor_subsets):
+            return copy.deepcopy(current)  # Preserve foreign order/duplicates too.
+        current = canonical_projection(kind, current)
         old_subset = [p for p in previous if p["path"] in owned]
-        require(fingerprint(subset) in (row["owned_text"][kind], fingerprint(old_subset)),
+        require(fingerprint(subset) == row["owned_text"][kind],
                 "R4 " + kind + " live projection drifted (renewal)")
         return sorted(copy.deepcopy([p for p in current if p["path"] not in owned] + old_subset),
                       key=lambda p: p["path"])
-    require(fingerprint(current) in (row["projections"][kind], fingerprint(previous)),
+    if any(current == value for value in frozen_ancestor_images(kind)):
+        return copy.deepcopy(current)
+    current = canonical_projection(kind, current)
+    require(fingerprint(current) == row["projections"][kind],
             "R4 " + kind + " live projection drifted (renewal)")
     result = copy.deepcopy(previous)
     if kind == "r4_record":
@@ -250,10 +297,7 @@ def validate():
     row = identity(registry)
     require(project_registry(registry) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
             "renewal changed predecessor or foreign registry rows")
-    for p in row["changed_files"]:
-        prior_digest(registry, p["path"], sha((ROOT / p["path"]).read_bytes()))
-    for p in row["added_files"]:
-        require(p["digest"] == sha((ROOT / p["path"]).read_bytes()), "renewal added file drifted: " + p["path"])
+    check_files(registry)
     require((ROOT / "justfile").read_bytes() == base_bytes("justfile") + RECIPE.encode(),
             "renewal owning recipe drifted")
     levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
@@ -268,6 +312,7 @@ def validate():
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
+    from unittest.mock import patch
     def rejected(label, callback, expected):
         try:
             callback()
@@ -279,12 +324,35 @@ def inversions():
     for path in CHANGED:
         rejected("substituted " + path, lambda path=path: prior_digest(registry, path, "0" * 64),
                  "R4 changed file drifted")
+        original_read = Path.read_bytes
+        for label, raw in (("physical rollback", base_bytes(path)),
+                           ("physical substitution", original_read(ROOT / path) + b"\n")):
+            with patch.object(Path, "read_bytes", lambda p, path=path, raw=raw:
+                    raw if p == ROOT / path else original_read(p)):
+                rejected(label + " " + path,
+                         lambda path=path: prior_digest(registry, path, sha((ROOT / path).read_bytes())),
+                         "R4 changed file drifted")
+    original_read = Path.read_bytes
+    for path in ADDED:
+        with patch.object(Path, "read_bytes", lambda p, path=path:
+                original_read(p) + b"\n" if p == ROOT / path else original_read(p)):
+            expected = "immutable epoch1 history" if path.startswith(HISTORY) else "renewal added file drifted"
+            rejected("physical added substitution " + path, validate, expected)
     values = current_projections()
     for kind in identity(registry)["projections"]:
         rejected("substituted " + kind, lambda kind=kind: project(registry, kind, "substituted"),
                  "live projection drifted")
         once = project(registry, kind, values[kind])
         require(project(registry, kind, once) == once, "renewal projection not idempotent: " + kind)
+        import phase26_2_allocator_registration as predecessor
+        composed = predecessor.project(registry, kind, project(registry, kind, values[kind]))
+        require(project(registry, kind, composed) == composed,
+                "renewal changed a projected predecessor image: " + kind)
+        require(predecessor.project(registry, kind, composed) == composed,
+                "renewal/predecessor composition is not idempotent: " + kind)
+        for image in frozen_ancestor_images(kind):
+            require(project(registry, kind, image) == image,
+                    "renewal changed a complete frozen ancestor image: " + kind)
     for kind in ("text", "r4_text"):
         owned = next(p for p in values[kind] if p["path"] in CHANGED + ADDED)
         for label, changed in (("omitted", [p for p in values[kind] if p != owned]),
@@ -300,6 +368,12 @@ def inversions():
     foreign["renewal_foreign_mutation"] = True
     require(project_registry(foreign) != json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
             "renewal swallowed foreign registry mutation")
+    original_text = Path.read_text
+    with patch.object(Path, "read_text", lambda p, *args, **kwargs:
+            json.dumps(foreign) if p == REGISTRY else original_text(p, *args, **kwargs)):
+        import phase26_2_allocator_registration as predecessor
+        rejected("foreign mutation through predecessor validator", predecessor.validate,
+                 "allocator changed frozen predecessor or foreign registry rows")
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
