@@ -14,7 +14,7 @@
   "source_pins": {
     ".github/workflows/cranelift-historical-full.yml": "fc035fb057fef36711abe6d37379bc23e1975592e72c91cc33d3d8a423c3f0da",
     ".github/workflows/phase26-2-allocator-liveness.yml": "b843ff586966ab96b0c1ca4cedb98c74611768fbcb47ab3c985bd4a773822ad8",
-    ".github/workflows/phase26-release-closure.yml": "b70fd3b98c7c366350b0b8f3396d81f2b42e4273cc101cd6ce1d7765a8cb78fe",
+    ".github/workflows/phase26-release-closure.yml": "31c0f8fb19cfa8cdc384e71d690ebaa5c6854aa17c5bab9fefd1b19cf9913300",
     ".github/workflows/stdlib-s26-native-bytes.yml": "f2f7c3334b0ce7693e52131766e546a2e139ed71bc90368a07c1df67a4abb204",
     "Makefile": "d0d930c100aa85455e8abebdde19eb606d9fad22aa9b7a26ad9fd8ca5bcac2d2",
     "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_LIVENESS.md": "c2a67426d9b89d4c0a91b81ecc25dc3a4de554b0157acf25a119f94f54fb27b8",
@@ -2636,7 +2636,7 @@
     "compiler/experiments/cranelift/production/epoch1/manifest.txt": "eba10d837fcaaaca525359dbaed8f953493ce3407b8149ebea8e526d524e3ab1",
     ".github/workflows/phase26-github-release-signing.yml": "08fcd2c55537be5fc0a4827444fb04318ef31b26f587d22347fb386e02c15388",
     "compiler/experiments/cranelift/production/renewal-assembly.json": "dc7f07028e12be02876e00829893d148f3024c973cc8a4392c37e66882098ef9",
-    "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md": "d576afbdfd68609be4bb1a5093c77184dcaa9493de876cffdf3ecf9d406f8bae",
+    "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md": "2c00cb2482ed56fc9a92cb9283ffc663eadf2e064bd6d49ef7a99b642152b083",
     "compiler/experiments/cranelift/production/github-enrollment.json": "88c0383460139f00728c5c8df74a60629c0015bd10f2e30ebfa6df4ce26b8cfe",
     "compiler/experiments/cranelift/production/epoch1/snapshot.json": "810b6ca7660b7c3ad36ebf1c1bae4c03fea247e1f3a5e0dd867a079ebdca6c79",
     "scripts/cranelift_test_levels.json": "7707595d94dd1c64f4a918d2a677bac5392e5216049f1ceda78567093c65decb",
@@ -2649,11 +2649,14 @@
     "scripts/phase26_github_package_candidate.py": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732",
     "scripts/phase26_github_issue.py": "cc9c7c4e8fb921261ee91f391ca67ec5b70af5f839c8fc406259561655e5785a",
     "scripts/phase26_production_renewal.py": "98734ad4ef5a590fb3486b5a1c660f2df93e268a81cc687cd73b3b1ee24c9732",
-    "scripts/phase26_production_renewal_registration.py": "da1144cc973a39aabcf89dc2a96236cb392850340b04c2f9b44ef348dd7d8bfc",
+    "scripts/phase26_production_renewal_registration.py": "d01b393bb4f11bdeeeda5740613ee0911d975d495e066e2a6b9debb268a290fc",
     "compiler/experiments/cranelift/production/github-provenance.json": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8",
     "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v3.json.gz": "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c",
     "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v4.json.gz": "5da70567528d2e2f3b70ca7bd3028816819d2ecdca0ae250ef8e4e61d82b6bc5",
-    "compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+    "compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+    "scripts/phase26_release_execution_controls.py": "22f8ba68769f6492c2f2129b24787ce2de33695664255c53b442904cebd7f308",
+    "scripts/phase26_release_paging.py": "0dd53da0795ae887ca8dd79457dca2a4b0cef44c886d7032f5d2d2062b8f95d5",
+    "scripts/phase26_release_execution.py": "c454fa79eef5e9cb6cd96d2455cd2a37f2fa15cce92d0a148015f89a5e01c995"
   },
   "snapshot": {
     "signer": "gust-github-release-1",

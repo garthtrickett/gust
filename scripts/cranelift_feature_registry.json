@@ -48132,7 +48132,7 @@
         {
           "path": ".github/workflows/phase26-release-closure.yml",
           "previous_digest": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050",
-          "current_digest": "b70fd3b98c7c366350b0b8f3396d81f2b42e4273cc101cd6ce1d7765a8cb78fe"
+          "current_digest": "31c0f8fb19cfa8cdc384e71d690ebaa5c6854aa17c5bab9fefd1b19cf9913300"
         },
         {
           "path": ".github/workflows/stdlib-s26-native-bytes.yml",
@@ -48222,11 +48222,11 @@
         },
         {
           "path": "compiler/phase26-release/release-epoch2.json",
-          "digest": "9fc96bd0038ecea6a94ab359297693ad9461f53af59aa4e13f566dc57dbd0a43"
+          "digest": "8ffd275e846e8815c15f2449ca2c5ed053691137bbf2220e6cb0779c9d023dd0"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
-          "digest": "e5cb6c1a054b42546439aa2257a6e62eb4952bb06895c14814a2a874e5351625"
+          "digest": "9a0534b31e2e6066b013c518fe05a8bd787d6c2c085b6b54bdbce0ecfdcd5da4"
         },
         {
           "path": "scripts/phase26_production_renewal.py",
@@ -48234,15 +48234,27 @@
         },
         {
           "path": "scripts/phase26_production_renewal_registration.py",
-          "digest": "da1144cc973a39aabcf89dc2a96236cb392850340b04c2f9b44ef348dd7d8bfc"
+          "digest": "d01b393bb4f11bdeeeda5740613ee0911d975d495e066e2a6b9debb268a290fc"
+        },
+        {
+          "path": "scripts/phase26_release_execution.py",
+          "digest": "c454fa79eef5e9cb6cd96d2455cd2a37f2fa15cce92d0a148015f89a5e01c995"
+        },
+        {
+          "path": "scripts/phase26_release_paging.py",
+          "digest": "0dd53da0795ae887ca8dd79457dca2a4b0cef44c886d7032f5d2d2062b8f95d5"
+        },
+        {
+          "path": "scripts/phase26_release_execution_controls.py",
+          "digest": "22f8ba68769f6492c2f2129b24787ce2de33695664255c53b442904cebd7f308"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
-          "digest": "d576afbdfd68609be4bb1a5093c77184dcaa9493de876cffdf3ecf9d406f8bae"
+          "digest": "2c00cb2482ed56fc9a92cb9283ffc663eadf2e064bd6d49ef7a99b642152b083"
         }
       ],
       "owned_text": {
-        "text": "9dbaf657aa13f97d1e981f5c525a0ee8a19058abf6d67a4a6409070332eec64c",
+        "text": "20b5541d86deeb93457ffddeb01a26c3748e0e2d16355eb3c90c98ecd613f180",
         "r4_text": "62107e511ef55ee8188fca97591158d00bf2449c02e66c9978efd64be269217d"
       },
       "projections": {
@@ -48253,7 +48265,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "72e0b1941031878e128e2adcf3d1bfb01b048d2b8b7bdc209e159801cde7708c",
-        "text": "3f6b5cd640119ba4760040ef083f21a478cce554f1864e9c49406f7dcba7bb15"
+        "text": "243645563fb3845013c97700b9b2feee89acedc5834eb84cedecc4f7f12aead0"
       },
       "spelling_render_current_digest": "daab8f7fb0577dd259105e925da52014ff8fbdf390572f61a2148616dbf4a1af"
     },
