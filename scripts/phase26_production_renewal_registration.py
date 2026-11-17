@@ -22,8 +22,8 @@ GUARD = "guard-cranelift-phase26-production-renewal"
 STATE = "GUST_LANE_STATE.md"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 HISTORY = "compiler/experiments/cranelift/production/epoch1/"
-BASELINE = HISTORY + "predecessor-baseline-v3.json.gz"
-BASELINE_SHA256 = "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c"
+BASELINE = HISTORY + "predecessor-baseline-v4.json.gz"
+BASELINE_SHA256 = "5da70567528d2e2f3b70ca7bd3028816819d2ecdca0ae250ef8e4e61d82b6bc5"
 CHANGED = (
     "TASK.md", "justfile", "scripts/cranelift_test_levels.json",
     "scripts/phase26_2_allocator_registration.py", "scripts/phase26_production_registration.py",
@@ -38,11 +38,13 @@ CHANGED = (
     ".github/workflows/stdlib-s26-native-bytes.yml",
     "scripts/phase26_r3_zlib_adapter_guard.sh",
     "scripts/fixture_reachability.py",
+    "src/runtime-rs/abi-tests/abi_smoke.c",
 )
 ADDED = tuple(HISTORY + name for name in (
     "manifest.txt", "manifest.sig", "snapshot.json", "production_trust.rs",
     "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz",
-    "predecessor-baseline-v3.json.gz", "public-identity.json")) + (
+    "predecessor-baseline-v3.json.gz", "predecessor-baseline-v4.json.gz",
+    "public-identity.json")) + (
     ".github/workflows/phase26-github-release-signing.yml",
     "scripts/phase26_github_package_candidate.py",
     "scripts/phase26_github_issue.py",
