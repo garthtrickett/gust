@@ -21,14 +21,14 @@ fn enrolled_signature_and_snapshot_fail_closed() {
         ..production_trust::SNAPSHOT };
     assert!(verify_signature_at(bytes, &signature, &manifest, &too_long, now).is_err());
     let unknown_bytes = String::from_utf8(bytes.to_vec()).unwrap()
-        .replace("signer: gust-native-release-1", "signer: unregistered-key").into_bytes();
+        .replace("signer: gust-github-release-1", "signer: unregistered-key").into_bytes();
     assert_ne!(unknown_bytes, bytes);
     let unknown_manifest = parse_manifest(&unknown_bytes).unwrap();
     assert!(verify_signature_at(&unknown_bytes, &signature, &unknown_manifest, &snapshot, now)
         .unwrap_err().to_string().contains("unknown signer"));
     let unknown = TrustSnapshot { keys: &[], ..production_trust::SNAPSHOT };
     assert!(verify_signature_at(bytes, &signature, &manifest, &unknown, now).is_err());
-    let revoked = TrustSnapshot { revoked_keys: &["gust-native-release-1"],
+    let revoked = TrustSnapshot { revoked_keys: &["gust-github-release-1"],
         ..production_trust::SNAPSHOT };
     assert!(verify_signature_at(bytes, &signature, &manifest, &revoked, now).is_err());
     let digests = [Sha256::digest(bytes).into()];
@@ -51,8 +51,12 @@ fn renewal_preserves_history_and_refuses_unsigned_or_rollback_packages() {
     let old_manifest = parse_manifest(old_bytes).unwrap();
     let current = production_trust::SNAPSHOT;
     let now = current.issued_unix_seconds;
-    let old_keys = [TrustedKey { first_epoch: 1, last_epoch: 1,
-        ..current.keys[0].clone() }];
+    let old_keys = [TrustedKey { id: "gust-native-release-1",
+        public_key: [0x67,0x78,0xb0,0x5d,0x2e,0xf8,0xf7,0xaf,
+            0x4f,0x55,0x39,0x18,0xb2,0xb5,0x65,0x8e,
+            0xba,0x1d,0x79,0x19,0x53,0x6a,0xb3,0xb6,
+            0x4c,0x69,0xe6,0x3f,0xd5,0xe0,0xb5,0x50],
+        first_epoch: 1, last_epoch: 1 }];
     let old_snapshot = TrustSnapshot { release_epoch: 1, minimum_package_epoch: 1,
         keys: &old_keys, issued_unix_seconds: 1792723172,
         expires_unix_seconds: 1793327972, ..production_trust::SNAPSHOT };
@@ -85,7 +89,7 @@ fn renewal_preserves_history_and_refuses_unsigned_or_rollback_packages() {
         assert!(verify_signature_at(bytes, old_signature, &manifest, &current, time)
             .unwrap_err().to_string().contains("stale/rollback/future"));
     }
-    let revoked = TrustSnapshot { revoked_keys: &["gust-native-release-1"],
+    let revoked = TrustSnapshot { revoked_keys: &["gust-github-release-1"],
         ..production_trust::SNAPSHOT };
     assert!(verify_signature_at(bytes, old_signature, &manifest, &revoked, now)
         .unwrap_err().to_string().contains("revoked signer"));

@@ -1,13 +1,13 @@
 {
-  "signer": "gust-native-release-1",
-  "public_key_hex": "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550",
-  "manifest_sha256": "0a764d934a94c2eb50263e4fbd77b04efdc38e309c680abdbe6e46c78e616c0a",
+  "signer": "gust-github-release-1",
+  "public_key_hex": "edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae",
+  "manifest_sha256": "a855faf64b3df55301f30ff23f955b2f996e20158894b039b7c3eed3faae6ffd",
   "release_epoch": 2,
   "minimum_package_epoch": 2,
   "key_first_epoch": 2,
   "key_last_epoch": 2,
-  "issued_unix_seconds": 1794889920,
-  "expires_unix_seconds": 1795494720,
+  "issued_unix_seconds": 1794918937,
+  "expires_unix_seconds": 1795523737,
   "maximum_validity_seconds": 604800,
   "revoked_keys": [],
   "withdrawn_digests": []

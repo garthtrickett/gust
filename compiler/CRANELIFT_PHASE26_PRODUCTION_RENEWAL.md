@@ -1,52 +1,64 @@
 # Selected epoch2 production renewal
 
-The operator selected this renewal on 2026-11-17 under the existing OD22
-policy: release epoch2, minimum package epoch2, key epochs2–2, the same
-`gust-native-release-1` Ed25519 public key, and the unchanged seven-day maximum.
-No new package, symbol, ABI, lifetime, resource, or OD23 semantics are selected.
+The operator delegated epoch2 renewal and then selected a GitHub-generated
+identity through “Whichever you rexkon”, after the enrolled private key was
+confirmed unavailable through GitHub. The selected identity is
+`gust-github-release-1`, public key
+`edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae`.
+Release epoch2, minimum package epoch2, key epochs2–2 and the seven-day maximum
+remain unchanged. This supersedes the earlier same-key parameter for this new
+candidate. No package, symbol, ABI, lifetime, resource or OD23 change is selected.
 
-The worker still embeds its trust snapshot. Packages, environment variables and
-source requests cannot update trust. The epoch1 enrolled worker, manifest,
-signature and snapshot are immutable fixtures in `production/epoch1/`.
-`compiler/phase26-release/release.json` and the original first-release report
-remain historical. Current qualification uses `release-epoch2.json` and a
-separate reachable-audit successor, with the same native/public/offline,
-fixed-point, quota, exact-head CI and final-main Historical requirements.
+The non-admitting issuer ran on GitHub as `44084383405`, attempt1, at reviewed
+commit `052cc79f573f0f2254a43f5ed4c9a0353e3958a4`. Artifact `14329041411`
+has ZIP SHA256 `4b7150808b6fb19708e20b8e469d3e1359b07f8f19156c1f2a7af17c6d38c8e6`.
+It generated its private key only in the ephemeral runner, verified its signature,
+and uploaded only public outputs. No private key was read into agent state,
+source or artifacts, and no repository secret was created. The issued key is
+one-shot: it is not a persistent GitHub signing service.
 
-The enrolled predecessor has empty revoked-key and withdrawn-digest lists.
-This renewal carries those actual source-enrolled lists; it makes no assurance
-about unseen compromise facts. An applicable contrary authorized record must
-be honored before signing or enrollment, not cleared to admit the package.
+The exact manifest SHA256 is
+`a855faf64b3df55301f30ff23f955b2f996e20158894b039b7c3eed3faae6ffd`.
+The canonical v2-domain message SHA256 is
+`9732f3393c5b0ee73ac61f3e35f483589ec354d36ef759412e1c116a9799ce31`.
+Actual assembly issue/expiry are `1794918937` / `1795523737`. Public provenance,
+identity and reviewed source-enrollment metadata are retained in `production/`.
 
-The unsigned artifact set was genuinely reassembled in an isolated environment
-with the sixteen existing exact production dependencies. Shared-host packages
-were unchanged. Its assembler digest is part of the public link provenance;
-changing that assembler requires a new actual assembly and message. Snapshot
-issue and expiry are the real assembly timestamps, not test-clock substitutes.
+The worker embeds this exact public key and snapshot. Packages, public-identity
+files, environment variables and source requests cannot update worker trust.
+Future runs of the operational issuer can produce candidates but cannot replace
+the enrolled key. A future identity or epoch needs its own reviewed publication.
+The v2/raw64/offline verification policy is unchanged.
 
-`phase26_production_renewal.py prepare-check` and `inversions` check preparation
-and refusals only. A real 64-byte public Ed25519 signature over the exact
-`gust-approved-native-package-v2\0` domain plus manifest is required by
-`validate`, the existing positive Rust test, enrollment and full qualification.
-There is no empty, old, generated, or placeholder epoch2 signature.
+Epoch1 worker, manifest, signature, snapshot and public-identity fixtures remain
+immutable in `production/epoch1/`. Its original predecessor archive is retained;
+a separately pinned v2 archive adds exact current-main blobs needed for the URL
+and public-identity successor. The original first-release authority and report
+remain historical. No old signature or qualification is relabeled as current.
+The actual enrolled revocation/withdrawal lists are empty; applicable contrary
+authorized records must be honored rather than cleared to admit a package.
 
-`handoff NEW_DIRECTORY` writes only the canonical message, public DER key and
-public signing request. It never signs or looks for private material. The
-operator-controlled signer returns the raw public signature. Then
-`accept-public-signature SIGNATURE_FILE` verifies it with the already enrolled
-public key and copies it to the absent current signature path. It cannot
-replace an existing signature or choose a key, epoch or clock. Signature
-verification alone is not qualification.
+The candidate uses the sixteen exact production dependencies. The shared host
+is unchanged. All twelve artifact digests and the public signature were checked.
+The assembler's exact bytes are in the signed link provenance; local and CI
+reassembly must reproduce those bytes and the enrolled manifest. Updating zlib's
+acquisition URL to its official `/fossils/` location changes no archive digest,
+commands or test expectations. The Stdlib workflow change is its owner's commit.
 
-After that actual handoff, `phase26_production_renewal_registration.py generate`
-updates only the active epoch2 authority, its audit and the additive successor
-row. It cannot enroll unsigned preparation. Every old registry row and epoch1
-assertion remains, using exact predecessor reconstruction. The new guard checks
-physical current bytes, omissions, substitutions, duplicates, rollback and
-foreign-mutation forwarding. The default Rust population grows by one history
-and unsigned/rollback refusal test; none of the old tests is removed or ignored.
+`phase26_production_renewal.py validate` verifies the actual signature and current
+wall-clock interval; `inversions` checks history and wrong-key, wrong-message,
+tamper, missing-signature, rollback and other refusals. The default Rust positive
+must verify the real current signature. The history positive explicitly uses the
+old key, and still rejects rollback at the new worker.
 
-Status: unsigned preparation. Actual signature, final enrollment, full current
-qualification, authoritative CI/artifact parity, reviews/rules and merge remain
-mandatory. The held PR619 correction is rebased only after this separate
-predecessor merges. All remaining activated Phase26 work stays open.
+Final additive registration requires this actual signature. Every predecessor
+registry row and assertion remains, using exact predecessor reconstruction.
+Current qualification uses separate `release-epoch2.json` and reachable-audit
+successors. Static/inversion, current worker/native/public/offline, fixed-point,
+product4GiB quota, exact-head CI/artifact parity, reviews/rules and checked merge
+remain mandatory. Public cryptographic verification alone is not qualification.
+
+Status: actual signed candidate enrolled in unqualified source; final registration,
+current-source qualification and authoritative CI/merge remain pending. PR619 is
+held until this separate predecessor merges, then rebased. The full activated
+Phase26 remainder and OD23 remain open.

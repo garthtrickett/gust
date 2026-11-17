@@ -6055,3 +6055,17 @@ operational control or carry historical native passes into changed source.
 The complete renewal includes the exact reviewed control code and supersedes
 the operational draft after actual issuance; only its all-green reviewed merge
 unblocks rebase of held PR619 and the original activated remainder.
+
+### Actual GitHub identity source enrollment — 2026-11-17
+
+Actual run44084383405 at052cc79f produced public key
+`edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae`,
+ID `gust-github-release-1`, epoch2/minimum2/range2–2. The authenticated artifact,
+all twelve package digests and raw64 signature independently verify; both existing
+reviewers cleared explicit source enrollment. Actual issue/expiry1794918937 and
+1795523737 preserve seven days. Source enrollment now pins those exact bytes;
+all current-source registration/inversions/production/public/R5/FP/CI/merge
+gates remain mandatory. Old preparation binaries are preserved before replacement.
+The earlier operational draft is superseded only by the complete checked renewal,
+not merged independently. The held480 correction and first-release history stay
+unchanged; the full activated roadmap continues after checked predecessor merge.

@@ -3,7 +3,7 @@ repository: garthtrickett/gust
 release: phase26-native-release-1
 package_id: gust_zlib_1_3_2_production
 epoch: 2
-signer: gust-native-release-1
+signer: gust-github-release-1
 target: x86_64-unknown-linux-gnu
 object_format: Elf
 license: Zlib
@@ -19,7 +19,7 @@ artifact: object|gust_zlib_adapter.o|e0614188e9ae6484fbfa87df979db8594a570870723
 artifact: archive|libz.a|8da0532f8f069a5b5bf6e6fd1d6cdd8405c299663a1414c05ed7196264ff721b
 artifact: build_options|gust-runtime-package.a|a6abd3801fcb29db904c172832cea779bc053ed17352bd8e42d93e7dca43adc3
 artifact: build_options|link-closure.a|ec029caf8ceb6217c3cc60a29fc3b3298a73a8c0cde11aad3036d15d6d525da1
-artifact: build_options|link-provenance.json|dbf0fa4f571c56ff87d99196939df2cd14eae7c2a5dc41235a5991167f3dd506
+artifact: build_options|link-provenance.json|2c92dc575b88fc2be0062da328c35b548bc97d0f0e21050f1000cd565f129d00
 symbol_count: 3
 symbol: gust_zlib_bound|496e74|value|1|496e74@value|-
 symbol: gust_zlib_compress|496e74|value|5|526177506f696e746572284279746529@borrow_read_call,496e74@value,526177506f696e746572284279746529@borrow_write_call,496e74@value,496e74@value|0@1@read,2@3@write

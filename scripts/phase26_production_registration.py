@@ -166,7 +166,7 @@ def normalize_edges(registry, edges):
 def production_policy(registry):
     identity(registry)
     profile = ROOT / "compiler/experiments/cranelift/production"
-    public = json.loads((profile / "public-identity.json").read_text())
+    public = json.loads(live_bytes("compiler/experiments/cranelift/production/public-identity.json"))
     snapshot = json.loads(live_bytes("compiler/experiments/cranelift/production/snapshot.json"))
     key = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550"
     require(public["public_key_hex"] == snapshot["public_key_hex"] == key and

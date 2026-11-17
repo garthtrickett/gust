@@ -22,8 +22,8 @@ GUARD = "guard-cranelift-phase26-production-renewal"
 STATE = "GUST_LANE_STATE.md"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 HISTORY = "compiler/experiments/cranelift/production/epoch1/"
-BASELINE = HISTORY + "predecessor-baseline.json.gz"
-BASELINE_SHA256 = "73089a2c9dbadb629efc24d28f9d42aacfe73e6ea9374a74513935ebb524e54d"
+BASELINE = HISTORY + "predecessor-baseline-v2.json.gz"
+BASELINE_SHA256 = "30e78dbe50b8b0b0fb2daa6614f8cbab5eb8844f8f666a041408d3aae7acfb03"
 CHANGED = (
     "TASK.md", "justfile", "scripts/cranelift_test_levels.json",
     "scripts/phase26_2_allocator_registration.py", "scripts/phase26_production_registration.py",
@@ -33,10 +33,19 @@ CHANGED = (
     "compiler/experiments/cranelift/production/manifest.txt",
     "compiler/experiments/cranelift/production/manifest.sig",
     "compiler/experiments/cranelift/production/snapshot.json",
+    "compiler/experiments/cranelift/production/public-identity.json",
+    ".github/workflows/phase26-release-closure.yml",
+    ".github/workflows/stdlib-s26-native-bytes.yml",
+    "scripts/phase26_r3_zlib_adapter_guard.sh",
 )
 ADDED = tuple(HISTORY + name for name in (
     "manifest.txt", "manifest.sig", "snapshot.json", "production_trust.rs",
-    "predecessor-baseline.json.gz")) + (
+    "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz", "public-identity.json")) + (
+    ".github/workflows/phase26-github-release-signing.yml",
+    "scripts/phase26_github_package_candidate.py",
+    "scripts/phase26_github_issue.py",
+    "compiler/experiments/cranelift/production/github-provenance.json",
+    "compiler/experiments/cranelift/production/github-enrollment.json",
     "compiler/experiments/cranelift/production/renewal-assembly.json",
     "compiler/phase26-release/release-epoch2.json",
     "compiler/phase26-release/reachable-audit-epoch2.json",
@@ -273,6 +282,7 @@ def generate():
         require(path not in ("TASK.md", "TASK_STDLIB.md", "GUST_LANE_STATE.md"),
                 "operational source pin re-admitted")
         pins[path] = sha((ROOT / path).read_bytes())
+    authority["snapshot"] = json.loads((renewal.PROFILE / "snapshot.json").read_text())
     authority["renewal_status"] = "SIGNED; actual qualification and exact-head CI remain required"
     authority["production_files"] = {name: sha((renewal.PROFILE / name).read_bytes())
                                     for name in ("manifest.txt", "manifest.sig", "public-identity.json")}

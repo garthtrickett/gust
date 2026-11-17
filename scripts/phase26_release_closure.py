@@ -39,7 +39,7 @@ PUBLIC_DIAGNOSTICS = {
 }
 FOLLOW_UPS = {"26.1-GENERAL", "26.1-ABI-EXT", "26.1-LIFECYCLE-EXT",
               "26.1-SQLITE", "26.1-DEPLOY"}
-PUBLIC_KEY = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550"
+PUBLIC_KEY = "edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae"
 MANUAL_DIAGNOSTICS = {
     "actual_typed_scoped_call_links_and_runs_with_signed_test_adapter",
     "actual_five_argument_scoped_call_links_and_runs_with_signed_test_adapter",
@@ -79,7 +79,7 @@ def checked_static_elf(path, expected_digest):
 
 
 def checked_trust(snapshot, now):
-    require(snapshot.get("signer") == "gust-native-release-1" and
+    require(snapshot.get("signer") == "gust-github-release-1" and
             snapshot.get("public_key_hex") == PUBLIC_KEY and
             (snapshot.get("release_epoch"), snapshot.get("minimum_package_epoch"),
              snapshot.get("key_first_epoch"), snapshot.get("key_last_epoch")) == (2, 2, 2, 2),
@@ -591,7 +591,7 @@ def inversions():
     changed["reviews"][0]["findings"] = ["unresolved"]
     rejected("review-unresolved-finding", lambda: checked_reviews(changed, head, "b" * 40), "findings")
 
-    snapshot = dict(signer="gust-native-release-1", public_key_hex=PUBLIC_KEY,
+    snapshot = dict(signer="gust-github-release-1", public_key_hex=PUBLIC_KEY,
                     release_epoch=2, minimum_package_epoch=2, key_first_epoch=2,
                     key_last_epoch=2, issued_unix_seconds=100, expires_unix_seconds=604900,
                     maximum_validity_seconds=604800)

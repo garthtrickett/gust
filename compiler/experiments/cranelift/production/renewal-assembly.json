@@ -1,8 +1,8 @@
 {
-  "manifest_sha256": "0a764d934a94c2eb50263e4fbd77b04efdc38e309c680abdbe6e46c78e616c0a",
-  "canonical_message_sha256": "a910d825874a4c28f269cb1a712fa6f4303789657db0a884164b3750056f44e5",
-  "issued_unix_seconds": 1794889920,
-  "expires_unix_seconds": 1795494720,
+  "manifest_sha256": "a855faf64b3df55301f30ff23f955b2f996e20158894b039b7c3eed3faae6ffd",
+  "canonical_message_sha256": "9732f3393c5b0ee73ac61f3e35f483589ec354d36ef759412e1c116a9799ce31",
+  "issued_unix_seconds": 1794918937,
+  "expires_unix_seconds": 1795523737,
   "artifacts": [
     {
       "kind": "source",
@@ -62,11 +62,11 @@
     {
       "kind": "build_options",
       "name": "link-provenance.json",
-      "sha256": "dbf0fa4f571c56ff87d99196939df2cd14eae7c2a5dc41235a5991167f3dd506"
+      "sha256": "2c92dc575b88fc2be0062da328c35b548bc97d0f0e21050f1000cd565f129d00"
     }
   ],
-  "status": "UNSIGNED actual assembly only; real public signature and qualification pending",
-  "assembly_script_sha256": "5175948980c098f6d4267bcd824b0c375ab86343c5777e71d150c24303197ba9",
-  "revocation_basis": "Carry source-enrolled empty arrays from exact epoch1 worker9de4a2ed; no new revocations or withdrawals selected; honor contrary applicable authorized state",
+  "status": "SIGNED GitHub assembly; actual worker enrollment and qualification remain mandatory",
+  "assembly_script_sha256": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732",
+  "revocation_basis": "Carry exact epoch1 worker source-enrolled empty arrays; no new revocations/withdrawals; honor applicable contrary authorized record",
   "production_admission": false
 }
