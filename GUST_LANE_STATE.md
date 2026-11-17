@@ -746,3 +746,13 @@ head CI/artifact/review/rules/merge gates. Only after the separate renewal
 merges rebase held PR619/480 and continue original activated Phase26.2–26.6.
 The continuation ladder remains as recorded in the previous terminal; no
 unrelated semantics/retired route/busy documentation is activated. OD23 OPEN.
+
+## 2026-11-17 selected signed renewal continuation
+
+Earlier unsigned-signature waits are superseded prospectively. Actual GitHub
+identity/signature is source-enrolled and its current Rust crypto/history tests
+pass. The original frozen source census and its failures remain retained. The
+existing owner is correcting predecessor text-view composition and source-only
+fixture inventories, then re-enrolling/reviewing/freshly qualifying under the
+unchanged product limits. No full production/CI/merge or Phase26 completion is
+claimed. PR619 remains held until checked renewal merge; OD23 is unselected.

@@ -22,8 +22,8 @@ GUARD = "guard-cranelift-phase26-production-renewal"
 STATE = "GUST_LANE_STATE.md"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 HISTORY = "compiler/experiments/cranelift/production/epoch1/"
-BASELINE = HISTORY + "predecessor-baseline-v2.json.gz"
-BASELINE_SHA256 = "30e78dbe50b8b0b0fb2daa6614f8cbab5eb8844f8f666a041408d3aae7acfb03"
+BASELINE = HISTORY + "predecessor-baseline-v3.json.gz"
+BASELINE_SHA256 = "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c"
 CHANGED = (
     "TASK.md", "justfile", "scripts/cranelift_test_levels.json",
     "scripts/phase26_2_allocator_registration.py", "scripts/phase26_production_registration.py",
@@ -37,10 +37,12 @@ CHANGED = (
     ".github/workflows/phase26-release-closure.yml",
     ".github/workflows/stdlib-s26-native-bytes.yml",
     "scripts/phase26_r3_zlib_adapter_guard.sh",
+    "scripts/fixture_reachability.py",
 )
 ADDED = tuple(HISTORY + name for name in (
     "manifest.txt", "manifest.sig", "snapshot.json", "production_trust.rs",
-    "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz", "public-identity.json")) + (
+    "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz",
+    "predecessor-baseline-v3.json.gz", "public-identity.json")) + (
     ".github/workflows/phase26-github-release-signing.yml",
     "scripts/phase26_github_package_candidate.py",
     "scripts/phase26_github_issue.py",
@@ -172,10 +174,12 @@ def prior_digest(registry, path, live):
     pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
     admitted = {pin["current_digest"], pin["previous_digest"]}
     predecessor = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))
-    for row in predecessor["phase26_activation_audit"].values():
-        if not isinstance(row, dict):
-            continue
-        for item in row.get("changed_files", []):
+    # Only coordinates emitted by enclosing successors can reach this adapter.
+    # Production's own before-state remains a rejected rollback, not an alias.
+    for key in ("allocator_resource_liveness_successor_v1", "first_release_closure_successor_v1",
+                "readonly_input_copy_successor_v1", "closed_ticket_composition_successor_v1",
+                "imported_native_successor_v1", "scoped_ticket_publication_successor_v1"):
+        for item in predecessor["phase26_activation_audit"][key]["changed_files"]:
             if item.get("path") == path:
                 admitted.update(item[field] for field in ("current_digest", "previous_digest"))
     require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
@@ -321,6 +325,48 @@ def validate():
     print("EPOCH2_EXACT_ADDITIVE_ENROLLMENT_PASS")
 
 
+def fixture_inventory_controls():
+    """Audit hashes never stand in for execution; retain the actual old ratchet."""
+    import contextlib
+    import io
+    import subprocess
+    from unittest.mock import patch
+    import fixture_reachability as fixtures
+    inventories = {"compiler/phase26-release/release-epoch2.json",
+                   "compiler/phase26-release/reachable-audit-epoch2.json"}
+    allowed = set(json.loads(fixtures.ALLOWLIST.read_text())["known_unexercised"])
+    require({name for name, _ in fixtures.unexercised()} == allowed and allowed,
+            "renewal changed the actual staged fixture population")
+    external = "scripts/renewal-executing-fixture-control.py"
+    require(fixtures.executing_references(sorted(inventories) + [external]) == [external],
+            "source-only inventory or executing-reference classification changed")
+    for path in inventories:
+        require(fixtures.executing_references([path + ".executor"]) == [path + ".executor"],
+                "inventory exemption widened beyond its exact path")
+    def ratchet_refuses(label):
+        stream = io.StringIO()
+        with patch.object(sys, "argv", ["fixture_reachability.py"]), contextlib.redirect_stdout(stream):
+            code = fixtures.main()
+        require(code == 1 and "No longer unexercised" in stream.getvalue(),
+                label + ": actual fixture ratchet failed to reject changed execution evidence")
+        print(label + ": REJECTED (expected actual fixture ratchet)", flush=True)
+    for path in sorted(inventories):
+        with patch.object(fixtures, "NON_EXECUTING_INVENTORIES",
+                          fixtures.NON_EXECUTING_INVENTORIES - {path}):
+            ratchet_refuses("inventory-as-execution " + path)
+    original = subprocess.run
+    target = sorted(allowed)[0]
+    def with_execution(args, *values, **kwargs):
+        result = original(args, *values, **kwargs)
+        if list(args) == ["git", "grep", "-l", "-F", target]:
+            return subprocess.CompletedProcess(args, result.returncode,
+                result.stdout + external + "\n", result.stderr)
+        return result
+    with patch.object(fixtures.subprocess, "run", with_execution):
+        ratchet_refuses("actual external reference remains execution evidence")
+    print("RENEWAL_SOURCE_ONLY_INVENTORY_CONTROLS_PASS", flush=True)
+
+
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
@@ -333,6 +379,13 @@ def inversions():
             print(label + ": REJECTED (expected assertion): " + str(error), flush=True)
         else:
             raise SystemExit(label + ": ACCEPTED")
+    production = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))[
+        "phase26_activation_audit"]["production_trust_successor_v1"]
+    for pin in production["changed_files"]:
+        if pin["path"] in CHANGED:
+            rejected("unqualified production predecessor " + pin["path"],
+                     lambda pin=pin: prior_digest(registry, pin["path"], pin["previous_digest"]),
+                     "R4 changed file drifted")
     for path in CHANGED:
         rejected("substituted " + path, lambda path=path: prior_digest(registry, path, "0" * 64),
                  "R4 changed file drifted")
@@ -386,6 +439,7 @@ def inversions():
         import phase26_2_allocator_registration as predecessor
         rejected("foreign mutation through predecessor validator", predecessor.validate,
                  "allocator changed frozen predecessor or foreign registry rows")
+    fixture_inventory_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 

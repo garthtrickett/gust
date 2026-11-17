@@ -135,6 +135,7 @@ def canonical_projection(kind, current):
         import phase26_r3_zlib_adapter_registration as r3
         import phase26_r4_collection_registration as r4
         raw = r4.owned_text(r3.raw_text_surfaces())
+        raw = successor.project(json.loads(REGISTRY.read_text()), 'r4_text', raw)
         edge = result['projections']['text']
         require(edge['current_digest'] in (fingerprint(raw),
                 fingerprint(operational_text('r4_text', raw)),

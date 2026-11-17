@@ -6069,3 +6069,10 @@ gates remain mandatory. Old preparation binaries are preserved before replacemen
 The earlier operational draft is superseded only by the complete checked renewal,
 not merged independently. The held480 correction and first-release history stay
 unchanged; the full activated roadmap continues after checked predecessor merge.
+
+Actual selected-key Rust crypto/history tests passed on the enrolled source.
+The frozen census exposed a predecessor record/text-view mismatch and two
+source-only audit inventories misclassified as fixture execution. Correct only
+those paths, preserve the original staged fixture population and predecessor
+comparisons, and prove rollback/foreign-reference refusal before fresh full
+source and production/R5/FP/CI gates. Existing first-release history is unchanged.
