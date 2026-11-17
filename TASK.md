@@ -6035,3 +6035,23 @@ canonical message, current-source production/public/R5/fixed-point evidence,
 normal CI/artifact parity, reviews/rules and checked merge are mandatory.
 Unsigned preparation and missing-signature refusal controls are not qualification.
 After the checked predecessor merge, resume the activated Phase26 remainder.
+
+### Delegated GitHub signer selection — 2026-11-17
+
+After the concrete choice between provisioning the enrolled key and a reviewed
+GitHub-generated identity, the operator replied “Whichever you rexkon”. The
+same owner selects the GitHub-generated one-shot Ed25519 identity
+`gust-github-release-1`: no transfer of the old private key or repository secret
+creation. This supersedes the earlier same-key parameter for the new epoch2
+candidate only; all epoch1 history and old unsigned drafts remain frozen.
+
+Use a reviewed non-admitting operational GitHub issuance control. Verify actual
+repo/owner/ref/commit/run/artifact provenance and raw signature, then review and
+pin the actual public key in the worker. Preserve v2/raw64/offline verification,
+epoch2/minimum2/keyrange2–2, real assembly issue/expiry and seven-day maximum,
+all product caps and all mandatory source/native/production/public/R5/FP/CI
+gates. No package/environment input can enroll a key. Do not merge a red
+operational control or carry historical native passes into changed source.
+The complete renewal includes the exact reviewed control code and supersedes
+the operational draft after actual issuance; only its all-green reviewed merge
+unblocks rebase of held PR619 and the original activated remainder.
