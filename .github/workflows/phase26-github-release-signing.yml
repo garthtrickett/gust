@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p build/github-r3
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
-            --retry 2 --max-time 90 https://zlib.net/zlib-1.3.2.tar.gz \
+            --retry 2 --max-time 90 https://zlib.net/fossils/zlib-1.3.2.tar.gz \
             --output build/github-r3/zlib-1.3.2.tar.gz
           bash scripts/phase26_r3_zlib_adapter.sh \
             build/github-r3/zlib-1.3.2.tar.gz build/github-r3/build
