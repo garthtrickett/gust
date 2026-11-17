@@ -1,0 +1,12 @@
+{
+  "signer": "gust-native-release-1",
+  "public_key_hex": "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550",
+  "manifest_sha256": "eba10d837fcaaaca525359dbaed8f953493ce3407b8149ebea8e526d524e3ab1",
+  "release_epoch": 1,
+  "minimum_package_epoch": 1,
+  "key_first_epoch": 1,
+  "key_last_epoch": 1,
+  "issued_unix_seconds": 1792723172,
+  "expires_unix_seconds": 1793327972,
+  "maximum_validity_seconds": 604800
+}

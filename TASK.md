@@ -6019,3 +6019,19 @@ and proposal; continue other authorized unblocked work under the normal ladder.
 The first-release terminal is superseded prospectively by this activation;
 its receipts and historical terminal are unchanged. General 26.1 work is
 re-entered only when a named admitted operation or later gate requires it.
+
+## Selected production trust renewal predecessor — 2026-11-17
+
+The operator delegated the concrete epoch2 renewal: minimum package epoch2,
+key epochs2–2, the same enrolled `gust-native-release-1` public identity,
+and the unchanged seven-day maximum. Carry the authenticated enrolled
+revocation/withdrawal state; honor any contrary applicable record. This selects
+the existing OD22 renewal route and does not select OD23 or change semantics.
+
+Prepare a separate main-based publication before rebasing the held PR619
+correction. Immutable epoch1 history and its first-release authority remain
+unchanged. A real operator-controlled signature over the exact newly assembled
+canonical message, current-source production/public/R5/fixed-point evidence,
+normal CI/artifact parity, reviews/rules and checked merge are mandatory.
+Unsigned preparation and missing-signature refusal controls are not qualification.
+After the checked predecessor merge, resume the activated Phase26 remainder.

@@ -644,3 +644,11 @@ in progress. Private object-local check factoring replaces repeated machine
 code; the compiler artifact ceiling stays unchanged. Native emitted-object
 bootstrap and authoritative CI are required before publication/merge/handoff.
 This is an active record, not terminal waiting; earlier waiting text is inactive.
+
+
+2026-11-17 — same Cranelift owner resumed the explicitly selected production
+epoch2 renewal on a separate main-based branch. Prior authority wait is
+invalid prospectively. Epoch1 history and held PR619/480 evidence are unchanged.
+Real isolated unsigned assembly passed; actual epoch2 signature, full source
+enrollment, production/public/R5/fixed-point and CI/review/merge remain pending.
+No OD23 selection or first-release history rewrite.

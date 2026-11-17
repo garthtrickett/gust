@@ -17,6 +17,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 KEY = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550"
+EPOCH = 2
 SOURCE = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
 MEMBERS = ("crt1.o", "crti.o", "crtbeginT.o", "libc.a", "libm-2.39.a",
            "libmvec.a", "libgcc.a", "libgcc_eh.a", "crtend.o", "crtn.o")
@@ -79,7 +80,7 @@ def assemble(package: Path, runtime: Path, receipt: Path, output: Path) -> None:
     artifacts.append(("build_options", "link-provenance.json"))
     manifest = ["format: gust.approved_native_package.v2", "repository: garthtrickett/gust",
                 "release: phase26-native-release-1", "package_id: gust_zlib_1_3_2_production",
-                "epoch: 1", "signer: gust-native-release-1", "target: x86_64-unknown-linux-gnu",
+                f"epoch: {EPOCH}", "signer: gust-native-release-1", "target: x86_64-unknown-linux-gnu",
                 "object_format: Elf", "license: Zlib", f"artifact_count: {len(artifacts)}"]
     manifest += [f"artifact: {kind}|{name}|{sha(destination / name)}" for kind, name in artifacts]
     ptr = b"RawPointer(Byte)".hex()
@@ -95,8 +96,8 @@ def assemble(package: Path, runtime: Path, receipt: Path, output: Path) -> None:
                "signer": identity["key_id"], "public_key_hex": KEY,
                "canonical_message_path": str(message), "canonical_message_sha256": sha(message),
                "manifest_path": str(manifest_path), "manifest_sha256": sha(manifest_path),
-               "artifact_manifest": provenance, "release_epoch": 1, "minimum_package_epoch": 1,
-               "key_first_epoch": 1, "key_last_epoch": 1, "issued_unix_seconds": issued,
+               "artifact_manifest": provenance, "release_epoch": EPOCH, "minimum_package_epoch": EPOCH,
+               "key_first_epoch": EPOCH, "key_last_epoch": EPOCH, "issued_unix_seconds": issued,
                "expires_unix_seconds": issued + 604800, "maximum_validity_seconds": 604800,
                "signature_destination": str(destination / "manifest.sig"),
                "authority_receipt_sha256": sha(receipt),

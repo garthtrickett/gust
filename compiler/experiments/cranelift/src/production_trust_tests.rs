@@ -1,43 +1,100 @@
 #[test]
 fn enrolled_signature_and_snapshot_fail_closed() {
     let bytes = production_trust::MANIFEST;
-    let signature = include_bytes!("../production/manifest.sig");
+    // Missing public signature is a failed production test, never an unsigned pass.
+    let signature = fs::read(Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("production/manifest.sig")).expect("real enrolled epoch2 public signature required");
+    assert_eq!(signature.len(), 64);
     let manifest = parse_manifest(bytes).unwrap();
     let snapshot = production_trust::SNAPSHOT;
     let now = snapshot.issued_unix_seconds;
-    assert!(verify_signature_at(bytes, signature, &manifest, &snapshot, now).is_ok());
-    assert_eq!(snapshot.release_epoch, 1);
-    assert_eq!(snapshot.minimum_package_epoch, 1);
+    assert!(verify_signature_at(bytes, &signature, &manifest, &snapshot, now).is_ok());
+    assert_eq!(snapshot.release_epoch, 2);
+    assert_eq!(snapshot.minimum_package_epoch, 2);
     assert_eq!(snapshot.keys.len(), 1);
-    assert_eq!((snapshot.keys[0].first_epoch, snapshot.keys[0].last_epoch), (1, 1));
+    assert_eq!((snapshot.keys[0].first_epoch, snapshot.keys[0].last_epoch), (2, 2));
     assert_eq!(snapshot.expires_unix_seconds - now, 604800);
     for time in [0, now - 1, snapshot.expires_unix_seconds, u64::MAX] {
-        assert!(verify_signature_at(bytes, signature, &manifest, &snapshot, time).is_err());
+        assert!(verify_signature_at(bytes, &signature, &manifest, &snapshot, time).is_err());
     }
     let too_long = TrustSnapshot { expires_unix_seconds: now + 604801,
         ..production_trust::SNAPSHOT };
-    assert!(verify_signature_at(bytes, signature, &manifest, &too_long, now).is_err());
+    assert!(verify_signature_at(bytes, &signature, &manifest, &too_long, now).is_err());
     let unknown_bytes = String::from_utf8(bytes.to_vec()).unwrap()
         .replace("signer: gust-native-release-1", "signer: unregistered-key").into_bytes();
     assert_ne!(unknown_bytes, bytes);
     let unknown_manifest = parse_manifest(&unknown_bytes).unwrap();
-    assert!(verify_signature_at(&unknown_bytes, signature, &unknown_manifest, &snapshot, now)
+    assert!(verify_signature_at(&unknown_bytes, &signature, &unknown_manifest, &snapshot, now)
         .unwrap_err().to_string().contains("unknown signer"));
     let unknown = TrustSnapshot { keys: &[], ..production_trust::SNAPSHOT };
-    assert!(verify_signature_at(bytes, signature, &manifest, &unknown, now).is_err());
+    assert!(verify_signature_at(bytes, &signature, &manifest, &unknown, now).is_err());
     let revoked = TrustSnapshot { revoked_keys: &["gust-native-release-1"],
         ..production_trust::SNAPSHOT };
-    assert!(verify_signature_at(bytes, signature, &manifest, &revoked, now).is_err());
+    assert!(verify_signature_at(bytes, &signature, &manifest, &revoked, now).is_err());
     let digests = [Sha256::digest(bytes).into()];
     let withdrawn = TrustSnapshot { withdrawn_digests: &digests,
         ..production_trust::SNAPSHOT };
-    assert!(verify_signature_at(bytes, signature, &manifest, &withdrawn, now).is_err());
-    let mut changed = *signature;
+    assert!(verify_signature_at(bytes, &signature, &manifest, &withdrawn, now).is_err());
+    let mut changed = signature.clone();
     changed[0] ^= 1;
     assert!(verify_signature_at(bytes, &changed, &manifest, &snapshot, now).is_err());
     for value in [b"".as_slice(), &signature[..63]] {
         assert!(verify_signature_at(bytes, value, &manifest, &snapshot, now).is_err());
     }
+}
+
+
+#[test]
+fn renewal_preserves_history_and_refuses_unsigned_or_rollback_packages() {
+    let old_bytes = include_bytes!("../production/epoch1/manifest.txt");
+    let old_signature = include_bytes!("../production/epoch1/manifest.sig");
+    let old_manifest = parse_manifest(old_bytes).unwrap();
+    let current = production_trust::SNAPSHOT;
+    let now = current.issued_unix_seconds;
+    let old_keys = [TrustedKey { first_epoch: 1, last_epoch: 1,
+        ..current.keys[0].clone() }];
+    let old_snapshot = TrustSnapshot { release_epoch: 1, minimum_package_epoch: 1,
+        keys: &old_keys, issued_unix_seconds: 1792723172,
+        expires_unix_seconds: 1793327972, ..production_trust::SNAPSHOT };
+    // Historical positive at its original fixture time proves actual old crypto.
+    assert!(verify_signature_at(old_bytes, old_signature, &old_manifest,
+        &old_snapshot, old_snapshot.issued_unix_seconds).is_ok());
+    assert!(verify_signature_at(old_bytes, old_signature, &old_manifest,
+        &old_snapshot, now).unwrap_err().to_string().contains("stale/rollback/future"));
+    assert!(verify_signature_at(old_bytes, old_signature, &old_manifest,
+        &current, now).unwrap_err().to_string().contains("stale/rollback/future"));
+    let bytes = production_trust::MANIFEST;
+    let manifest = parse_manifest(bytes).unwrap();
+    assert_eq!(manifest.epoch, 2);
+    assert_ne!(bytes, old_bytes);
+    assert!(verify_signature_at(bytes, old_signature, &manifest, &current, now)
+        .unwrap_err().to_string().contains("invalid signature"));
+    for missing in [b"".as_slice(), &old_signature[..63]] {
+        assert!(verify_signature_at(bytes, missing, &manifest, &current, now)
+            .unwrap_err().to_string().contains("signature width"));
+    }
+    for epoch in [1, 3] {
+        let altered = String::from_utf8(bytes.to_vec()).unwrap()
+            .replace("epoch: 2\n", &format!("epoch: {epoch}\n")).into_bytes();
+        assert_ne!(altered, bytes);
+        let parsed = parse_manifest(&altered).unwrap();
+        assert!(verify_signature_at(&altered, old_signature, &parsed, &current, now)
+            .unwrap_err().to_string().contains("stale/rollback/future"));
+    }
+    for time in [now - 1, current.expires_unix_seconds] {
+        assert!(verify_signature_at(bytes, old_signature, &manifest, &current, time)
+            .unwrap_err().to_string().contains("stale/rollback/future"));
+    }
+    let revoked = TrustSnapshot { revoked_keys: &["gust-native-release-1"],
+        ..production_trust::SNAPSHOT };
+    assert!(verify_signature_at(bytes, old_signature, &manifest, &revoked, now)
+        .unwrap_err().to_string().contains("revoked signer"));
+    let digests = [Sha256::digest(bytes).into()];
+    let withdrawn = TrustSnapshot { withdrawn_digests: &digests,
+        ..production_trust::SNAPSHOT };
+    assert!(verify_signature_at(bytes, old_signature, &manifest, &withdrawn, now)
+        .unwrap_err().to_string().contains("withdrawn package"));
+    assert!(current.revoked_keys.is_empty() && current.withdrawn_digests.is_empty());
 }
 
 #[test]

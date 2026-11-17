@@ -7,17 +7,17 @@ pub const MAXIMUM_VALIDITY_SECONDS: u64 = 604800;
 pub const MANIFEST: &[u8] = include_bytes!("../production/manifest.txt");
 pub const SNAPSHOT: TrustSnapshot<'static> = TrustSnapshot {
     release: RELEASE,
-    release_epoch: 1,
-    issued_unix_seconds: 1792723172,
-    expires_unix_seconds: 1793327972,
-    minimum_package_epoch: 1,
+    release_epoch: 2,
+    issued_unix_seconds: 1794889920,
+    expires_unix_seconds: 1795494720,
+    minimum_package_epoch: 2,
     keys: &[TrustedKey {
         id: "gust-native-release-1",
         public_key: [0x67,0x78,0xb0,0x5d,0x2e,0xf8,0xf7,0xaf,
             0x4f,0x55,0x39,0x18,0xb2,0xb5,0x65,0x8e,
             0xba,0x1d,0x79,0x19,0x53,0x6a,0xb3,0xb6,
             0x4c,0x69,0xe6,0x3f,0xd5,0xe0,0xb5,0x50],
-        first_epoch: 1, last_epoch: 1,
+        first_epoch: 2, last_epoch: 2,
     }],
     revoked_keys: &[], withdrawn_digests: &[],
 };

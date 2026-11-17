@@ -167,7 +167,7 @@ def production_policy(registry):
     identity(registry)
     profile = ROOT / "compiler/experiments/cranelift/production"
     public = json.loads((profile / "public-identity.json").read_text())
-    snapshot = json.loads((profile / "snapshot.json").read_text())
+    snapshot = json.loads(live_bytes("compiler/experiments/cranelift/production/snapshot.json"))
     key = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550"
     require(public["public_key_hex"] == snapshot["public_key_hex"] == key and
             public["key_id"] == snapshot["signer"] == "gust-native-release-1" and
@@ -176,9 +176,9 @@ def production_policy(registry):
     require([snapshot[n] for n in ("release_epoch", "minimum_package_epoch", "key_first_epoch", "key_last_epoch")] == [1,1,1,1] and
             snapshot["maximum_validity_seconds"] == 604800 and
             snapshot["expires_unix_seconds"] - snapshot["issued_unix_seconds"] == 604800 and
-            sha((profile / "manifest.txt").read_bytes()) == snapshot["manifest_sha256"],
+            sha(live_bytes("compiler/experiments/cranelift/production/manifest.txt")) == snapshot["manifest_sha256"],
             "production pinned epoch, validity or manifest binding changed")
-    worker = (ROOT / "compiler/experiments/cranelift/src/production_trust.rs").read_text()
+    worker = live_bytes("compiler/experiments/cranelift/src/production_trust.rs").decode()
     array = re.search(r"public_key: \[(.*?)\]", worker, re.S)[1]
     actual = bytes(int(n, 16) for n in re.findall(r"0x([0-9a-f]{2})", array)).hex()
     require(actual == key and all(f"{name}: {snapshot[name]}" in worker for name in
