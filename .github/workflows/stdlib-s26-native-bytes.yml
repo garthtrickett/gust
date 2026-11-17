@@ -58,7 +58,7 @@ jobs:
         run: |
           mkdir -p build/guards/stdlib_s26_1_package
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
-            --retry 3 --max-time 90 https://zlib.net/zlib-1.3.2.tar.gz \
+            --retry 3 --max-time 90 https://zlib.net/fossils/zlib-1.3.2.tar.gz \
             --output build/guards/stdlib_s26_1_package/zlib-1.3.2.tar.gz
           bash scripts/phase26_r3_zlib_adapter.sh \
             build/guards/stdlib_s26_1_package/zlib-1.3.2.tar.gz \
