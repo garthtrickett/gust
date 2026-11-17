@@ -48132,7 +48132,7 @@
         {
           "path": ".github/workflows/phase26-release-closure.yml",
           "previous_digest": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050",
-          "current_digest": "07a334ee1f72065b49a8df202ba7c7fe4778cf64f36ef1dbb07b71c51404c2d8"
+          "current_digest": "0f0548dfa5cc96052150697d2555a6a1ac140a7ecce8b4bf39d61a10b50dbbf4"
         },
         {
           "path": ".github/workflows/stdlib-s26-native-bytes.yml",
@@ -48209,11 +48209,11 @@
         },
         {
           "path": "compiler/phase26-release/release-epoch2.json",
-          "digest": "9b8e956c0fa0a73e45acafb88a539654dcdb6498067719d1f327cbeeeab46593"
+          "digest": "6fc1b82155a88dba49cfecbd5b1abf1e5584b7b6eebca09fb7f8cfc649fe092a"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
-          "digest": "018d7908ea989f132808e45eaa274cd857befe1dd14038cecc69246eef3c3865"
+          "digest": "93a559d2126bacaed82765ab5c66e60834797fe01882d3e18127c9b26393c0e5"
         },
         {
           "path": "scripts/phase26_production_renewal.py",
@@ -48221,7 +48221,7 @@
         },
         {
           "path": "scripts/phase26_production_renewal_registration.py",
-          "digest": "5dc427df0be202e38ff0e1bb7bf868adcf386e4aa0f399752dc976467bf37cf0"
+          "digest": "b32f31f5e5d9901111fa9caef28f2723afb63c0591c438157f0f582f70334410"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
@@ -48229,7 +48229,7 @@
         }
       ],
       "owned_text": {
-        "text": "0f3ebfd2788468d76bc06a5992ca4c7f33baeb2c563350ed62566f913474d634",
+        "text": "b2dae2603e6a797ae640ef670c9d658e415b273b339cd97a24198c9d6071da7f",
         "r4_text": "62107e511ef55ee8188fca97591158d00bf2449c02e66c9978efd64be269217d"
       },
       "projections": {
@@ -48240,7 +48240,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "72e0b1941031878e128e2adcf3d1bfb01b048d2b8b7bdc209e159801cde7708c",
-        "text": "1b8fa0ec5c32ffd9a3abac0691d88e117c76df4af46f1d9579b4afdcf0a1499c"
+        "text": "faead34b1690efc7569f78fa9e8233f19f460b535484d168a57cbe1c6985d25b"
       },
       "spelling_render_current_digest": "daab8f7fb0577dd259105e925da52014ff8fbdf390572f61a2148616dbf4a1af"
     },
