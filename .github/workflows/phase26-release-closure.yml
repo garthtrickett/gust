@@ -55,6 +55,8 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Pin the enrolled production toolchain
         run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-release-toolchain
+      - name: Validate selected production trust renewal
+        run: just guard-cranelift-phase26-production-renewal
       - name: Build current native compiler
         run: python3 scripts/phase26_release_bounded.py make gust
       - name: Reproduce exact public native package inputs

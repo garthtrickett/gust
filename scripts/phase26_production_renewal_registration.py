@@ -59,6 +59,9 @@ RECIPE = ("\n# Selected epoch2 worker renewal; no package-supplied trust updates
     "    python3 scripts/phase26_production_renewal_registration.py validate\n"
     "    python3 scripts/phase26_production_renewal_registration.py inversions\n"
     "    python3 scripts/phase26_production_renewal.py validate\n")
+WORKFLOW = ".github/workflows/phase26-release-closure.yml"
+WORKFLOW_STEP = ("      - name: Validate selected production trust renewal\n"
+                 "        run: just " + GUARD + "\n")
 
 
 def require(ok, message):
@@ -306,6 +309,18 @@ def generate():
     print("EPOCH2_EXACT_ADDITIVE_ENROLLMENT_GENERATED; not qualification")
 
 
+def check_workflow_caller():
+    previous = base_bytes(WORKFLOW).decode()
+    old_url = "https://zlib.net/zlib-1.3.2.tar.gz"
+    new_url = "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+    anchor = "      - name: Build current native compiler\n"
+    require(previous.count(old_url) == previous.count(anchor) == 1,
+            "renewal predecessor workflow anchors drifted")
+    expected = previous.replace(old_url, new_url).replace(anchor, WORKFLOW_STEP + anchor)
+    require((ROOT / WORKFLOW).read_text() == expected,
+            "renewal owning workflow caller drifted")
+
+
 def validate():
     import phase26_production_renewal as renewal
     renewal.validate()
@@ -316,6 +331,7 @@ def validate():
     check_files(registry)
     require((ROOT / "justfile").read_bytes() == base_bytes("justfile") + RECIPE.encode(),
             "renewal owning recipe drifted")
+    check_workflow_caller()
     levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
     require(levels["guards"].pop(GUARD, None) == 2 and
             levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")),
@@ -400,6 +416,40 @@ def predecessor_record_control():
     print("PREDECESSOR_RECORD_CONTROL_ONLY_PASS; full inversions/census remain required", flush=True)
 
 
+def workflow_caller_controls():
+    """Registry mention alone must never stand in for this actual CI caller."""
+    from unittest.mock import patch
+    import phase24_retirement_consumer_inventory as inventory
+    check_workflow_caller()
+    reached, named, make = inventory.liveness()
+    require(GUARD in reached and GUARD in named and GUARD not in make,
+            "renewal guard lacks its actual owning workflow route")
+    original_text = Path.read_text
+    current = original_text(ROOT / WORKFLOW)
+    require(current.count(WORKFLOW_STEP) == 1, "renewal caller control is not isolated")
+    without_caller = current.replace(WORKFLOW_STEP, "", 1)
+    with patch.object(Path, "read_text", lambda p, *args, **kwargs:
+            without_caller if p == ROOT / WORKFLOW else original_text(p, *args, **kwargs)):
+        reached, named, make = inventory.liveness()
+        require(GUARD not in reached and GUARD in named and GUARD not in make,
+                "renewal caller removal did not move actual reachability")
+        for label, callback, expected in (
+                ("owning workflow caller omitted", check_workflow_caller,
+                 "renewal owning workflow caller drifted"),
+                ("registry-only renewal guard", inventory.validate,
+                 "a recipe became live solely because a registry names it")):
+            try:
+                callback()
+            except SystemExit as error:
+                require(expected in str(error),
+                        label + ": REJECTED (different assertion): " + str(error))
+                print(label + ": REJECTED (expected assertion)", flush=True)
+            else:
+                raise SystemExit(label + ": ACCEPTED")
+    check_workflow_caller()
+    print("RENEWAL_ACTUAL_WORKFLOW_CALLER_CONTROLS_PASS; full inversions remain required", flush=True)
+
+
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
@@ -474,9 +524,11 @@ def inversions():
                  "allocator changed frozen predecessor or foreign registry rows")
     predecessor_record_control()
     fixture_inventory_controls()
+    workflow_caller_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
 if __name__ == "__main__":
     {"generate": generate, "validate": validate, "inversions": inversions,
-     "predecessor-record-control": predecessor_record_control}[sys.argv[1]]()
+     "predecessor-record-control": predecessor_record_control,
+     "workflow-caller-controls": workflow_caller_controls}[sys.argv[1]]()
