@@ -521,6 +521,16 @@ def source_delivery_controls():
             rejected(label, check_source_archive, expected)
 
     original_text = Path.read_text
+    manifest_path = ROOT / "compiler/experiments/cranelift/production/manifest.txt"
+    manifest = original_text(manifest_path)
+    source_line = "artifact: source|zlib-1.3.2.tar.gz|" + SOURCE_SHA256
+    require(manifest.count(source_line) == 1, "source binding control is not isolated")
+    altered_manifest = manifest.replace(source_line, source_line[:-64] + "0" * 64, 1)
+    with patch.object(Path, "read_text", lambda p, *a, **kw:
+                      altered_manifest if p == manifest_path else original_text(p, *a, **kw)):
+        rejected("signed manifest source binding", check_source_archive,
+                 "vendored source differs from the signed manifest input")
+
     for path, expected in (
         (WORKFLOW, "renewal owning workflow caller drifted"),
         (STDLIB_WORKFLOW, "renewal Stdlib workflow source route drifted"),
@@ -539,6 +549,18 @@ def source_delivery_controls():
         with patch.object(Path, "read_text", lambda p, *a, **kw:
                           wrong_argument if p == ROOT / path else original_text(p, *a, **kw)):
             rejected("unqualified source argument " + path, check_workflow_caller, expected)
+        current = original_text(ROOT / path)
+        before, after = (
+            ("python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-release-closure",
+             "just guard-cranelift-phase26-release-closure") if path == WORKFLOW else
+            ("cmp compiler/experiments/cranelift/production/manifest.txt",
+             "echo compiler/experiments/cranelift/production/manifest.txt"))
+        require(current.count(before) == 1, "preserved workflow step control is not isolated")
+        weakened_step = current.replace(before, after, 1)
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                          weakened_step if p == ROOT / path else original_text(p, *a, **kw)):
+            rejected("weakened existing qualification step " + path,
+                     check_workflow_caller, expected)
 
     # Invalid gzip cannot reach a compiler even if a future edit removes the
     # digest gate. Require its exact diagnostic, not a later tar rejection.
