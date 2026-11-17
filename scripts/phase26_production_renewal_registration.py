@@ -115,11 +115,6 @@ def frozen_ancestor_images(kind):
                  "phase26_imported_native_registration", "phase26_ticket_publication_registration"):
         values.append(importlib.import_module(name).baseline()["projections"][kind])
     if kind == "r4_record":
-        require(isinstance(current, dict) and set(current) == set(previous) and
-                isinstance(current.get("changed_files"), list) and
-                sum(isinstance(p, dict) and p.get("path") == STATE
-                    for p in current["changed_files"]) == 1,
-                "R4 r4_record live projection drifted (renewal)")
         for value in list(values):
             live_state = copy.deepcopy(value)
             next(p for p in live_state["changed_files"] if p["path"] == STATE)[
@@ -137,6 +132,11 @@ def canonical_projection(kind, current):
         return sorted(copy.deepcopy([p for p in current if p["path"] != STATE] +
                       [p for p in previous if p["path"] == STATE]), key=lambda p: p["path"])
     if kind == "r4_record":
+        require(isinstance(current, dict) and set(current) == set(previous) and
+                isinstance(current.get("changed_files"), list) and
+                sum(isinstance(p, dict) and p.get("path") == STATE
+                    for p in current["changed_files"]) == 1,
+                "R4 r4_record live projection drifted (renewal)")
         result = copy.deepcopy(current)
         state = next(p for p in result["changed_files"] if p["path"] == STATE)
         old = next(p for p in previous["changed_files"] if p["path"] == STATE)
