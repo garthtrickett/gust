@@ -652,3 +652,46 @@ invalid prospectively. Epoch1 history and held PR619/480 evidence are unchanged.
 Real isolated unsigned assembly passed; actual epoch2 signature, full source
 enrollment, production/public/R5/fixed-point and CI/review/merge remain pending.
 No OD23 selection or first-release history rewrite.
+
+
+# Cranelift selected renewal — bounded signature wait
+
+Written 2026-11-17T05:02:55.167451+00:00. Same compiler owner and activated Phase26 remainder.
+
+Completed: separate main9df2 renewal preparation, exact immutable epoch1
+capture, reviewed current epoch2 worker/snapshot/manifest/refusal successor,
+genuine pinned isolated unsigned12-artifact assembly,27 Python refusal
+controls, closure refusals, eight-kind ancestor archive enumeration, current
+Rust worker/test compilation,94-test enumeration, and the actual history/
+rollback unit test. Actual byte bindings and host/source integrity passed.
+All preparation jobs reaped; none remains live.
+
+The mandatory current-production positive test actually FAILS because the
+real epoch2 public signature is absent. No full signed enrollment, transitive
+registered inversions, full production/public/R5/FP/native/CI or merge pass
+is claimed. Current authority/audit enrollment drafts remain explicitly
+unsigned until a genuine signature permits final enumeration.
+
+Renewal authority is selected. Allowed public release metadata contains no
+documented invokable operator-controlled signer. The remaining input is the
+raw64-byte Ed25519 signature from gust-native-release-1 over the exact1964-byte
+canonical-message.bin in public-signature-handoff-v1 (SHA256
+`a910d825874a4c28f269cb1a712fa6f4303789657db0a884164b3750056f44e5`).
+Return it as public-signature-handoff-v1/manifest.sig or supply the documented
+operator-controlled signing interface. No private material was scanned/read.
+Actual snapshot:2026-11-17T04:32:00Z to2026-11-24T04:32:00Z; no clock override.
+
+On the actual handoff: verify current source/inputs and real signature before
+accepting it; finalize exact additive enrollment; run signature-dependent
+controls and all current-source/native/production/public/protected4GiB R5/FP
+and authoritative CI/artifact/review/rule/merge gates. Rebase held PR619/480
+only after the separate renewal merges; continue activated26.2–26.6 afterward.
+
+Continuation ladder checked: selected next compiler corrections depend on
+this merged renewal and their held qualification, with no unmerged semantic
+stack. docs/UNBLOCKED_CONTAINMENT_WORK.md remains proposal/semantic-prerequisite
+work; docs/DEMO_TARGET_PROGRAM.md remains a specification target. Neither
+selects extra semantics or retired bootstrap work. No unrelated busywork is
+started. OD23 remains OPEN/unselected; frozen first-release history unchanged.
+Original startup symlink, installed480 tools and dirty prototype are preserved.
+This wait is invalidated prospectively when the actual handoff resumes work.
