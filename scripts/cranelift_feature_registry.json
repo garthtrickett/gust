@@ -48056,6 +48056,185 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "production_epoch2_renewal_successor_v1": {
+      "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",
+      "owner": "cranelift",
+      "guard": "guard-cranelift-phase26-production-renewal",
+      "release_epoch": 2,
+      "operational_state_excluded": "GUST_LANE_STATE.md",
+      "od23": "OPEN; no observation alternative selected",
+      "changed_files": [
+        {
+          "path": "TASK.md",
+          "previous_digest": "ef2321c68e68e30952e5eb023e94a98a7b88f594d7903376feb4dc981cbb8273",
+          "current_digest": "230d21dc28f241ffd763eaa2e8af4cad15856db1905cb0b2c43da3e1e28cb088"
+        },
+        {
+          "path": "justfile",
+          "previous_digest": "fc7ddb6ee2530b27d9513470e5b94a53032964b417ef75cf8db38f21da52b267",
+          "current_digest": "1a394ba10c83831838cc65e3b889fca90dc9238ffb8152522fa4b2111621d55b"
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "6cf72a1df7593ddfb1249991e419bfae530c2acb28f4db1e0a04e5c940730d44",
+          "current_digest": "7707595d94dd1c64f4a918d2a677bac5392e5216049f1ceda78567093c65decb"
+        },
+        {
+          "path": "scripts/phase26_2_allocator_registration.py",
+          "previous_digest": "09263b79685ceec8c343321fdce1d2c9dd9fb4e009db6d165c056184776399da",
+          "current_digest": "3be13e6ed2e576182c84bf3a2baec1bba5f5b6d5dc6898c71ef800a51a680111"
+        },
+        {
+          "path": "scripts/phase26_production_registration.py",
+          "previous_digest": "aa9dcae656c83a8fb08be97e440a9562505f851808e95d1682f4817713bfcaeb",
+          "current_digest": "0d0cc90077b68f40dd41df24c3ae1f303ced236a35c8d118aeaafe7a4a72ef33"
+        },
+        {
+          "path": "scripts/phase26_release_closure.py",
+          "previous_digest": "e382b0e60ed8e58a472808025f4658bc1f7466e7ba0368e6f30ed4155f173579",
+          "current_digest": "ca9a73a024209cbcb86e553e3f56cca8156e763f796641ef86426350f597c19c"
+        },
+        {
+          "path": "scripts/phase26_production_package.py",
+          "previous_digest": "5dc03141dd57ffd6d54c6d29e3554f4e7ff4b7008d52212fc093064c72792c50",
+          "current_digest": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/production_trust.rs",
+          "previous_digest": "9de4a2ed0db9b585ca181c3d13b7aacd3898f7152af92a7db9483a94d2265434",
+          "current_digest": "09c63fa3e88f2b5ad4b7e3a62029c7a5fc044b4646c2872bdcb2d180bff3badb"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/production_trust_tests.rs",
+          "previous_digest": "9e3fbaaf55a290ff7053f0af30e0ae70b05140f65c7113ae8513d9cc9a9e30d5",
+          "current_digest": "382de5b5eb193bd062f4adec2256b3d8cd25f3529f348948f99868dab9846696"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/manifest.txt",
+          "previous_digest": "eba10d837fcaaaca525359dbaed8f953493ce3407b8149ebea8e526d524e3ab1",
+          "current_digest": "a855faf64b3df55301f30ff23f955b2f996e20158894b039b7c3eed3faae6ffd"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/manifest.sig",
+          "previous_digest": "ca663c4013fa5e793652e0759ea7b9f79cd204c01a00c830cc6d168e42ab7d39",
+          "current_digest": "e815c84671f20a0c2a8cbea5881096b617a7b26418c66e62071fde93f9c2df99"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/snapshot.json",
+          "previous_digest": "810b6ca7660b7c3ad36ebf1c1bae4c03fea247e1f3a5e0dd867a079ebdca6c79",
+          "current_digest": "6caeb785aed1cba0b6052850b63d493acb393df78a2d8313c8c48b6e805c3046"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/public-identity.json",
+          "previous_digest": "5116cf043f6aa8b42a8018f14aa195722d738a1ab0ddc8d04db62c472aac8529",
+          "current_digest": "52bdd34eb70570d27d63feb38056cd31c566559d3d4b97e56a2812e2ddbffce5"
+        },
+        {
+          "path": ".github/workflows/phase26-release-closure.yml",
+          "previous_digest": "0e86ee15e6c698c4d419b508f18550533eaba2b30b85c925dba677ecc1960050",
+          "current_digest": "07a334ee1f72065b49a8df202ba7c7fe4778cf64f36ef1dbb07b71c51404c2d8"
+        },
+        {
+          "path": ".github/workflows/stdlib-s26-native-bytes.yml",
+          "previous_digest": "e7091cbec685c8d704b62ca4392bc98b1690c9ae261a0d6b533c6be72cf25d22",
+          "current_digest": "65d8ba05abb5f2f799539c49d4ba7f8e2e5abf0e88736d3d943d7d8194b15247"
+        },
+        {
+          "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
+          "previous_digest": "19d0f2fd538d86672c781a9e65cf92761cd2c4a73ca83f9f96a659b1dfaf5c19",
+          "current_digest": "0e5302ebc9d3c2d21d663d05f530459a2de25e99ed37eaa2e0a075ff0dd5d25a"
+        }
+      ],
+      "added_files": [
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/manifest.txt",
+          "digest": "eba10d837fcaaaca525359dbaed8f953493ce3407b8149ebea8e526d524e3ab1"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/manifest.sig",
+          "digest": "ca663c4013fa5e793652e0759ea7b9f79cd204c01a00c830cc6d168e42ab7d39"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/snapshot.json",
+          "digest": "810b6ca7660b7c3ad36ebf1c1bae4c03fea247e1f3a5e0dd867a079ebdca6c79"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/production_trust.rs",
+          "digest": "9de4a2ed0db9b585ca181c3d13b7aacd3898f7152af92a7db9483a94d2265434"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/predecessor-baseline.json.gz",
+          "digest": "73089a2c9dbadb629efc24d28f9d42aacfe73e6ea9374a74513935ebb524e54d"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v2.json.gz",
+          "digest": "30e78dbe50b8b0b0fb2daa6614f8cbab5eb8844f8f666a041408d3aae7acfb03"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/epoch1/public-identity.json",
+          "digest": "5116cf043f6aa8b42a8018f14aa195722d738a1ab0ddc8d04db62c472aac8529"
+        },
+        {
+          "path": ".github/workflows/phase26-github-release-signing.yml",
+          "digest": "08fcd2c55537be5fc0a4827444fb04318ef31b26f587d22347fb386e02c15388"
+        },
+        {
+          "path": "scripts/phase26_github_package_candidate.py",
+          "digest": "c00f82cae8bcdf2578d138265a8a88812aa51c4ffc4567d3ea3d6b2323677732"
+        },
+        {
+          "path": "scripts/phase26_github_issue.py",
+          "digest": "cc9c7c4e8fb921261ee91f391ca67ec5b70af5f839c8fc406259561655e5785a"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/github-provenance.json",
+          "digest": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/github-enrollment.json",
+          "digest": "88c0383460139f00728c5c8df74a60629c0015bd10f2e30ebfa6df4ce26b8cfe"
+        },
+        {
+          "path": "compiler/experiments/cranelift/production/renewal-assembly.json",
+          "digest": "dc7f07028e12be02876e00829893d148f3024c973cc8a4392c37e66882098ef9"
+        },
+        {
+          "path": "compiler/phase26-release/release-epoch2.json",
+          "digest": "1bb4c396c5df6592be966435f84a0e78f69ebf0f374c59bf7ffdfe3d9d0f336c"
+        },
+        {
+          "path": "compiler/phase26-release/reachable-audit-epoch2.json",
+          "digest": "86ccc8758addbd2e62babea4d9c91d993c95c15cb8632f30943978b79476b60a"
+        },
+        {
+          "path": "scripts/phase26_production_renewal.py",
+          "digest": "97a4c8fe965bc77129de61877e88250b6897db8b8bf18adf00937da5a64a777f"
+        },
+        {
+          "path": "scripts/phase26_production_renewal_registration.py",
+          "digest": "748dfff3ac5bc0c8bd0fd202fd7327f93d93580c9b1bd2e0bdb546bfd4d6fc5f"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
+          "digest": "6f6c25c25a68807ab2684a40102a24b8ee6204add69665f93d1155651ab23176"
+        }
+      ],
+      "owned_text": {
+        "text": "9d0d36f37c79a618cc2413677fd8ef8ae5645d5458d7ca9372d14f9cdfc9af62",
+        "r4_text": "62107e511ef55ee8188fca97591158d00bf2449c02e66c9978efd64be269217d"
+      },
+      "projections": {
+        "r4_text": "464488137c02874d52e10f36075100585be6e498077a28876e34ccdcf7e7fe00",
+        "spelling": "13a1b95d4397ec0e4b483073406c3bfae8f9470355661f8ef1d1a8e6df7163df",
+        "filename": "9a409e447cfa02b5571c28deafefb489bff9fed41213552fd2537db5f80ae6f2",
+        "r3_record": "286bcb8257f29c3ff085882c766e9e39eab91492addb5ce39fa94f624c8e55eb",
+        "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
+        "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
+        "r4_record": "72e0b1941031878e128e2adcf3d1bfb01b048d2b8b7bdc209e159801cde7708c",
+        "text": "2d1a11d991a5782a4d2489a648ed0a813f58200cd31a2eace676cf93f8591531"
+      },
+      "spelling_render_current_digest": "daab8f7fb0577dd259105e925da52014ff8fbdf390572f61a2148616dbf4a1af"
+    },
     "allocator_resource_liveness_successor_v1": {
       "predecessor_main": "35ebca4c91dce0b14d7343e638c8ed91a09cd867",
       "owner": "cranelift",
