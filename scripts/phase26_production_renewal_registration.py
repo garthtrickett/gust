@@ -367,6 +367,39 @@ def fixture_inventory_controls():
     print("RENEWAL_SOURCE_ONLY_INVENTORY_CONTROLS_PASS", flush=True)
 
 
+def predecessor_record_control():
+    """Exercise the old record check through its actual imported module target."""
+    from unittest.mock import patch
+    import phase26_2_allocator_registration as predecessor
+    registry = json.loads(REGISTRY.read_text())
+    check_files(registry)  # Require this exact patched source before isolation.
+    foreign_record = copy.deepcopy(predecessor.baseline()["projections"]["r4_record"])
+    next(p for p in foreign_record["changed_files"] if p["path"] == STATE)[
+        "current_digest"] = sha((ROOT / STATE).read_bytes())
+    next(p for p in foreign_record["changed_files"] if p["path"] != STATE)[
+        "current_digest"] = "0" * 64
+    # __main__ is distinct from the module imported by the predecessor.
+    target = predecessor.successor
+    original_project = target.project
+    isolated = []
+    def isolate_foreign_record(registry, kind, value):
+        if kind == "r4_record" and value is foreign_record:
+            isolated.append(True)
+            return copy.deepcopy(value)
+        return original_project(registry, kind, value)
+    with patch.object(target, "project", isolate_foreign_record):
+        try:
+            predecessor.project(registry, "r4_record", foreign_record)
+        except SystemExit as error:
+            require("live projection drifted (allocator successor)" in str(error),
+                    "predecessor nested foreign record: REJECTED (different assertion): " + str(error))
+            print("predecessor nested foreign record: REJECTED (expected assertion)", flush=True)
+        else:
+            raise SystemExit("predecessor nested foreign record: ACCEPTED")
+    require(isolated == [True], "predecessor control did not isolate its exact input")
+    print("PREDECESSOR_RECORD_CONTROL_ONLY_PASS; full inversions/census remain required", flush=True)
+
+
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
@@ -439,22 +472,11 @@ def inversions():
         import phase26_2_allocator_registration as predecessor
         rejected("foreign mutation through predecessor validator", predecessor.validate,
                  "allocator changed frozen predecessor or foreign registry rows")
-    # Isolate the predecessor's own whole-record check: the real upstream
-    # physical and text checks were exercised above and remain active below.
-    foreign_record = copy.deepcopy(predecessor.baseline()["projections"]["r4_record"])
-    next(p for p in foreign_record["changed_files"] if p["path"] == STATE)[
-        "current_digest"] = sha((ROOT / STATE).read_bytes())
-    next(p for p in foreign_record["changed_files"] if p["path"] != STATE)[
-        "current_digest"] = "0" * 64
-    original_project = project
-    with patch.dict(globals(), project=lambda registry, kind, value:
-            copy.deepcopy(value) if kind == "r4_record" else original_project(registry, kind, value)):
-        rejected("predecessor nested foreign record after STATE normalization",
-                 lambda: predecessor.project(registry, "r4_record", foreign_record),
-                 "live projection drifted (allocator successor)")
+    predecessor_record_control()
     fixture_inventory_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
 if __name__ == "__main__":
-    {"generate": generate, "validate": validate, "inversions": inversions}[sys.argv[1]]()
+    {"generate": generate, "validate": validate, "inversions": inversions,
+     "predecessor-record-control": predecessor_record_control}[sys.argv[1]]()

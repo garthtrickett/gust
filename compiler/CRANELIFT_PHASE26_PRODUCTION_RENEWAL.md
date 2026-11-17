@@ -58,7 +58,12 @@ successors. Static/inversion, current worker/native/public/offline, fixed-point,
 product4GiB quota, exact-head CI/artifact parity, reviews/rules and checked merge
 remain mandatory. Public cryptographic verification alone is not qualification.
 
-Status: actual signed candidate enrolled in unqualified source; final registration,
-current-source qualification and authoritative CI/merge remain pending. PR619 is
-held until this separate predecessor merges, then rebased. The full activated
-Phase26 remainder and OD23 remain open.
+`predecessor-record-control` exercises only the downstream record-refusal seam;
+the default full inversions still include it and every other control. A focused
+control pass cannot substitute for the complete source/production qualification.
+
+Qualification is established by current-source receipts and exact-head CI, not by
+this source record. Final registration, production/public/R5/fixed-point checks,
+artifact parity, reviews/rules and merge are mandatory. PR619 is held until this
+separate predecessor merges, then rebased. The full activated Phase26 remainder
+and OD23 remain open.
