@@ -6079,9 +6079,11 @@ source and production/R5/FP/CI gates. Existing first-release history is unchange
 
 Current-source local qualification at274e passed, but its owning CI attempt
 44271083237 refused the worker installation-root predicate before compilation.
-Both authenticated metadata GETs succeeded; the actual worker path is unknown.
-Preserve that qualified source/tool evidence before adding bounded nonadmitting
-process observations. Keep the root/provisioning predicates unchanged until
-actual facts support a reviewed correction, and repeat current-source mandatory
+Both authenticated metadata GETs succeeded. The qualified33 successor preserved
+that failure and captured the actual live cached-worker layout on run44288905722.
+Its 270-file qualified source/tool archive is checked before the reviewed layout
+correction: retain the legacy root and add only the observed versioned cached
+layout, with all independent ancestry/API/checkout/provisioning checks and
+explicit deceptive-layout/provenance refusals. Repeat all current-source mandatory
 qualification before corrective publication. CI, merge and the activated Phase26
 remainder remain open; no new identity or resource-slot decision is selected.

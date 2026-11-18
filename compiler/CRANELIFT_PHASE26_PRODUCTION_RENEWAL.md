@@ -147,5 +147,12 @@ now retain only the live ancestor PIDs, start ticks, executable paths and parent
 PIDs, associated with public run/job and checkout facts. They contain no argv or
 environment values and do not admit a runner. At most two distinct 128 KiB
 records cover initial admission and pre-provision revalidation; neither record
-overwrites the other. The existing root predicate and
-all provisioning gates remain unchanged pending actual-path evidence and review.
+overwrites the other. A subsequent authenticated failed-run artifact captured
+`/home/runner/actions-runner/cached/2.338.2/bin/Runner.Worker` as the live
+ancestor. Admission now also recognizes this exact cached layout with three ASCII
+numeric version components. The legacy root remains supported. Deceptive
+prefixes, extra depth, malformed versions, wrong directories and other binaries
+remain refused. Both layouts exercise the same run/job/checkout refusals and
+repeated live-identity checks; neither a path nor a captured record authorizes
+provisioning by itself. No compiler or paging command ran in either failed CI
+attempt, and full current-source qualification and authoritative CI remain gates.

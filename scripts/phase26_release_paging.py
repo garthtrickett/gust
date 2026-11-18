@@ -159,8 +159,14 @@ def validate_runner_evidence(environment, worker, run, jobs, checkout):
             environment.get("GITHUB_REPOSITORY_ID") == "1263612197" and
             environment.get("GITHUB_JOB") == "qualification", "not the owning hosted runner")
     executable = Path(worker["executable"])
+    # The current hosted image uses a versioned cache outside the legacy root.
+    # This layout check is only one conjunct of the live/API admission below.
+    cached_worker = re.fullmatch(
+        r"/home/runner/actions-runner/cached/[0-9]+\.[0-9]+\.[0-9]+/bin/Runner\.Worker",
+        str(executable)) is not None
     require(executable.name == "Runner.Worker" and
-            executable.is_relative_to("/home/runner/runners"), "no live hosted worker ancestor")
+            (executable.is_relative_to("/home/runner/runners") or cached_worker),
+            "no live hosted worker ancestor")
     require(run["id"] == int(environment["GITHUB_RUN_ID"]) and
             run["run_attempt"] == int(environment["GITHUB_RUN_ATTEMPT"]) and
             run["repository"]["id"] == 1263612197 and

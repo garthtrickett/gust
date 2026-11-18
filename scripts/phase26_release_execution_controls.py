@@ -155,7 +155,10 @@ def worker_observation_controls(root, env, worker, run, job, checkout):
                 ("rev-parse", "HEAD^{tree}"): checkout["tree"],
                 ("rev-list", "--parents", "-n1", "HEAD"):
                     " ".join([checkout["head"], *checkout["parents"]])}[tuple(command[1:])] + "\n"
-    for number, executable in enumerate((final["executable"], "/unqualified-layout/bin/Runner.Worker")):
+    for number, executable in enumerate((
+            "/home/runner/runners/version/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/2.338.2/bin/Runner.Worker",
+            "/unqualified-layout/bin/Runner.Worker")):
         case = root/("worker-observation-"+str(number));case.mkdir()
         current = dict(final, executable=executable)
         chain = [first, current]
@@ -172,7 +175,7 @@ def worker_observation_controls(root, env, worker, run, job, checkout):
              patch.object(paging, "process_identity", return_value=current), \
              patch.object(paging, "public_api", side_effect=response), \
              patch.object(paging.subprocess, "check_output", side_effect=git_value):
-            if number == 0:
+            if number < 2:
                 assert paging.hosted_runner(token, case)["worker"] == current
                 first_bytes = (case/"hosted-worker-observation-1.json").read_bytes()
                 assert paging.hosted_runner(token, case)["worker"] == current
@@ -250,32 +253,51 @@ def controls():
         runner_group_name="GitHub Actions", labels=["ubuntu-24.04"])
     checkout = dict(head=head, tree=tree, parents=[base])
 
-    def validate(e=env, w=worker, r=run, j=job, c=checkout):
-        return paging.validate_runner_evidence(e, w, r, [j], c)
+    cached_worker = dict(worker, executable="/home/runner/actions-runner/cached/2.338.2/bin/Runner.Worker")
+    for worker in (worker, cached_worker):
+        def validate(e=env, w=worker, r=run, j=job, c=checkout):
+            return paging.validate_runner_evidence(e, w, r, [j], c)
 
-    assert validate() == job
-    merged_env, merged_checkout = dict(env, GITHUB_SHA=merge), dict(checkout, head=merge, parents=[base, head])
-    assert validate(e=merged_env, c=merged_checkout) == job
-    for name, value in (("GITHUB_ACTIONS", "false"), ("RUNNER_ENVIRONMENT", "self-hosted"),
-        ("GITHUB_REPOSITORY_ID", "1"), ("GITHUB_JOB", "other"), ("GITHUB_RUN_ID", "43"),
-        ("GITHUB_RUN_ATTEMPT", "1"), ("RUNNER_NAME", "other")):
-        diagnostic = ("owning runner/job provenance mismatch" if name == "RUNNER_NAME" else
-            "owning public run provenance mismatch" if name in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT") else
-            "not the owning hosted runner")
-        rejected("hosted identity " + name, lambda n=name, v=value: validate(e=dict(env, **{n: v})), diagnostic)
-    rejected("environment flags without worker ancestry", lambda: validate(w=dict(worker, executable="/usr/bin/python3")),
-             "no live hosted worker ancestor")
-    rejected("foreign checkout tree", lambda: validate(c=dict(checkout, tree="f"*40)),
-             "checkout differs from the exact owning source tree")
-    rejected("unauthenticated merge parents", lambda: validate(e=merged_env,
-        c=dict(merged_checkout, parents=["f"*40, head])), "checkout is not the authenticated owning merge tree")
-    rejected("historical job attempt", lambda: validate(j=dict(job, run_attempt=1)),
-             "ambiguous or absent current owning job")
-    rejected("foreign runner", lambda: validate(j=dict(job, runner_id=0)), "owning runner/job provenance mismatch")
-    rejected("substituted owning workflow", lambda: validate(r=dict(run, path="other.yml")),
-             "owning public run provenance mismatch")
-    rejected("ambiguous current jobs", lambda: paging.validate_runner_evidence(env, worker, run, [job, job], checkout),
-             "ambiguous or absent current owning job")
+        assert validate() == job
+        merged_env, merged_checkout = dict(env, GITHUB_SHA=merge), dict(checkout, head=merge, parents=[base, head])
+        assert validate(e=merged_env, c=merged_checkout) == job
+        for name, value in (("GITHUB_ACTIONS", "false"), ("RUNNER_ENVIRONMENT", "self-hosted"),
+            ("GITHUB_REPOSITORY_ID", "1"), ("GITHUB_JOB", "other"), ("GITHUB_RUN_ID", "43"),
+            ("GITHUB_RUN_ATTEMPT", "1"), ("RUNNER_NAME", "other")):
+            diagnostic = ("owning runner/job provenance mismatch" if name == "RUNNER_NAME" else
+                "owning public run provenance mismatch" if name in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT") else
+                "not the owning hosted runner")
+            rejected("hosted identity " + name, lambda n=name, v=value: validate(e=dict(env, **{n: v})), diagnostic)
+        rejected("environment flags without worker ancestry", lambda: validate(w=dict(worker, executable="/usr/bin/python3")),
+                 "no live hosted worker ancestor")
+        rejected("foreign checkout tree", lambda: validate(c=dict(checkout, tree="f"*40)),
+                 "checkout differs from the exact owning source tree")
+        rejected("unauthenticated merge parents", lambda: validate(e=merged_env,
+            c=dict(merged_checkout, parents=["f"*40, head])), "checkout is not the authenticated owning merge tree")
+        rejected("historical job attempt", lambda: validate(j=dict(job, run_attempt=1)),
+                 "ambiguous or absent current owning job")
+        rejected("foreign runner", lambda: validate(j=dict(job, runner_id=0)), "owning runner/job provenance mismatch")
+        rejected("substituted owning workflow", lambda: validate(r=dict(run, path="other.yml")),
+                 "owning public run provenance mismatch")
+        rejected("foreign owning actor", lambda: validate(r=dict(run, actor=dict(id=1))),
+                 "owning public run provenance mismatch")
+        rejected("ambiguous current jobs", lambda: paging.validate_runner_evidence(env, worker, run, [job, job], checkout),
+                 "ambiguous or absent current owning job")
+    for executable in (
+            "/home/runner/actions-runner/cached-foreign/2.338.2/bin/Runner.Worker",
+            "/home/runner/actions-runner-other/cached/2.338.2/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/extra/2.338.2/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/2.338/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/2.338.2.1/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/2.x.2/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/２.338.2/bin/Runner.Worker",
+            "/home/runner/actions-runner/cached/2.338.2/other/Runner.Worker",
+            "/home/runner/actions-runner/cached/2.338.2/bin/Runner.Listener",
+            "/home/runner/actions-runner/cached/2.338.2/bin/../bin/Runner.Worker"):
+        rejected("unqualified cached layout " + executable,
+                 lambda p=executable: validate(w=dict(cached_worker, executable=p)),
+                 "no live hosted worker ancestor")
+    print("RELEASE_HOSTED_LAYOUT_CONTROLS_PASS; both roots retain all provenance checks")
     old = {"/existing": dict(kind="file", size_bytes=1024, used_bytes=0, priority=-2)}
     assert paging.preserved_swaps(old, {"/existing": dict(old["/existing"], used_bytes=512)})
     assert not paging.preserved_swaps(old, {})
