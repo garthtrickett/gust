@@ -100,3 +100,19 @@ the record builder. Existing standalone builders still scan freshly, physical
 file digests remain fresh, and no result is cached across calls. Complete
 old/new projection equality, observed scan counts, malformed-edge refusals and
 a later missing audited input qualify this extraction before publication.
+
+Repeated predecessor decoding uses a process-local immutable-data cache, limited
+to 64 entries and 128 MiB of conservatively charged keys, values and overhead.
+It stores decoded Base64 bytes and inherited digest sets keyed by actual input
+content, requested path and predecessor cohort. It never stores parsed mutable
+registries, live projections, filesystem presence or admission decisions. Mutable,
+unsupported and oversized inputs use the original uncached algorithm; failures
+are not cached. Eviction changes performance only.
+
+Every caller still resolves its baseline entry and registry-input seam and checks
+the physical current file and both pinned coordinates on every invocation. The
+inversions exercise byte and entry eviction, immutable returns, changed keys,
+uncached fallbacks and warm-cache missing/substituted inputs. Direct old/new
+return and error parity and the original complete timed guards remain required.
+The v5 predecessor archive also has an explicit immutable-history hash pin;
+earlier archive pins and refusal expectations are unchanged.

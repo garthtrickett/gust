@@ -62,6 +62,8 @@ ADDED = tuple(HISTORY + name for name in (
     "scripts/phase26_release_execution.py",
     "scripts/phase26_release_paging.py",
     "scripts/phase26_release_execution_controls.py",
+    "scripts/phase26_predecessor_data.py",
+    "scripts/phase26_predecessor_data_controls.py",
     "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
 )
 RECIPE = ("\n# Selected epoch2 worker renewal; no package-supplied trust updates.\n" + GUARD + ":\n"
@@ -111,7 +113,9 @@ def baseline():
 
 
 def base_bytes(path):
-    return base64.b64decode(baseline()["files"][path], validate=True)
+    from phase26_predecessor_data import decoded_payload
+    # Resolve the dependency on every call; only its supplied content is memoized.
+    return decoded_payload(baseline()["files"][path])
 
 
 def record(registry):
@@ -200,15 +204,11 @@ def prior_digest(registry, path, live):
         return live
     pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
     admitted = {pin["current_digest"], pin["previous_digest"]}
-    predecessor = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))
-    # Only coordinates emitted by enclosing successors can reach this adapter.
-    # Production's own before-state remains a rejected rollback, not an alias.
-    for key in ("allocator_resource_liveness_successor_v1", "first_release_closure_successor_v1",
-                "readonly_input_copy_successor_v1", "closed_ticket_composition_successor_v1",
-                "imported_native_successor_v1", "scoped_ticket_publication_successor_v1"):
-        for item in predecessor["phase26_activation_audit"][key]["changed_files"]:
-            if item.get("path") == path:
-                admitted.update(item[field] for field in ("current_digest", "previous_digest"))
+    from phase26_predecessor_data import inherited_digests
+    # Read this seam every time. Cache keys include the actual supplied bytes
+    # and path, never the final admission, current pin, or filesystem presence.
+    predecessor = base_bytes("scripts/cranelift_feature_registry.json")
+    admitted.update(inherited_digests(predecessor, path))
     require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
             pin["previous_digest"] == sha(base_bytes(path)) and live in admitted,
             "R4 changed file drifted: " + path + " (epoch2 renewal)")
@@ -636,6 +636,11 @@ def execution_environment_controls():
     print("EPOCH2_EXECUTION_ENVIRONMENT_CALLER_CONTROLS_PASS", flush=True)
 
 
+def predecessor_decode_controls():
+    from phase26_predecessor_data_controls import controls
+    controls(sys.modules[__name__])
+
+
 def projection_reuse_controls():
     """One live view per call; malformed views and later missing inputs fail closed."""
     import errno
@@ -814,6 +819,7 @@ def inversions():
     execution_environment_controls()
     release_workflow_consumer_controls()
     projection_reuse_controls()
+    predecessor_decode_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
@@ -823,4 +829,5 @@ if __name__ == "__main__":
      "workflow-caller-controls": workflow_caller_controls,
      "release-workflow-controls": release_workflow_consumer_controls,
      "projection-reuse-controls": projection_reuse_controls,
+     "predecessor-decode-controls": predecessor_decode_controls,
      "source-delivery-controls": source_delivery_controls}[sys.argv[1]]()
