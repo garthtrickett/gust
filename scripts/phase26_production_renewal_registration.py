@@ -796,7 +796,11 @@ def inversions():
                          lambda path=path: prior_digest(registry, path, sha((ROOT / path).read_bytes())),
                          "R4 changed file drifted")
     original_read = Path.read_bytes
+    from phase26_2_allocator_predecessor_controls import composed_added_controls
+    handled = composed_added_controls(sys.modules[__name__], registry, rejected)
     for path in ADDED:
+        if path in handled:
+            continue  # Both current and exact39 predecessor assertions ran above.
         with patch.object(Path, "read_bytes", lambda p, path=path:
                 original_read(p) + b"\n" if p == ROOT / path else original_read(p)):
             expected = ("vendored signed source archive digest drifted" if path == SOURCE_ARCHIVE else

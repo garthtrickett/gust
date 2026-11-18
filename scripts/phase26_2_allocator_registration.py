@@ -59,7 +59,8 @@ def baseline():
 
 
 def base_bytes(path):
-    return base64.b64decode(baseline()['files'][path], validate=True)
+    from phase26_predecessor_data import decoded_payload
+    return decoded_payload(baseline()['files'][path])
 
 
 def record(registry):
@@ -86,13 +87,12 @@ def prior_digest(registry, path, live):
         return live
     pin = next(p for p in identity(registry)['changed_files'] if p['path'] == path)
     admitted = {pin['current_digest'], pin['previous_digest']}
-    predecessor = json.loads(base_bytes('scripts/cranelift_feature_registry.json'))
-    for key in ('first_release_closure_successor_v1', 'readonly_input_copy_successor_v1',
+    from phase26_predecessor_data import inherited_digests_indexed
+    cohort = ('first_release_closure_successor_v1', 'readonly_input_copy_successor_v1',
                 'closed_ticket_composition_successor_v1', 'imported_native_successor_v1',
-                'scoped_ticket_publication_successor_v1'):
-        for item in predecessor['phase26_activation_audit'][key]['changed_files']:
-            if item['path'] == path:
-                admitted.update(item[field] for field in ('current_digest', 'previous_digest'))
+                'scoped_ticket_publication_successor_v1')
+    admitted.update(inherited_digests_indexed(base_bytes('scripts/cranelift_feature_registry.json'),
+                                           path, cohort))
     require(successor.prior_digest(registry, path, sha((ROOT / path).read_bytes())) == pin['current_digest'] and
         pin['previous_digest'] == sha(base_bytes(path)) and
         live in admitted,
@@ -213,11 +213,8 @@ def build_record():
             spelling.manifest_summary(sites)).encode()))
 
 
-def validate():
-    registry = json.loads(REGISTRY.read_text())
+def check_files(registry):
     row = identity(registry)
-    require(project_registry(registry) == json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
-            'allocator changed frozen predecessor or foreign registry rows')
     for p in row['changed_files']:
         prior_digest(registry, p['path'], sha((ROOT / p['path']).read_bytes()))
     for p in row['added_files']:
@@ -226,6 +223,14 @@ def validate():
         except SystemExit as error:
             raise SystemExit('allocator added file drifted: '+p['path']+': '+str(error))
         require(p['digest'] == current, 'allocator added file drifted: '+p['path'])
+
+
+def validate():
+    registry = json.loads(REGISTRY.read_text())
+    row = identity(registry)
+    require(project_registry(registry) == json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
+            'allocator changed frozen predecessor or foreign registry rows')
+    check_files(registry)
     require(successor.prior_bytes(registry, 'justfile', (ROOT/'justfile').read_bytes()) == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
     levels = json.loads(successor.prior_bytes(registry, 'scripts/cranelift_test_levels.json', (ROOT/'scripts/cranelift_test_levels.json').read_bytes()))
     require(levels['guards'].pop(GUARD,None)==2 and levels==json.loads(base_bytes('scripts/cranelift_test_levels.json')),
@@ -285,8 +290,12 @@ def inversions():
     require(project_registry(changed) != json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
             'allocator normalizer swallowed foreign registry mutation')
     original = Path.read_bytes
+    from phase26_2_allocator_predecessor_controls import composed_added_controls
+    handled = composed_added_controls(sys.modules[__name__], registry, rejected)
     for item in identity(registry)['added_files']:
         path = item['path']
+        if path in handled:
+            continue  # Both current and exact39 predecessor assertions ran above.
         with patch.object(Path,'read_bytes',lambda p,path=path:original(p)+b'\n' if p==ROOT/path else original(p)):
             rejected('added bytes '+path,validate, 'allocator added file drifted')
     original_text = Path.read_text

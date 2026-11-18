@@ -22,6 +22,10 @@ PROFILE_BASELINE = 'compiler/phase26-2-allocator-identity/bootstrap-profile-pred
 PROFILE_BASELINE_SHA256 = '1f82b0f3b52dedacabd39a111b18b68fee3ebddc541f17bfe5ad6ce5287fe91c'
 LIFECYCLE_BASELINE = 'compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor-v2.json.gz'
 LIFECYCLE_BASELINE_SHA256 = '2105278aa3cb1e840dd0a4c3b791300942bff9d2b99038b1946fcbb072f2a2be'
+CONTROL_BASELINE = 'compiler/phase26-2-allocator-identity/predecessor-pin-controls-v1.json.gz'
+CONTROL_BASELINE_SHA256 = '39852d3d4aa62f0b8298d8f81bda9609a0f8dd9722e05d048777edc28ceae6d2'
+CONTROL_CHANGED = ('scripts/phase26_2_allocator_registration.py',
+    'scripts/phase26_predecessor_data.py')
 HISTORICAL_BASELINES = {
     'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz':
         '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b',
@@ -41,8 +45,9 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
-    *PROFILE_CHANGED, *LIFECYCLE_CHANGED)
-ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE,
+    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED)
+ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
+    'scripts/phase26_2_allocator_predecessor_controls.py',
     LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
     'compiler/phase26-2-allocator-identity/cases.json',
@@ -129,13 +134,24 @@ def lifecycle_baseline():
 
 
 def base_bytes(path):
+    from phase26_predecessor_data import decoded_payload
     files = baseline()['files']
     if path in files:
-        return base64.b64decode(files[path], validate=True)
+        return decoded_payload(files[path])
     if path in PROFILE_CHANGED:
-        return base64.b64decode(profile_baseline()['files'][path], validate=True)
+        return decoded_payload(profile_baseline()['files'][path])
+    if path in CONTROL_CHANGED:
+        raw = (ROOT/CONTROL_BASELINE).read_bytes()
+        require(sha(raw) == CONTROL_BASELINE_SHA256, 'predecessor pin-control archive bytes drifted')
+        value = json.loads(gzip.decompress(raw))
+        require(set(value) == {'schema', 'base', 'predecessor_baseline_sha256', 'files'} and
+                value['schema'] == 'gust.allocator_predecessor_pin_controls.v1' and
+                value['base'] == BASE and value['predecessor_baseline_sha256'] == BASELINE_SHA256 and
+                set(value['files']) == set(CONTROL_CHANGED),
+                'predecessor pin-control archive identity drifted')
+        return decoded_payload(value['files'][path])
     require(path in LIFECYCLE_CHANGED, 'unknown predecessor file: ' + path)
-    return base64.b64decode(lifecycle_baseline()['files'][path], validate=True)
+    return decoded_payload(lifecycle_baseline()['files'][path])
 
 
 def record(registry):
@@ -161,13 +177,12 @@ def prior_digest(registry, path, live):
         return live
     pin = next(p for p in identity(registry)['changed_files'] if p['path'] == path)
     admitted = {pin['current_digest'], pin['previous_digest']}
-    predecessor = json.loads(base_bytes('scripts/cranelift_feature_registry.json'))
-    for key in (PREDECESSOR_KEY, 'allocator_resource_liveness_successor_v1', 'first_release_closure_successor_v1', 'readonly_input_copy_successor_v1',
+    from phase26_predecessor_data import inherited_digests_indexed
+    cohort = (PREDECESSOR_KEY, 'allocator_resource_liveness_successor_v1', 'first_release_closure_successor_v1', 'readonly_input_copy_successor_v1',
                 'closed_ticket_composition_successor_v1', 'imported_native_successor_v1',
-                'scoped_ticket_publication_successor_v1'):
-        for item in predecessor['phase26_activation_audit'][key]['changed_files']:
-            if item['path'] == path:
-                admitted.update(item[field] for field in ('current_digest', 'previous_digest'))
+                'scoped_ticket_publication_successor_v1')
+    admitted.update(inherited_digests_indexed(base_bytes('scripts/cranelift_feature_registry.json'),
+                                           path, cohort))
     require(sha((ROOT / path).read_bytes()) == pin['current_digest'] and
         pin['previous_digest'] == sha(base_bytes(path)) and
         live in admitted,
@@ -182,11 +197,15 @@ def prior_bytes(registry, path, live):
     return base_bytes(path)
 
 
-def operational_text(kind, current):
+def check_text_rows(kind, current):
     require(isinstance(current, list) and all(isinstance(p, dict) and 'path' in p for p in current),
             'R4 ' + kind + ' live projection drifted (allocator identity successor)')
     require(sum(p['path'] == STATE for p in current) <= 1,
             'R4 ' + kind + ' live projection drifted (allocator identity successor)')
+
+
+def operational_text(kind, current):
+    check_text_rows(kind, current)
     return sorted(copy.deepcopy([p for p in current if p['path'] != STATE] +
         [p for p in baseline()['projections'][kind] if p['path'] == STATE]), key=lambda p: p['path'])
 
@@ -258,6 +277,13 @@ def ancestor_text_inversions(registry, kind, current, rejected):
         image = operational_text(kind, foreign + copy.deepcopy(subset))
         require(project(registry, kind, image) == image,
                 'ancestor allocator text image is not a fixed point')
+        state = next(p for p in image if p['path'] == STATE)
+        rejected('ancestor '+digest[:12]+' duplicated operational state '+kind,
+            lambda image=image,state=state:project(registry, kind, image+[copy.deepcopy(state)]),
+            'R4 '+kind+' live projection drifted')
+        rejected('ancestor '+digest[:12]+' malformed row '+kind,
+            lambda image=image:project(registry, kind, image+[None]),
+            'R4 '+kind+' live projection drifted')
         target = next(p for p in subset if p['path'] == 'compiler/typechecker.gst')
         for label, changed in (
                 ('omitted', [p for p in image if p['path'] != target['path']]),
@@ -284,7 +310,7 @@ def ancestor_text_inversions(registry, kind, current, rejected):
     for name in ANCESTOR_REGISTRATIONS:
         previous = importlib.import_module(name)
         image = previous.project(registry, kind, current)
-        require(project(registry, kind, image) == operational_text(kind, image),
+        require(project(registry, kind, image) == image,
                 'composed ancestor allocator text image changed: '+name)
     previous = importlib.import_module(ANCESTOR_REGISTRATIONS[0])
     image = previous.project(registry, kind, current)
@@ -330,6 +356,14 @@ def project(registry, kind, current):
     previous = baseline()['projections'][kind]
     require(type(current) is type(previous),
             'R4 ' + kind + ' live projection drifted (allocator identity successor)')
+    if kind in ('text', 'r4_text'):
+        check_text_rows(kind, current)
+        owned = set(CHANGED + ADDED)
+        subset = [p for p in current if p['path'] in owned]
+        if fingerprint(subset) in ancestor_text_subsets(kind):
+            # Preserve a complete predecessor image before operational retagging.
+            # Physical checks above remain mandatory; foreign rows stay untouched.
+            return copy.deepcopy(current)
     if kind not in ('text', 'r4_text') and any(
             current == image for image in ancestor_record_images(kind)):
         return copy.deepcopy(current)
@@ -339,13 +373,6 @@ def project(registry, kind, current):
         owned = set(CHANGED + ADDED)
         subset = [p for p in current if p['path'] in owned]
         old_subset = [p for p in previous if p['path'] in owned]
-        if fingerprint(subset) in ancestor_text_subsets(kind):
-            # A predecessor may feed its own normalized image back through us.
-            # Keep that exact image fixed; restoring our newer baseline would
-            # undo its normalization. Projection coordinates never excuse
-            # current physical rollback, and foreign rows remain untouched.
-            physical_files(registry, row)
-            return copy.deepcopy(current)
         require(fingerprint(subset) in (row['owned_text'][kind], fingerprint(old_subset)),
                 'R4 ' + kind + ' live projection drifted (allocator identity successor)')
         return sorted(copy.deepcopy([p for p in current if p['path'] not in owned] + old_subset),
@@ -514,6 +541,8 @@ def validate():
 
 def inversions():
     validate()
+    from phase26_2_allocator_predecessor_controls import indexed_coordinate_controls
+    indexed_coordinate_controls(sys.modules[__name__])
     registry = json.loads(REGISTRY.read_text())
     from unittest.mock import patch
     import phase26_2_allocator_lifecycle_evidence as lifecycle_evidence

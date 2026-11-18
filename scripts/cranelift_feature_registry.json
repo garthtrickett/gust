@@ -48087,17 +48087,17 @@
         {
           "path": "scripts/phase26_production_renewal_registration.py",
           "previous_digest": "82c33141eeffe8838635229b88a31824014880dc55de0931bb5b173c6dfb6db8",
-          "current_digest": "3d7616cd4c8dd46b614680b71ce7c2c738d259430ffead1924d21c24d7be6038"
+          "current_digest": "4c8173eb96cbd50dec01a28ca00ecf1686065b36a6323dd098283d878e39aa9b"
         },
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "a07bfda7dbb7fd7cf8a1a538fd8494e0c158cff9d76e8d6b33da3c6d0effd1dc"
+          "current_digest": "03a4254ef442ab77a7265ce62e0b610ed8d73e2a280598d3b3e3afad2152a4cc"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "24009e4262960663716558c5208ff20433056c6cf82f84ef3b3735eb121d71da"
+          "current_digest": "df2df68f9da2d19005889ee009618b17690949569df8c4eedb510018b6d25a78"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48108,6 +48108,16 @@
           "path": "scripts/phase20_arena_lifecycle.py",
           "previous_digest": "68d837bad139a9b93cd653fba56ffbaf55b0e745eda0944a8d98d247f22214c2",
           "current_digest": "2d80c6d2d52b8e15192bb48112cf410beab4a473735b6d2ec80d63089864bdf5"
+        },
+        {
+          "path": "scripts/phase26_2_allocator_registration.py",
+          "previous_digest": "4e570a673b6c3213af63894c96f34d01b566043d7ebc2aa6abc4ea9592a4e754",
+          "current_digest": "1860832567945d2dd50acf2d7d8db34ae496273d21c03b6ead697497e62e6612"
+        },
+        {
+          "path": "scripts/phase26_predecessor_data.py",
+          "previous_digest": "07d1675c25930101affe9ac515ce5d676632511b69be04db88cfc724c111bc2b",
+          "current_digest": "ca2471330d60edc16de486d11272b77c8c866a0161963a4a3e3666b222beef37"
         }
       ],
       "added_files": [
@@ -48136,12 +48146,20 @@
           "digest": "2105278aa3cb1e840dd0a4c3b791300942bff9d2b99038b1946fcbb072f2a2be"
         },
         {
+          "path": "compiler/phase26-2-allocator-identity/predecessor-pin-controls-v1.json.gz",
+          "digest": "39852d3d4aa62f0b8298d8f81bda9609a0f8dd9722e05d048777edc28ceae6d2"
+        },
+        {
+          "path": "scripts/phase26_2_allocator_predecessor_controls.py",
+          "digest": "145ad4beb71c6e603881df0a3f2036687301f923b60807a2fa9500aefdeca14d"
+        },
+        {
           "path": "scripts/phase26_2_allocator_lifecycle_evidence.py",
           "digest": "dc9088e5620faa41f1d5645022aa0d647516c6b2239b719c0b8ddb3167cbad9e"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "406965410889adaeb5798470b195772cd2261ea2c7ea281d4175eb00d486b1e3"
+          "digest": "a2d26b499cb5d7c8b5dbafc258fed303d4783e5408889d49dae1e86d1d915a1f"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48177,7 +48195,7 @@
         }
       ],
       "owned_text": {
-        "text": "5f60b4a392f43519b8c0ac130092c656c6493e241d383955afd91204edbd7ac4",
+        "text": "0073d97abafcd90306404ea2700d1c290160c47cedf0f6ebf942dbb74699357d",
         "r4_text": "1969ac19fff597bc8b383eea74edc721aba5d3ecbf4916f7a4b1e0efa4b1b285"
       },
       "projections": {
@@ -48188,7 +48206,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "5a28d2864922ed5b56cd8ded5dfe596dfce32d42498c6816805f1d593b12e86a",
-        "text": "b6a93553d0970bd0b803046937f6b9ec6bc12b3a5c271965a144687c5d2ee60a"
+        "text": "76ddacb740ab78acf1a4d94907502176e3ae32266a653e41ff035b2794afd5f0"
       },
       "spelling_render_current_digest": "42cdf9865b27e4f84038c7e53a21ffe1cb09e4e6bdcbee85282c77db5084044a"
     },
