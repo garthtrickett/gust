@@ -139,3 +139,13 @@ and discarded before the protected build. API errors remain failures and retain
 only sanitized endpoint/status/rate-limit facts. Early provenance refusal now
 also records failure and positive no-paging-created cleanup evidence. The prior
 unauthenticated HTTP403 occurred before compiler execution, not during a build.
+
+An owning CI attempt reached both authenticated metadata endpoints, then refused
+the worker installation-root predicate before compiler execution. The actual
+installation path was absent from its retained evidence. Bounded observations
+now retain only the live ancestor PIDs, start ticks, executable paths and parent
+PIDs, associated with public run/job and checkout facts. They contain no argv or
+environment values and do not admit a runner. At most two distinct 128 KiB
+records cover initial admission and pre-provision revalidation; neither record
+overwrites the other. The existing root predicate and
+all provisioning gates remain unchanged pending actual-path evidence and review.

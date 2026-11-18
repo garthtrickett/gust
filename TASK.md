@@ -6076,3 +6076,12 @@ source-only audit inventories misclassified as fixture execution. Correct only
 those paths, preserve the original staged fixture population and predecessor
 comparisons, and prove rollback/foreign-reference refusal before fresh full
 source and production/R5/FP/CI gates. Existing first-release history is unchanged.
+
+Current-source local qualification at274e passed, but its owning CI attempt
+44271083237 refused the worker installation-root predicate before compilation.
+Both authenticated metadata GETs succeeded; the actual worker path is unknown.
+Preserve that qualified source/tool evidence before adding bounded nonadmitting
+process observations. Keep the root/provisioning predicates unchanged until
+actual facts support a reviewed correction, and repeat current-source mandatory
+qualification before corrective publication. CI, merge and the activated Phase26
+remainder remain open; no new identity or resource-slot decision is selected.

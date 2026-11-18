@@ -194,20 +194,51 @@ def validate_runner_evidence(environment, worker, run, jobs, checkout):
     return job
 
 
+def hosted_worker_ancestry():
+    """Observe a bounded live chain; finding a basename does not admit a runner."""
+    pid, seen, ancestors = os.getpid(), set(), []
+    deadline = time.monotonic() + 5
+    while pid > 1:
+        require(len(ancestors) < 64 and time.monotonic() <= deadline,
+                "hosted worker ancestry bound exhausted")
+        require(pid not in seen, "hosted worker ancestry cycle")
+        seen.add(pid)
+        identity = process_identity(pid)
+        require(set(identity) == {"pid", "start_ticks", "executable", "parent"} and
+                identity["pid"] == pid, "unexpected hosted process identity fields")
+        require(process_identity(pid) == identity, "hosted process identity changed during traversal")
+        require(time.monotonic() <= deadline, "hosted worker ancestry bound exhausted")
+        ancestors.append(identity)
+        if Path(identity["executable"]).name == "Runner.Worker":
+            return identity, ancestors
+        pid = identity["parent"]
+    raise ValueError("release execution environment: no live Runner.Worker ancestor")
+
+
+def record_worker_observation(output, worker, ancestors, run, job, checkout):
+    """Retain public process/API facts before admission, without argv or environment."""
+    record = dict(status="OBSERVATION ONLY; hosted admission remains required", utc=utc(),
+        worker=worker, ancestors=ancestors, checkout=checkout,
+        api_context=dict(run_id=run["id"], run_attempt=run["run_attempt"], job_id=job["id"],
+                         runner_id=job["runner_id"]))
+    raw = (json.dumps(record, indent=2)+"\n").encode()
+    require(len(raw) <= 128*1024, "hosted worker observation exceeds bound")
+    paths = [output/("hosted-worker-observation-"+str(number)+".json") for number in (1, 2)]
+    existing = [path for path in paths if path.exists() or path.is_symlink()]
+    require(existing == paths[:len(existing)] and
+            all(path.is_file() and not path.is_symlink() and path.stat().st_size <= 128*1024
+                for path in existing), "invalid prior hosted worker observation")
+    require(len(existing) < 2, "too many hosted worker observations")
+    with paths[len(existing)].open("xb") as stream:
+        stream.write(raw)
+
+
 def hosted_runner(token, output):
     require(os.getuid() != 0 and pwd.getpwuid(os.getuid()).pw_name == "runner" and
             Path.home() == Path("/home/runner") and
             ROOT == Path(os.environ.get("GITHUB_WORKSPACE", "")).resolve() and
             ROOT.is_relative_to("/home/runner/work"), "shared-host provisioning is forbidden")
-    pid = os.getpid()
-    worker = None
-    while pid > 1:
-        identity = process_identity(pid)
-        if Path(identity["executable"]).name == "Runner.Worker":
-            worker = identity
-            break
-        pid = identity["parent"]
-    require(worker is not None, "no live Runner.Worker ancestor")
+    worker, ancestors = hosted_worker_ancestry()
     names = ("GITHUB_ACTIONS", "RUNNER_ENVIRONMENT", "RUNNER_OS", "GITHUB_REPOSITORY",
              "GITHUB_REPOSITORY_ID", "GITHUB_JOB", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT",
              "GITHUB_SHA", "RUNNER_NAME")
@@ -221,6 +252,7 @@ def hosted_runner(token, output):
         return subprocess.check_output(["git", *arguments], cwd=ROOT, text=True).strip()
     checkout = dict(head=git("rev-parse", "HEAD"), tree=git("rev-parse", "HEAD^{tree}"),
                     parents=git("rev-list", "--parents", "-n1", "HEAD").split()[1:])
+    record_worker_observation(output, worker, ancestors, run, jobs["jobs"][0], checkout)
     job = validate_runner_evidence(environment, worker, run, jobs["jobs"], checkout)
     require(process_identity(worker["pid"]) == worker, "hosted worker identity changed")
     return dict(environment=environment, worker=worker, run=run, job=job, checkout=checkout)

@@ -118,6 +118,101 @@ def metadata_api_controls(root):
     print("RELEASE_METADATA_PUBLIC_AUTH_CONTROLS_PASS; no real credentials, network or provisioning")
 
 
+def worker_observation_controls(root, env, worker, run, job, checkout):
+    """Capture actual-function observations without admitting a synthetic runner."""
+    first = dict(pid=10, parent=5, start_ticks="1", executable="/usr/bin/python3")
+    final = dict(worker, parent=1)
+    with patch.object(paging.os, "getpid", return_value=10), \
+         patch.object(paging, "process_identity", side_effect=lambda pid: {10: first, 5: final}[pid]):
+        observed, ancestors = paging.hosted_worker_ancestry()
+        assert observed == final and ancestors == [first, final]
+    with patch.object(paging.os, "getpid", return_value=10):
+        with patch.object(paging, "process_identity", return_value=dict(first, parent=1)):
+            rejected("no worker basename", paging.hosted_worker_ancestry, "no live Runner.Worker ancestor")
+        with patch.object(paging, "process_identity", return_value=dict(first, parent=10)):
+            rejected("ancestor cycle", paging.hosted_worker_ancestry, "hosted worker ancestry cycle")
+        with patch.object(paging, "process_identity", side_effect=[first, dict(first, start_ticks="2")]):
+            rejected("stale process identity", paging.hosted_worker_ancestry,
+                     "hosted process identity changed during traversal")
+        with patch.object(paging, "process_identity", return_value=dict(first, argv="must not be retained")):
+            rejected("unqualified process fields", paging.hosted_worker_ancestry,
+                     "unexpected hosted process identity fields")
+        with patch.object(paging.time, "monotonic", side_effect=[0, 6]):
+            rejected("ancestor duration bound", paging.hosted_worker_ancestry,
+                     "hosted worker ancestry bound exhausted")
+    with patch.object(paging.os, "getpid", return_value=1000), \
+         patch.object(paging, "process_identity", side_effect=lambda pid:
+             dict(first, pid=pid, parent=pid-1)):
+        rejected("ancestor population bound", paging.hosted_worker_ancestry,
+                 "hosted worker ancestry bound exhausted")
+
+    fake_root = Path("/home/runner/work/gust/gust")
+    token = "synthetic-observation-credential"
+    job = dict(job, id=100)
+    def git_value(command, **kwargs):
+        assert command[0] == "git" and kwargs == dict(cwd=fake_root, text=True)
+        return {("rev-parse", "HEAD"): checkout["head"],
+                ("rev-parse", "HEAD^{tree}"): checkout["tree"],
+                ("rev-list", "--parents", "-n1", "HEAD"):
+                    " ".join([checkout["head"], *checkout["parents"]])}[tuple(command[1:])] + "\n"
+    for number, executable in enumerate((final["executable"], "/unqualified-layout/bin/Runner.Worker")):
+        case = root/("worker-observation-"+str(number));case.mkdir()
+        current = dict(final, executable=executable)
+        chain = [first, current]
+        def response(path, credential, output):
+            assert credential == token and output == case
+            assert path in ("actions/runs/42", "actions/runs/42/jobs?per_page=100")
+            return run if path == "actions/runs/42" else dict(total_count=1, jobs=[job])
+        with patch.object(paging, "ROOT", fake_root), \
+             patch.object(paging.os, "getuid", return_value=1000), \
+             patch.object(paging.pwd, "getpwuid", return_value=__import__("types").SimpleNamespace(pw_name="runner")), \
+             patch.object(paging.Path, "home", return_value=Path("/home/runner")), \
+             patch.dict(os.environ, dict(env, GITHUB_WORKSPACE=str(fake_root), GUST_RELEASE_METADATA_TOKEN=token)), \
+             patch.object(paging, "hosted_worker_ancestry", return_value=(current, chain)), \
+             patch.object(paging, "process_identity", return_value=current), \
+             patch.object(paging, "public_api", side_effect=response), \
+             patch.object(paging.subprocess, "check_output", side_effect=git_value):
+            if number == 0:
+                assert paging.hosted_runner(token, case)["worker"] == current
+                first_bytes = (case/"hosted-worker-observation-1.json").read_bytes()
+                assert paging.hosted_runner(token, case)["worker"] == current
+                assert (case/"hosted-worker-observation-1.json").read_bytes() == first_bytes
+                assert (case/"hosted-worker-observation-2.json").is_file()
+                rejected("third worker observation", lambda: paging.hosted_runner(token, case),
+                         "too many hosted worker observations")
+            else:
+                rejected("observed wrong root still refuses", lambda: paging.hosted_runner(token, case),
+                         "no live hosted worker ancestor")
+        record = json.loads((case/"hosted-worker-observation-1.json").read_text())
+        assert record["status"] == "OBSERVATION ONLY; hosted admission remains required"
+        assert record["ancestors"] == chain and record["worker"] == current and record["checkout"] == checkout
+        assert record["api_context"] == dict(run_id=42, run_attempt=2, job_id=100, runner_id=123)
+        assert all(set(row) == {"pid", "start_ticks", "executable", "parent"} for row in record["ancestors"])
+        raw = (case/"hosted-worker-observation-1.json").read_text()
+        assert token not in raw and "GITHUB_ACTIONS" not in raw and "argv" not in raw
+    case = root/"oversized-worker-observation";case.mkdir()
+    rejected("worker observation size bound", lambda: paging.record_worker_observation(case,
+        final, [dict(final, executable="x"*(128*1024))], run, job, checkout),
+        "hosted worker observation exceeds bound")
+    assert not list(case.iterdir())
+    # A compact representation can fit while the actual indented bytes exceed
+    # the bound. Mutate a real produced record to exercise that distinction.
+    boundary = json.loads((root/"worker-observation-0/hosted-worker-observation-1.json").read_text())
+    boundary["ancestors"] = [dict(first, executable="") for _ in range(64)]
+    padding = 128*1024-len(json.dumps(boundary).encode())-1
+    count, remainder = divmod(padding, 64)
+    for i, row in enumerate(boundary["ancestors"]):row["executable"] = "x"*(count+(i < remainder))
+    assert len(json.dumps(boundary).encode()) < 128*1024
+    assert len((json.dumps(boundary, indent=2)+"\n").encode()) > 128*1024
+    case = root/"formatted-worker-observation-boundary";case.mkdir()
+    with patch.object(paging, "utc", return_value=boundary["utc"]):
+        rejected("formatted observation size bound", lambda: paging.record_worker_observation(case,
+            boundary["worker"], boundary["ancestors"], run, job, checkout),
+            "hosted worker observation exceeds bound")
+    assert not list(case.iterdir())
+    print("RELEASE_WORKER_OBSERVATION_CONTROLS_PASS; wrong roots still refuse, no provisioning")
+
+
 def controls():
     assert paging.COMPILER_CAP_BYTES == 4294967296
     assert (paging.MINIMUM_PAGING, paging.TARGET_PAGING, paging.MAX_NEW_PAGING) == (
@@ -191,6 +286,7 @@ def controls():
     with tempfile.TemporaryDirectory(prefix="controls-", dir=parent) as temporary:
         root = Path(temporary)
         metadata_api_controls(root)
+        worker_observation_controls(root, env, worker, run, job, checkout)
         output = root/"evidence"
         output.mkdir()
         (root/"build/guards").mkdir(parents=True)
