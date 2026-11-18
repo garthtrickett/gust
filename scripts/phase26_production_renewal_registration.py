@@ -1,0 +1,850 @@
+#!/usr/bin/env python3
+"""Exact additive epoch2 successor; old epoch1 assertions retain their inputs.
+
+Generation is a final, signature-required step. An unsigned working tree cannot
+be enrolled or published by treating a placeholder as a public signature.
+"""
+from __future__ import annotations
+
+import base64
+import copy
+from functools import lru_cache
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+BASE = "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d"
+KEY = "production_epoch2_renewal_successor_v1"
+GUARD = "guard-cranelift-phase26-production-renewal"
+STATE = "GUST_LANE_STATE.md"
+REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
+HISTORY = "compiler/experiments/cranelift/production/epoch1/"
+BASELINE = HISTORY + "predecessor-baseline-v6.json.gz"
+BASELINE_SHA256 = "0f6cec4910fe8aabb4a53b5a7d830021c2b9767e307adddcec92b0942fa845d9"
+CHANGED = (
+    "TASK.md", "justfile", "scripts/cranelift_test_levels.json",
+    "scripts/phase26_2_allocator_registration.py", "scripts/phase26_production_registration.py",
+    "scripts/phase26_release_registration.py",
+    "scripts/phase26_r3_zlib_adapter_registration.py",
+    "scripts/phase26_r4_collection_registration.py", "scripts/phase26_ticket_publication_registration.py",
+    "scripts/phase26_release_closure.py", "scripts/phase26_production_package.py",
+    "compiler/experiments/cranelift/src/production_trust.rs",
+    "compiler/experiments/cranelift/src/production_trust_tests.rs",
+    "compiler/experiments/cranelift/production/manifest.txt",
+    "compiler/experiments/cranelift/production/manifest.sig",
+    "compiler/experiments/cranelift/production/snapshot.json",
+    "compiler/experiments/cranelift/production/public-identity.json",
+    ".github/workflows/phase26-release-closure.yml",
+    ".github/workflows/stdlib-s26-native-bytes.yml",
+    "scripts/phase26_r3_zlib_adapter_guard.sh",
+    "scripts/fixture_reachability.py",
+    "src/runtime-rs/abi-tests/abi_smoke.c",
+)
+ADDED = tuple(HISTORY + name for name in (
+    "manifest.txt", "manifest.sig", "snapshot.json", "production_trust.rs",
+    "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz",
+    "predecessor-baseline-v3.json.gz", "predecessor-baseline-v4.json.gz",
+    "predecessor-baseline-v5.json.gz",
+    "predecessor-baseline-v6.json.gz",
+    "public-identity.json")) + (
+    ".github/workflows/phase26-github-release-signing.yml",
+    "scripts/phase26_github_package_candidate.py",
+    "scripts/phase26_github_issue.py",
+    "compiler/experiments/cranelift/production/github-provenance.json",
+    "compiler/experiments/cranelift/production/github-enrollment.json",
+    "compiler/experiments/cranelift/production/renewal-assembly.json",
+    "compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz",
+    "compiler/phase26-release/release-epoch2.json",
+    "compiler/phase26-release/reachable-audit-epoch2.json",
+    "scripts/phase26_production_renewal.py",
+    "scripts/phase26_production_renewal_registration.py",
+    "scripts/phase26_release_execution.py",
+    "scripts/phase26_release_paging.py",
+    "scripts/phase26_release_execution_controls.py",
+    "scripts/phase26_predecessor_data.py",
+    "scripts/phase26_predecessor_data_controls.py",
+    "scripts/phase26_fresh_view_controls.py",
+    "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
+)
+RECIPE = ("\n# Selected epoch2 worker renewal; no package-supplied trust updates.\n" + GUARD + ":\n"
+    "    python3 scripts/phase26_production_renewal_registration.py validate\n"
+    "    python3 scripts/phase26_production_renewal_registration.py inversions\n"
+    "    python3 scripts/phase26_production_renewal.py validate\n")
+WORKFLOW = ".github/workflows/phase26-release-closure.yml"
+STDLIB_WORKFLOW = ".github/workflows/stdlib-s26-native-bytes.yml"
+SOURCE_ARCHIVE = "compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz"
+SOURCE_SHA256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+WORKFLOW_STEP = ("      - name: Validate selected production trust renewal\n"
+                 "        run: just " + GUARD + "\n")
+EXECUTION_BUILD = ("        env:\n"
+    "          GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}\n"
+    "        run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution\n")
+EXECUTION_METADATA = (
+    "      - name: Retain bounded cold-build environment evidence\n"
+    "        if: always()\n"
+    "        uses: actions/upload-artifact@v4\n"
+    "        with:\n"
+    "          name: phase26-release-execution-environment\n"
+    "          if-no-files-found: error\n"
+    "          path: |\n"
+    "            build/guards/phase26_release_execution/*.json\n"
+    "            build/guards/phase26_release_execution/*.jsonl\n"
+    "            build/guards/phase26_release_execution/*.log\n")
+
+
+def require(ok, message):
+    if not ok:
+        raise SystemExit(GUARD + ": " + message)
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def fingerprint(value):
+    return sha(json.dumps(value, sort_keys=True, separators=(",", ":")).encode())
+
+
+@lru_cache(maxsize=1)
+def baseline():
+    raw = (ROOT / BASELINE).read_bytes()
+    require(sha(raw) == BASELINE_SHA256, "renewal predecessor bytes drifted")
+    value = json.loads(gzip.decompress(raw))
+    require(value["base"] == BASE, "renewal predecessor identity drifted")
+    return value
+
+
+def base_bytes(path):
+    from phase26_predecessor_data import decoded_payload
+    # Resolve the dependency on every call; only its supplied content is memoized.
+    return decoded_payload(baseline()["files"][path])
+
+
+def record(registry):
+    return registry.get("phase26_activation_audit", {}).get(KEY)
+
+
+def identity(registry):
+    row = record(registry)
+    require(row and row["predecessor_main"] == BASE and row["owner"] == "cranelift" and
+            row["guard"] == GUARD and row["release_epoch"] == 2 and
+            row["operational_state_excluded"] == STATE and
+            row["od23"] == "OPEN; no observation alternative selected" and
+            [p["path"] for p in row["changed_files"]] == list(CHANGED) and
+            [p["path"] for p in row["added_files"]] == list(ADDED),
+            "renewal identity or file population drifted")
+    require((ROOT / STATE).is_file() and (ROOT / STATE).stat().st_size > 0,
+            "operational lane state is absent")
+    return row
+
+
+def check_files(registry):
+    row = identity(registry)
+    for pin in row["changed_files"]:
+        require(pin["previous_digest"] == sha(base_bytes(pin["path"])) and
+                sha((ROOT / pin["path"]).read_bytes()) == pin["current_digest"],
+                "R4 changed file drifted: " + pin["path"] + " (epoch2 renewal)")
+    for pin in row["added_files"]:
+        require(sha((ROOT / pin["path"]).read_bytes()) == pin["digest"],
+                "renewal added file drifted: " + pin["path"])
+
+
+def frozen_ancestor_images(kind):
+    # Complete, hash-checked archived images only. Repeated old normalizers
+    # must not promote an older image back to the immediate predecessor.
+    import importlib
+    values = [baseline()["projections"][kind]]
+    for name in ("phase26_2_allocator_registration", "phase26_release_registration",
+                 "phase26_readonly_input_copy_registration", "phase26_ticket_composition_registration",
+                 "phase26_imported_native_registration", "phase26_ticket_publication_registration"):
+        values.append(importlib.import_module(name).baseline()["projections"][kind])
+    if kind == "r4_record":
+        for value in list(values):
+            live_state = copy.deepcopy(value)
+            next(p for p in live_state["changed_files"] if p["path"] == STATE)[
+                "current_digest"] = sha((ROOT / STATE).read_bytes())
+            values.append(live_state)
+    return values
+
+
+def canonical_projection(kind, current):
+    previous = baseline()["projections"][kind]
+    if kind in ("text", "r4_text"):
+        require(isinstance(current, list) and all(isinstance(p, dict) and "path" in p for p in current) and
+                sum(p["path"] == STATE for p in current) <= 1,
+                "R4 " + kind + " live projection drifted (renewal)")
+        return sorted(copy.deepcopy([p for p in current if p["path"] != STATE] +
+                      [p for p in previous if p["path"] == STATE]), key=lambda p: p["path"])
+    if kind == "r4_record":
+        require(isinstance(current, dict) and set(current) == set(previous) and
+                isinstance(current.get("changed_files"), list) and
+                sum(isinstance(p, dict) and p.get("path") == STATE
+                    for p in current["changed_files"]) == 1,
+                "R4 r4_record live projection drifted (renewal)")
+        result = copy.deepcopy(current)
+        state = next(p for p in result["changed_files"] if p["path"] == STATE)
+        old = next(p for p in previous["changed_files"] if p["path"] == STATE)
+        require(state["previous_digest"] == old["previous_digest"] and
+                state["current_digest"] in (old["current_digest"], sha((ROOT / STATE).read_bytes())),
+                "R4 r4_record live projection drifted (renewal)")
+        state["current_digest"] = old["current_digest"]
+        edge = result["projections"]["text"]
+        if edge["current_digest"] != previous["projections"]["text"]["current_digest"]:
+            import phase26_r3_zlib_adapter_registration as r3
+            import phase26_r4_collection_registration as r4
+            raw = r4.owned_text(r3.raw_text_surfaces())
+            normalized = fingerprint(canonical_projection("r4_text", raw))
+            require(edge["current_digest"] in (fingerprint(raw), normalized),
+                    "R4 r4_record live projection drifted (renewal)")
+            edge["current_digest"] = normalized
+        return result
+    return current
+
+
+def prior_digest(registry, path, live):
+    if not record(registry) or path not in CHANGED:
+        return live
+    pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
+    admitted = {pin["current_digest"], pin["previous_digest"]}
+    from phase26_predecessor_data import inherited_digests
+    # Read this seam every time. Cache keys include the actual supplied bytes
+    # and path, never the final admission, current pin, or filesystem presence.
+    predecessor = base_bytes("scripts/cranelift_feature_registry.json")
+    admitted.update(inherited_digests(predecessor, path))
+    require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
+            pin["previous_digest"] == sha(base_bytes(path)) and live in admitted,
+            "R4 changed file drifted: " + path + " (epoch2 renewal)")
+    return pin["previous_digest"]
+
+
+def prior_bytes(registry, path, live):
+    if not record(registry) or path not in CHANGED:
+        return live
+    prior_digest(registry, path, sha(live))
+    return base_bytes(path)
+
+
+def project(registry, kind, current):
+    if not record(registry):
+        return current
+    row = identity(registry)
+    previous = baseline()["projections"][kind]
+    require(type(current) is type(previous), "R4 " + kind + " live projection drifted (renewal)")
+    # Ancestor acceptance is never a physical rollback escape hatch.
+    check_files(registry)
+    if kind in ("text", "r4_text"):
+        require(all(isinstance(p, dict) and "path" in p for p in current),
+                "R4 " + kind + " live projection drifted (renewal)")
+        owned = set(CHANGED + ADDED)
+        subset = [p for p in current if p["path"] in owned]
+        ancestor_subsets = [[p for p in value if p["path"] in owned]
+                            for value in frozen_ancestor_images(kind)]
+        if any(subset == value for value in ancestor_subsets):
+            return copy.deepcopy(current)  # Preserve foreign order/duplicates too.
+        current = canonical_projection(kind, current)
+        old_subset = [p for p in previous if p["path"] in owned]
+        require(fingerprint(subset) == row["owned_text"][kind],
+                "R4 " + kind + " live projection drifted (renewal)")
+        return sorted(copy.deepcopy([p for p in current if p["path"] not in owned] + old_subset),
+                      key=lambda p: p["path"])
+    if any(current == value for value in frozen_ancestor_images(kind)):
+        return copy.deepcopy(current)
+    current = canonical_projection(kind, current)
+    require(fingerprint(current) == row["projections"][kind],
+            "R4 " + kind + " live projection drifted (renewal)")
+    result = copy.deepcopy(previous)
+    if kind == "r4_record":
+        next(p for p in result["changed_files"] if p["path"] == STATE)["current_digest"] = sha((ROOT / STATE).read_bytes())
+    return result
+
+
+def project_registry(registry):
+    result = copy.deepcopy(registry)
+    result.get("phase26_activation_audit", {}).pop(KEY, None)
+    return result
+
+
+def prior_render_digest(registry, live):
+    if not record(registry):
+        return live
+    row = identity(registry)
+    previous = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))[
+        "phase26_activation_audit"]["allocator_resource_liveness_successor_v1"]["spelling_render_current_digest"]
+    require(live in (row["spelling_render_current_digest"], previous),
+            "R4 current spelling review is stale or missing (renewal)")
+    return previous
+
+
+def current_projections():
+    import phase26_2_allocator_registration as previous
+    return previous.current_projections()
+
+
+def build_record():
+    import phase24_semantic_spelling_inventory as spelling
+    values = current_projections()
+    values = {kind: canonical_projection(kind, value) for kind, value in values.items()}
+    sites = spelling.source_sites()
+    return dict(predecessor_main=BASE, owner="cranelift", guard=GUARD, release_epoch=2,
+        operational_state_excluded=STATE,
+        od23="OPEN; no observation alternative selected",
+        changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)),
+                           current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
+        added_files=[dict(path=p, digest=sha((ROOT / p).read_bytes())) for p in ADDED],
+        owned_text={k: fingerprint([p for p in values[k] if p["path"] in CHANGED + ADDED])
+                    for k in ("text", "r4_text")},
+        projections={k: fingerprint(v) for k, v in values.items()},
+        spelling_render_current_digest=sha(spelling.render(spelling.load_authority(), sites,
+            spelling.manifest_summary(sites)).encode()))
+
+
+def generate():
+    import phase26_production_renewal as renewal
+    renewal.validate()  # Requires real signature and actual valid wall-clock interval.
+    check_source_archive()
+    registry = json.loads(REGISTRY.read_text())
+    require(not record(registry), "generation requires an unregistered current successor")
+    require(registry == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
+            "generation would overwrite foreign or predecessor registry changes")
+    # Update only the active successor authority; epoch1 records stay frozen.
+    authority_path = ROOT / "compiler/phase26-release/release-epoch2.json"
+    authority = json.loads(authority_path.read_text())
+    pins = authority["source_pins"]
+    for path in set(pins) | (set(CHANGED + ADDED) - {
+            "TASK.md", "compiler/phase26-release/release-epoch2.json",
+            "compiler/phase26-release/reachable-audit-epoch2.json"}):
+        require(path not in ("TASK.md", "TASK_STDLIB.md", "GUST_LANE_STATE.md"),
+                "operational source pin re-admitted")
+        pins[path] = sha((ROOT / path).read_bytes())
+    authority["snapshot"] = json.loads((renewal.PROFILE / "snapshot.json").read_text())
+    authority["artifacts"] = [[p["kind"], p["name"], p["sha256"]] for p in
+                              json.loads((renewal.PROFILE / "renewal-assembly.json").read_text())["artifacts"]]
+    authority["renewal_status"] = "SIGNED; actual qualification and exact-head CI remain required"
+    authority["production_files"] = {name: sha((renewal.PROFILE / name).read_bytes())
+                                    for name in ("manifest.txt", "manifest.sig", "public-identity.json")}
+    audit_path = ROOT / authority["reachable_audit"]
+    audit = json.loads(audit_path.read_text())
+    audit["source_pins"] = pins
+    audit_path.write_text(json.dumps(audit, indent=2) + "\n")
+    authority_path.write_text(json.dumps(authority, indent=2) + "\n")
+    row = build_record()
+    marker = '  "phase26_activation_audit": {\n'
+    original = REGISTRY.read_text()
+    require(original.count(marker) == 1, "renewal registry insertion anchor drifted")
+    field = "\n".join("  " + line for line in json.dumps({KEY: row}, indent=2).splitlines()[1:-1])
+    REGISTRY.write_text(original.replace(marker, marker + field + ",\n", 1))
+    print("EPOCH2_EXACT_ADDITIVE_ENROLLMENT_GENERATED; not qualification")
+
+
+def check_source_archive():
+    archive = ROOT / SOURCE_ARCHIVE
+    require(archive.is_file() and not archive.is_symlink() and
+            archive.resolve().is_relative_to(ROOT.resolve()),
+            "vendored signed source is not a regular owned file")
+    require(sha(archive.read_bytes()) == SOURCE_SHA256,
+            "vendored signed source archive digest drifted")
+    manifest = (ROOT / "compiler/experiments/cranelift/production/manifest.txt").read_text()
+    require(manifest.splitlines().count(
+        "artifact: source|zlib-1.3.2.tar.gz|" + SOURCE_SHA256) == 1,
+        "vendored source differs from the signed manifest input")
+
+
+def source_workflow(path, directory):
+    previous = base_bytes(path).decode()
+    fetch = ("          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \\\n"
+             "            --retry 3 --max-time 90 https://zlib.net/zlib-1.3.2.tar.gz \\\n"
+             "            --output " + directory + "/zlib-1.3.2.tar.gz\n")
+    argument = "            " + directory + "/zlib-1.3.2.tar.gz \\\n"
+    require(previous.count(fetch) == previous.count(argument) == 1,
+            "renewal predecessor source workflow anchors drifted")
+    return previous.replace(fetch, "", 1).replace(
+        argument, "            " + SOURCE_ARCHIVE + " \\\n", 1)
+
+
+def check_workflow_caller():
+    previous = source_workflow(WORKFLOW, "build/guards/phase26_r3_zlib_adapter")
+    anchor = "      - name: Build current native compiler\n"
+    require(previous.count(anchor) == 1, "renewal predecessor workflow anchor drifted")
+    expected = previous.replace(anchor, WORKFLOW_STEP + anchor, 1)
+    build = "        run: python3 scripts/phase26_release_bounded.py make gust\n"
+    artifact = "      - name: Retain exact-source qualification and failure evidence\n"
+    require(expected.count(build) == expected.count(artifact) == 1,
+            "renewal predecessor execution anchors drifted")
+    expected = expected.replace(build, EXECUTION_BUILD, 1).replace(
+        artifact, EXECUTION_METADATA + artifact, 1)
+    require((ROOT / WORKFLOW).read_text() == expected,
+            "renewal owning workflow caller drifted")
+    require((ROOT / STDLIB_WORKFLOW).read_text() ==
+            source_workflow(STDLIB_WORKFLOW, "build/guards/stdlib_s26_1_package"),
+            "renewal Stdlib workflow source route drifted")
+
+def validate():
+    import phase26_production_renewal as renewal
+    renewal.validate()
+    check_source_archive()
+    registry = json.loads(REGISTRY.read_text())
+    row = identity(registry)
+    require(project_registry(registry) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
+            "renewal changed predecessor or foreign registry rows")
+    check_files(registry)
+    require((ROOT / "justfile").read_bytes() == base_bytes("justfile") + RECIPE.encode(),
+            "renewal owning recipe drifted")
+    check_workflow_caller()
+    levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
+    require(levels["guards"].pop(GUARD, None) == 2 and
+            levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")),
+            "renewal test level or predecessor guard changed")
+    for kind, value in current_projections().items():
+        project(registry, kind, value)
+    print("EPOCH2_EXACT_ADDITIVE_ENROLLMENT_PASS")
+
+
+def fixture_inventory_controls():
+    """Audit hashes never stand in for execution; retain the actual old ratchet."""
+    import contextlib
+    import io
+    import subprocess
+    from unittest.mock import patch
+    import fixture_reachability as fixtures
+    inventories = {"compiler/phase26-release/release-epoch2.json",
+                   "compiler/phase26-release/reachable-audit-epoch2.json"}
+    allowed = set(json.loads(fixtures.ALLOWLIST.read_text())["known_unexercised"])
+    require({name for name, _ in fixtures.unexercised()} == allowed and allowed,
+            "renewal changed the actual staged fixture population")
+    external = "scripts/renewal-executing-fixture-control.py"
+    require(fixtures.executing_references(sorted(inventories) + [external]) == [external],
+            "source-only inventory or executing-reference classification changed")
+    for path in inventories:
+        require(fixtures.executing_references([path + ".executor"]) == [path + ".executor"],
+                "inventory exemption widened beyond its exact path")
+    def ratchet_refuses(label):
+        stream = io.StringIO()
+        with patch.object(sys, "argv", ["fixture_reachability.py"]), contextlib.redirect_stdout(stream):
+            code = fixtures.main()
+        require(code == 1 and "No longer unexercised" in stream.getvalue(),
+                label + ": actual fixture ratchet failed to reject changed execution evidence")
+        print(label + ": REJECTED (expected actual fixture ratchet)", flush=True)
+    for path in sorted(inventories):
+        with patch.object(fixtures, "NON_EXECUTING_INVENTORIES",
+                          fixtures.NON_EXECUTING_INVENTORIES - {path}):
+            ratchet_refuses("inventory-as-execution " + path)
+    original = subprocess.run
+    target = sorted(allowed)[0]
+    def with_execution(args, *values, **kwargs):
+        result = original(args, *values, **kwargs)
+        if list(args) == ["git", "grep", "-l", "-F", target]:
+            return subprocess.CompletedProcess(args, result.returncode,
+                result.stdout + external + "\n", result.stderr)
+        return result
+    with patch.object(fixtures.subprocess, "run", with_execution):
+        ratchet_refuses("actual external reference remains execution evidence")
+    print("RENEWAL_SOURCE_ONLY_INVENTORY_CONTROLS_PASS", flush=True)
+
+
+def predecessor_record_control():
+    """Exercise the old record check through its actual imported module target."""
+    from unittest.mock import patch
+    import phase26_2_allocator_registration as predecessor
+    registry = json.loads(REGISTRY.read_text())
+    check_files(registry)  # Require this exact patched source before isolation.
+    foreign_record = copy.deepcopy(predecessor.baseline()["projections"]["r4_record"])
+    next(p for p in foreign_record["changed_files"] if p["path"] == STATE)[
+        "current_digest"] = sha((ROOT / STATE).read_bytes())
+    next(p for p in foreign_record["changed_files"] if p["path"] != STATE)[
+        "current_digest"] = "0" * 64
+    # __main__ is distinct from the module imported by the predecessor.
+    target = predecessor.successor
+    original_project = target.project
+    isolated = []
+    def isolate_foreign_record(registry, kind, value):
+        if kind == "r4_record" and value is foreign_record:
+            isolated.append(True)
+            return copy.deepcopy(value)
+        return original_project(registry, kind, value)
+    with patch.object(target, "project", isolate_foreign_record):
+        try:
+            predecessor.project(registry, "r4_record", foreign_record)
+        except SystemExit as error:
+            require("live projection drifted (allocator successor)" in str(error),
+                    "predecessor nested foreign record: REJECTED (different assertion): " + str(error))
+            print("predecessor nested foreign record: REJECTED (expected assertion)", flush=True)
+        else:
+            raise SystemExit("predecessor nested foreign record: ACCEPTED")
+    require(isolated == [True], "predecessor control did not isolate its exact input")
+    print("PREDECESSOR_RECORD_CONTROL_ONLY_PASS; full inversions/census remain required", flush=True)
+
+
+def workflow_caller_controls():
+    """Registry mention alone must never stand in for this actual CI caller."""
+    from unittest.mock import patch
+    import phase24_retirement_consumer_inventory as inventory
+    check_workflow_caller()
+    reached, named, make = inventory.liveness()
+    require(GUARD in reached and GUARD in named and GUARD not in make,
+            "renewal guard lacks its actual owning workflow route")
+    original_text = Path.read_text
+    current = original_text(ROOT / WORKFLOW)
+    require(current.count(WORKFLOW_STEP) == 1, "renewal caller control is not isolated")
+    without_caller = current.replace(WORKFLOW_STEP, "", 1)
+    with patch.object(Path, "read_text", lambda p, *args, **kwargs:
+            without_caller if p == ROOT / WORKFLOW else original_text(p, *args, **kwargs)):
+        reached, named, make = inventory.liveness()
+        require(GUARD not in reached and GUARD in named and GUARD not in make,
+                "renewal caller removal did not move actual reachability")
+        for label, callback, expected in (
+                ("owning workflow caller omitted", check_workflow_caller,
+                 "renewal owning workflow caller drifted"),
+                ("registry-only renewal guard", inventory.validate,
+                 "a recipe became live solely because a registry names it")):
+            try:
+                callback()
+            except SystemExit as error:
+                require(expected in str(error),
+                        label + ": REJECTED (different assertion): " + str(error))
+                print(label + ": REJECTED (expected assertion)", flush=True)
+            else:
+                raise SystemExit(label + ": ACCEPTED")
+    check_workflow_caller()
+    print("RENEWAL_ACTUAL_WORKFLOW_CALLER_CONTROLS_PASS; full inversions remain required", flush=True)
+
+
+def source_delivery_controls():
+    """The signed source and both retired network routes remain fail-closed."""
+    from unittest.mock import patch
+    import subprocess
+    import tempfile
+    check_source_archive()
+    check_workflow_caller()
+    archive = ROOT / SOURCE_ARCHIVE
+    original_read, original_file = Path.read_bytes, Path.is_file
+    original_link, original_resolve = Path.is_symlink, Path.resolve
+
+    def rejected(label, callback, expected):
+        try:
+            callback()
+        except SystemExit as error:
+            require(expected in str(error),
+                    label + ": REJECTED (different assertion): " + str(error))
+            print(label + ": REJECTED (expected assertion)", flush=True)
+        else:
+            raise SystemExit(label + ": ACCEPTED")
+
+    for label, method, replacement, expected in (
+        ("missing signed source", "is_file",
+         lambda p: False if p == archive else original_file(p),
+         "vendored signed source is not a regular owned file"),
+        ("substituted signed source", "read_bytes",
+         lambda p: b"wrong source" if p == archive else original_read(p),
+         "vendored signed source archive digest drifted"),
+        ("symlink signed source", "is_symlink",
+         lambda p: True if p == archive else original_link(p),
+         "vendored signed source is not a regular owned file"),
+        ("escaped signed source", "resolve",
+         lambda p, *a, **kw: ROOT.parent / "outside-source" if p == archive else original_resolve(p, *a, **kw),
+         "vendored signed source is not a regular owned file"),
+    ):
+        with patch.object(Path, method, replacement):
+            rejected(label, check_source_archive, expected)
+
+    original_text = Path.read_text
+    manifest_path = ROOT / "compiler/experiments/cranelift/production/manifest.txt"
+    manifest = original_text(manifest_path)
+    source_line = "artifact: source|zlib-1.3.2.tar.gz|" + SOURCE_SHA256
+    require(manifest.count(source_line) == 1, "source binding control is not isolated")
+    altered_manifest = manifest.replace(source_line, source_line[:-64] + "0" * 64, 1)
+    with patch.object(Path, "read_text", lambda p, *a, **kw:
+                      altered_manifest if p == manifest_path else original_text(p, *a, **kw)):
+        rejected("signed manifest source binding", check_source_archive,
+                 "vendored source differs from the signed manifest input")
+
+    for path, expected in (
+        (WORKFLOW, "renewal owning workflow caller drifted"),
+        (STDLIB_WORKFLOW, "renewal Stdlib workflow source route drifted"),
+    ):
+        old = base_bytes(path).decode().replace(
+            "https://zlib.net/zlib-1.3.2.tar.gz",
+            "https://zlib.net/fossils/zlib-1.3.2.tar.gz")
+        if path == WORKFLOW:
+            old = old.replace("      - name: Build current native compiler\n",
+                              WORKFLOW_STEP + "      - name: Build current native compiler\n", 1)
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                          old if p == ROOT / path else original_text(p, *a, **kw)):
+            rejected("retired network source " + path, check_workflow_caller, expected)
+        wrong_argument = original_text(ROOT / path).replace(
+            SOURCE_ARCHIVE, "build/guards/unqualified-source.tar.gz")
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                          wrong_argument if p == ROOT / path else original_text(p, *a, **kw)):
+            rejected("unqualified source argument " + path, check_workflow_caller, expected)
+        current = original_text(ROOT / path)
+        before, after = (
+            ("python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-release-closure",
+             "just guard-cranelift-phase26-release-closure") if path == WORKFLOW else
+            ("cmp compiler/experiments/cranelift/production/manifest.txt",
+             "echo compiler/experiments/cranelift/production/manifest.txt"))
+        require(current.count(before) == 1, "preserved workflow step control is not isolated")
+        weakened_step = current.replace(before, after, 1)
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                          weakened_step if p == ROOT / path else original_text(p, *a, **kw)):
+            rejected("weakened existing qualification step " + path,
+                     check_workflow_caller, expected)
+
+    # Invalid gzip cannot reach a compiler even if a future edit removes the
+    # digest gate. Require its exact diagnostic, not a later tar rejection.
+    parent = ROOT / "build/guards"
+    parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="renewal-source-", dir=parent) as raw:
+        directory = Path(raw)
+        bad = directory / "wrong.tar.gz"
+        bad.write_bytes(b"not the enrolled source archive\n")
+        output = directory / "must-not-build"
+        result = subprocess.run(["bash", "scripts/phase26_r3_zlib_adapter.sh",
+                                 str(bad), str(output)], cwd=ROOT, capture_output=True, text=True)
+        require(result.returncode == 1 and
+                "Phase 26 zlib source archive digest mismatch" in result.stderr and
+                not output.exists(), "unchanged R3 digest-first refusal drifted")
+    check_source_archive()
+    check_workflow_caller()
+    print("EPOCH2_SIGNED_SOURCE_DELIVERY_CONTROLS_PASS", flush=True)
+
+
+def execution_environment_controls():
+    """Actual helper controls plus the exact build and metadata caller edges."""
+    from unittest.mock import patch
+    import phase26_release_execution
+    phase26_release_execution.controls()
+    check_workflow_caller()
+    original = Path.read_text
+    current = original(ROOT / WORKFLOW)
+    mutations = (
+        ("omitted metadata credential", current.replace(
+            "          GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}\n", "", 1)),
+        ("changed metadata credential", current.replace(
+            "GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}",
+            "GUST_RELEASE_METADATA_TOKEN: unqualified", 1)),
+        ("unprepared protected build", current.replace(EXECUTION_BUILD,
+            "        run: python3 scripts/phase26_release_bounded.py make gust\n", 1)),
+        ("omitted environment failure evidence", current.replace(EXECUTION_METADATA, "", 1)),
+        ("paging contents in artifact", current.replace(
+            "build/guards/phase26_release_execution/*.json\n",
+            "build/guards/phase26_release_execution_paging/*\n", 1)),
+    )
+    for label, mutated in mutations:
+        require(mutated != current, label + ": control did not change its mechanism")
+        with patch.object(Path, "read_text", lambda p, *a, **kw:
+                mutated if p == ROOT / WORKFLOW else original(p, *a, **kw)):
+            try:
+                check_workflow_caller()
+            except SystemExit as error:
+                require("renewal owning workflow caller drifted" in str(error),
+                        label + ": REJECTED (different assertion): " + str(error))
+                print(label + ": REJECTED (expected assertion)", flush=True)
+            else:
+                raise SystemExit(label + ": ACCEPTED")
+    print("EPOCH2_EXECUTION_ENVIRONMENT_CALLER_CONTROLS_PASS", flush=True)
+
+
+def predecessor_decode_controls():
+    from phase26_predecessor_data_controls import controls
+    controls(sys.modules[__name__])
+
+
+def fresh_view_controls():
+    from phase26_fresh_view_controls import controls
+    controls(sys.modules[__name__])
+
+
+def projection_reuse_controls():
+    """One live view per call; malformed views and later missing inputs fail closed."""
+    import errno
+    from unittest.mock import patch
+    import phase26_r4_collection_registration as r4
+    import phase26_ticket_publication_registration as ticket
+    kinds = ("text", "spelling", "filename", "r3_record", "production", "workflow")
+    shape = {kind: {"previous": None, "current": None} for kind in kinds}
+    malformed = [("omitted edge", {k: v for k, v in shape.items() if k != "text"}),
+                 ("extra edge", dict(shape, unexpected={"previous": None, "current": None}))]
+    for field in ("previous", "current"):
+        changed = copy.deepcopy(shape)
+        del changed["text"][field]
+        malformed.append(("missing " + field, changed))
+    changed = copy.deepcopy(shape)
+    changed["text"]["unexpected"] = None
+    malformed.append(("extra edge field", changed))
+    changed = copy.deepcopy(shape)
+    changed["text"] = []
+    malformed.append(("non-record edge", changed))
+    for label, value in malformed:
+        try:
+            r4.build_record_from_projections(value)
+        except SystemExit as error:
+            require("R4 record projection input shape drifted" in str(error),
+                    label + ": REJECTED (different assertion): " + str(error))
+        else:
+            raise SystemExit(label + ": ACCEPTED")
+        print(label + ": REJECTED (expected projection shape)", flush=True)
+
+    calls = []
+    original_scan = r4.live_projections
+    def observed():
+        calls.append(True)
+        return original_scan()
+    target = ROOT / "README.md"
+    original_text = Path.read_text
+    missing_reads = []
+    def missing(path, *args, **kwargs):
+        if path == target:
+            missing_reads.append(True)
+            raise FileNotFoundError(errno.ENOENT, "deliberately missing audited dependency", str(target))
+        return original_text(path, *args, **kwargs)
+    with patch.object(r4, "live_projections", observed):
+        ticket.current_projections()
+        require(len(calls) == 1, "current projection consumer repeated its live scan")
+        with patch.object(Path, "read_text", missing):
+            try:
+                ticket.current_projections()
+            except FileNotFoundError as error:
+                require(error.filename == str(target) and missing_reads,
+                        "missing audited dependency: REJECTED (different file)")
+            else:
+                raise SystemExit("missing audited dependency: ACCEPTED cached view")
+        require(len(calls) == 2, "independent projection call reused an old view")
+    print("RENEWAL_SHARED_SCAN_FRESH_INPUT_CONTROLS_PASS; no cross-call cache", flush=True)
+
+
+def release_workflow_consumer_controls():
+    """Exercise the real validate consumer; downstream projections retain their full suite."""
+    import contextlib
+    import io
+    from unittest.mock import patch
+    import phase26_release_registration as release
+    expected = base_bytes(WORKFLOW).decode()
+    seen = []
+    original_identity = release.workflow_identity
+    original_read = Path.read_bytes
+
+    def observed(text):
+        require(text == expected, "release consumer did not receive exact predecessor workflow")
+        seen.append(text)
+        original_identity(text)
+
+    # Isolate this actual call site after its physical checks. The original
+    # complete validate/inversions still run independently in the full census.
+    with patch.object(release, "workflow_identity", observed), \
+            patch.object(release, "current_projections", lambda: {}), \
+            contextlib.redirect_stdout(io.StringIO()):
+        release.validate()
+        require(seen == [expected], "release workflow consumer was not actually observed")
+        current = original_read(ROOT / WORKFLOW)
+        for label, raw in (("physical workflow rollback", base_bytes(WORKFLOW)),
+                           ("physical workflow substitution", current + b"\n")):
+            seen.clear()
+            with patch.object(Path, "read_bytes", lambda p, raw=raw:
+                    raw if p == ROOT / WORKFLOW else original_read(p)):
+                try:
+                    release.validate()
+                except SystemExit as error:
+                    require("R4 changed file drifted" in str(error),
+                            label + ": REJECTED (different assertion): " + str(error))
+                else:
+                    raise SystemExit(label + ": ACCEPTED")
+            require(not seen, label + " reached historical view before physical rejection")
+    print("RENEWAL_ACTUAL_RELEASE_WORKFLOW_CONSUMER_PASS; full historical guard remains required", flush=True)
+
+
+def inversions():
+    validate()
+    registry = json.loads(REGISTRY.read_text())
+    from unittest.mock import patch
+    def rejected(label, callback, expected):
+        try:
+            callback()
+        except SystemExit as error:
+            require(expected in str(error), label + ": REJECTED (different assertion): " + str(error))
+            print(label + ": REJECTED (expected assertion): " + str(error), flush=True)
+        else:
+            raise SystemExit(label + ": ACCEPTED")
+    production = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))[
+        "phase26_activation_audit"]["production_trust_successor_v1"]
+    for pin in production["changed_files"]:
+        if pin["path"] in CHANGED:
+            rejected("unqualified production predecessor " + pin["path"],
+                     lambda pin=pin: prior_digest(registry, pin["path"], pin["previous_digest"]),
+                     "R4 changed file drifted")
+    for path in CHANGED:
+        rejected("substituted " + path, lambda path=path: prior_digest(registry, path, "0" * 64),
+                 "R4 changed file drifted")
+        original_read = Path.read_bytes
+        for label, raw in (("physical rollback", base_bytes(path)),
+                           ("physical substitution", original_read(ROOT / path) + b"\n")):
+            with patch.object(Path, "read_bytes", lambda p, path=path, raw=raw:
+                    raw if p == ROOT / path else original_read(p)):
+                rejected(label + " " + path,
+                         lambda path=path: prior_digest(registry, path, sha((ROOT / path).read_bytes())),
+                         "R4 changed file drifted")
+    original_read = Path.read_bytes
+    for path in ADDED:
+        with patch.object(Path, "read_bytes", lambda p, path=path:
+                original_read(p) + b"\n" if p == ROOT / path else original_read(p)):
+            expected = ("vendored signed source archive digest drifted" if path == SOURCE_ARCHIVE else
+                        "immutable epoch1 history" if path.startswith(HISTORY) else "renewal added file drifted")
+            rejected("physical added substitution " + path, validate, expected)
+    values = current_projections()
+    for kind in identity(registry)["projections"]:
+        rejected("substituted " + kind, lambda kind=kind: project(registry, kind, "substituted"),
+                 "live projection drifted")
+        once = project(registry, kind, values[kind])
+        require(project(registry, kind, once) == once, "renewal projection not idempotent: " + kind)
+        import phase26_2_allocator_registration as predecessor
+        composed = predecessor.project(registry, kind, project(registry, kind, values[kind]))
+        require(project(registry, kind, composed) == composed,
+                "renewal changed a projected predecessor image: " + kind)
+        require(predecessor.project(registry, kind, composed) == composed,
+                "renewal/predecessor composition is not idempotent: " + kind)
+        for image in frozen_ancestor_images(kind):
+            require(project(registry, kind, image) == image,
+                    "renewal changed a complete frozen ancestor image: " + kind)
+    for kind in ("text", "r4_text"):
+        owned = next(p for p in values[kind] if p["path"] in CHANGED + ADDED)
+        for label, changed in (("omitted", [p for p in values[kind] if p != owned]),
+                               ("duplicate", values[kind] + [owned])):
+            rejected(label + " " + kind, lambda kind=kind, changed=changed: project(registry, kind, changed),
+                     "live projection drifted")
+        foreign = next(p for p in values[kind] if p["path"] not in CHANGED + ADDED)
+        changed = copy.deepcopy(values[kind])
+        next(p for p in changed if p["path"] == foreign["path"])["renewal_foreign_mutation"] = True
+        require(any(p.get("renewal_foreign_mutation") for p in project(registry, kind, changed)),
+                "renewal swallowed foreign source mutation")
+    foreign = copy.deepcopy(registry)
+    foreign["renewal_foreign_mutation"] = True
+    require(project_registry(foreign) != json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
+            "renewal swallowed foreign registry mutation")
+    original_text = Path.read_text
+    with patch.object(Path, "read_text", lambda p, *args, **kwargs:
+            json.dumps(foreign) if p == REGISTRY else original_text(p, *args, **kwargs)):
+        import phase26_2_allocator_registration as predecessor
+        rejected("foreign mutation through predecessor validator", predecessor.validate,
+                 "allocator changed frozen predecessor or foreign registry rows")
+    predecessor_record_control()
+    fixture_inventory_controls()
+    workflow_caller_controls()
+    source_delivery_controls()
+    execution_environment_controls()
+    release_workflow_consumer_controls()
+    projection_reuse_controls()
+    predecessor_decode_controls()
+    fresh_view_controls()
+    print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
+
+
+if __name__ == "__main__":
+    {"generate": generate, "validate": validate, "inversions": inversions,
+     "predecessor-record-control": predecessor_record_control,
+     "workflow-caller-controls": workflow_caller_controls,
+     "release-workflow-controls": release_workflow_consumer_controls,
+     "projection-reuse-controls": projection_reuse_controls,
+     "predecessor-decode-controls": predecessor_decode_controls,
+     "fresh-view-controls": fresh_view_controls,
+     "source-delivery-controls": source_delivery_controls}[sys.argv[1]]()

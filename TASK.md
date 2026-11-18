@@ -6019,3 +6019,71 @@ and proposal; continue other authorized unblocked work under the normal ladder.
 The first-release terminal is superseded prospectively by this activation;
 its receipts and historical terminal are unchanged. General 26.1 work is
 re-entered only when a named admitted operation or later gate requires it.
+
+## Selected production trust renewal predecessor — 2026-11-17
+
+The operator delegated the concrete epoch2 renewal: minimum package epoch2,
+key epochs2–2, the same enrolled `gust-native-release-1` public identity,
+and the unchanged seven-day maximum. Carry the authenticated enrolled
+revocation/withdrawal state; honor any contrary applicable record. This selects
+the existing OD22 renewal route and does not select OD23 or change semantics.
+
+Prepare a separate main-based publication before rebasing the held PR619
+correction. Immutable epoch1 history and its first-release authority remain
+unchanged. A real operator-controlled signature over the exact newly assembled
+canonical message, current-source production/public/R5/fixed-point evidence,
+normal CI/artifact parity, reviews/rules and checked merge are mandatory.
+Unsigned preparation and missing-signature refusal controls are not qualification.
+After the checked predecessor merge, resume the activated Phase26 remainder.
+
+### Delegated GitHub signer selection — 2026-11-17
+
+After the concrete choice between provisioning the enrolled key and a reviewed
+GitHub-generated identity, the operator replied “Whichever you rexkon”. The
+same owner selects the GitHub-generated one-shot Ed25519 identity
+`gust-github-release-1`: no transfer of the old private key or repository secret
+creation. This supersedes the earlier same-key parameter for the new epoch2
+candidate only; all epoch1 history and old unsigned drafts remain frozen.
+
+Use a reviewed non-admitting operational GitHub issuance control. Verify actual
+repo/owner/ref/commit/run/artifact provenance and raw signature, then review and
+pin the actual public key in the worker. Preserve v2/raw64/offline verification,
+epoch2/minimum2/keyrange2–2, real assembly issue/expiry and seven-day maximum,
+all product caps and all mandatory source/native/production/public/R5/FP/CI
+gates. No package/environment input can enroll a key. Do not merge a red
+operational control or carry historical native passes into changed source.
+The complete renewal includes the exact reviewed control code and supersedes
+the operational draft after actual issuance; only its all-green reviewed merge
+unblocks rebase of held PR619 and the original activated remainder.
+
+### Actual GitHub identity source enrollment — 2026-11-17
+
+Actual run44084383405 at052cc79f produced public key
+`edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae`,
+ID `gust-github-release-1`, epoch2/minimum2/range2–2. The authenticated artifact,
+all twelve package digests and raw64 signature independently verify; both existing
+reviewers cleared explicit source enrollment. Actual issue/expiry1794918937 and
+1795523737 preserve seven days. Source enrollment now pins those exact bytes;
+all current-source registration/inversions/production/public/R5/FP/CI/merge
+gates remain mandatory. Old preparation binaries are preserved before replacement.
+The earlier operational draft is superseded only by the complete checked renewal,
+not merged independently. The held480 correction and first-release history stay
+unchanged; the full activated roadmap continues after checked predecessor merge.
+
+Actual selected-key Rust crypto/history tests passed on the enrolled source.
+The frozen census exposed a predecessor record/text-view mismatch and two
+source-only audit inventories misclassified as fixture execution. Correct only
+those paths, preserve the original staged fixture population and predecessor
+comparisons, and prove rollback/foreign-reference refusal before fresh full
+source and production/R5/FP/CI gates. Existing first-release history is unchanged.
+
+Current-source local qualification at274e passed, but its owning CI attempt
+44271083237 refused the worker installation-root predicate before compilation.
+Both authenticated metadata GETs succeeded. The qualified33 successor preserved
+that failure and captured the actual live cached-worker layout on run44288905722.
+Its 270-file qualified source/tool archive is checked before the reviewed layout
+correction: retain the legacy root and add only the observed versioned cached
+layout, with all independent ancestry/API/checkout/provisioning checks and
+explicit deceptive-layout/provenance refusals. Repeat all current-source mandatory
+qualification before corrective publication. CI, merge and the activated Phase26
+remainder remain open; no new identity or resource-slot decision is selected.

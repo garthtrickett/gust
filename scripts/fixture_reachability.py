@@ -41,6 +41,8 @@ NON_EXECUTING_INVENTORIES = {
     # Source hashes bind bytes; listing a fixture does not execute it.
     "compiler/phase26-release/release.json",
     "compiler/phase26-release/reachable-audit.json",
+    "compiler/phase26-release/release-epoch2.json",
+    "compiler/phase26-release/reachable-audit-epoch2.json",
 }
 
 

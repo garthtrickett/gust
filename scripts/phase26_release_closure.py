@@ -20,7 +20,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "compiler/experiments/cranelift/production"
-AUTHORITY = ROOT / "compiler/phase26-release/release.json"
+AUTHORITY = ROOT / "compiler/phase26-release/release-epoch2.json"
 SHARDS = ("phase9-core", "phase19", "phase20", "phase18", "phase9g",
           "phase15", "phase16", "phase10", "phase11", "phase17")
 PUBLIC_EXITS = {
@@ -39,7 +39,7 @@ PUBLIC_DIAGNOSTICS = {
 }
 FOLLOW_UPS = {"26.1-GENERAL", "26.1-ABI-EXT", "26.1-LIFECYCLE-EXT",
               "26.1-SQLITE", "26.1-DEPLOY"}
-PUBLIC_KEY = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550"
+PUBLIC_KEY = "edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae"
 MANUAL_DIAGNOSTICS = {
     "actual_typed_scoped_call_links_and_runs_with_signed_test_adapter",
     "actual_five_argument_scoped_call_links_and_runs_with_signed_test_adapter",
@@ -79,11 +79,11 @@ def checked_static_elf(path, expected_digest):
 
 
 def checked_trust(snapshot, now):
-    require(snapshot.get("signer") == "gust-native-release-1" and
+    require(snapshot.get("signer") == "gust-github-release-1" and
             snapshot.get("public_key_hex") == PUBLIC_KEY and
             (snapshot.get("release_epoch"), snapshot.get("minimum_package_epoch"),
-             snapshot.get("key_first_epoch"), snapshot.get("key_last_epoch")) == (1, 1, 1, 1),
-            "initial production identity or epoch range disagrees")
+             snapshot.get("key_first_epoch"), snapshot.get("key_last_epoch")) == (2, 2, 2, 2),
+            "selected production identity or epoch range disagrees")
     issued, expires = snapshot.get("issued_unix_seconds"), snapshot.get("expires_unix_seconds")
     require(type(issued) is int and type(expires) is int and
             snapshot.get("maximum_validity_seconds") == 604800 and
@@ -181,9 +181,11 @@ def checked_fixed_point_bindings(record):
 
 
 def validate_sources():
+    import phase26_production_renewal as renewal
+    renewal.validate()  # Selected current profile; no unsigned or expired closure.
     authority = load(AUTHORITY)
-    require(authority.get("version") == 1 and
-            authority.get("scope") == "Phase26.1 first-release zlib only" and
+    require(authority.get("version") == 2 and
+            authority.get("scope") == "Phase26 epoch2 renewal of first-release zlib only" and
             authority.get("target") == "x86_64-unknown-linux-gnu",
             "release scope or profile disagrees")
     require(authority.get("follow_ups") == {name: "OPEN" for name in FOLLOW_UPS} and
@@ -341,7 +343,7 @@ def qualification(public_dir, production_dir, regression_dir, output):
     population = authority["compiler_unit_test_population"]
     summary = ("test result: ok. " + str(population["passed"]) + " passed; 0 failed; " +
                str(population["ignored"]) + " ignored; 0 measured; 0 filtered out;")
-    require(population == {"passed": 78, "ignored": 15} and
+    require(population == {"passed": 79, "ignored": 15} and
             summary in (ROOT / commands[0]["log"]).read_text(),
             "full compiler unit-test population did not execute")
     compiler_log = (ROOT / commands[0]["log"]).read_text()
@@ -589,9 +591,9 @@ def inversions():
     changed["reviews"][0]["findings"] = ["unresolved"]
     rejected("review-unresolved-finding", lambda: checked_reviews(changed, head, "b" * 40), "findings")
 
-    snapshot = dict(signer="gust-native-release-1", public_key_hex=PUBLIC_KEY,
-                    release_epoch=1, minimum_package_epoch=1, key_first_epoch=1,
-                    key_last_epoch=1, issued_unix_seconds=100, expires_unix_seconds=604900,
+    snapshot = dict(signer="gust-github-release-1", public_key_hex=PUBLIC_KEY,
+                    release_epoch=2, minimum_package_epoch=2, key_first_epoch=2,
+                    key_last_epoch=2, issued_unix_seconds=100, expires_unix_seconds=604900,
                     maximum_validity_seconds=604800)
     checked_trust(snapshot, 100)
     checked_trust(snapshot, 604899)
@@ -599,7 +601,7 @@ def inversions():
         rejected("production-time-" + str(now), lambda now=now: checked_trust(snapshot, now),
                  "currently valid")
     for field, value, assertion in (("public_key_hex", "0" * 64, "identity"),
-            ("key_last_epoch", 2, "epoch range"),
+            ("key_last_epoch", 3, "epoch range"),
             ("maximum_validity_seconds", 604801, "maximum interval"),
             ("expires_unix_seconds", 604901, "maximum interval")):
         changed = dict(snapshot, **{field: value})

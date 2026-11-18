@@ -1,0 +1,22 @@
+{
+  "status": "Explicit reviewed source enrollment of actual GitHub-generated public identity; not runtime qualification",
+  "repository": "garthtrickett/gust",
+  "owner_id": 3760677,
+  "source_commit": "052cc79f573f0f2254a43f5ed4c9a0353e3958a4",
+  "run_id": 44084383405,
+  "run_attempt": 1,
+  "artifact_id": 14329041411,
+  "artifact_zip_sha256": "4b7150808b6fb19708e20b8e469d3e1359b07f8f19156c1f2a7af17c6d38c8e6",
+  "key_id": "gust-github-release-1",
+  "public_key_hex": "edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae",
+  "public_files_sha256": {
+    "canonical-message.bin": "9732f3393c5b0ee73ac61f3e35f483589ec354d36ef759412e1c116a9799ce31",
+    "github-provenance.json": "43ee970fe310c3b9184846cd3e2ee65d86f65f2794febc6021f9831b98e384f8",
+    "package/manifest.sig": "e815c84671f20a0c2a8cbea5881096b617a7b26418c66e62071fde93f9c2df99",
+    "package/manifest.txt": "a855faf64b3df55301f30ff23f955b2f996e20158894b039b7c3eed3faae6ffd",
+    "public-identity.json": "52bdd34eb70570d27d63feb38056cd31c566559d3d4b97e56a2812e2ddbffce5",
+    "snapshot.json": "6caeb785aed1cba0b6052850b63d493acb393df78a2d8313c8c48b6e805c3046"
+  },
+  "selection": "Operator delegated concrete new identity choice after explicit GitHub signing direction; epoch1 history unchanged",
+  "private_material_accessed": false
+}

@@ -644,3 +644,115 @@ in progress. Private object-local check factoring replaces repeated machine
 code; the compiler artifact ceiling stays unchanged. Native emitted-object
 bootstrap and authoritative CI are required before publication/merge/handoff.
 This is an active record, not terminal waiting; earlier waiting text is inactive.
+
+
+2026-11-17 — same Cranelift owner resumed the explicitly selected production
+epoch2 renewal on a separate main-based branch. Prior authority wait is
+invalid prospectively. Epoch1 history and held PR619/480 evidence are unchanged.
+Real isolated unsigned assembly passed; actual epoch2 signature, full source
+enrollment, production/public/R5/fixed-point and CI/review/merge remain pending.
+No OD23 selection or first-release history rewrite.
+
+
+# Cranelift selected renewal — bounded signature wait
+
+Written 2026-11-17T05:02:55.167451+00:00. Same compiler owner and activated Phase26 remainder.
+
+Completed: separate main9df2 renewal preparation, exact immutable epoch1
+capture, reviewed current epoch2 worker/snapshot/manifest/refusal successor,
+genuine pinned isolated unsigned12-artifact assembly,27 Python refusal
+controls, closure refusals, eight-kind ancestor archive enumeration, current
+Rust worker/test compilation,94-test enumeration, and the actual history/
+rollback unit test. Actual byte bindings and host/source integrity passed.
+All preparation jobs reaped; none remains live.
+
+The mandatory current-production positive test actually FAILS because the
+real epoch2 public signature is absent. No full signed enrollment, transitive
+registered inversions, full production/public/R5/FP/native/CI or merge pass
+is claimed. Current authority/audit enrollment drafts remain explicitly
+unsigned until a genuine signature permits final enumeration.
+
+Renewal authority is selected. Allowed public release metadata contains no
+documented invokable operator-controlled signer. The remaining input is the
+raw64-byte Ed25519 signature from gust-native-release-1 over the exact1964-byte
+canonical-message.bin in public-signature-handoff-v1 (SHA256
+`a910d825874a4c28f269cb1a712fa6f4303789657db0a884164b3750056f44e5`).
+Return it as public-signature-handoff-v1/manifest.sig or supply the documented
+operator-controlled signing interface. No private material was scanned/read.
+Actual snapshot:2026-11-17T04:32:00Z to2026-11-24T04:32:00Z; no clock override.
+
+On the actual handoff: verify current source/inputs and real signature before
+accepting it; finalize exact additive enrollment; run signature-dependent
+controls and all current-source/native/production/public/protected4GiB R5/FP
+and authoritative CI/artifact/review/rule/merge gates. Rebase held PR619/480
+only after the separate renewal merges; continue activated26.2–26.6 afterward.
+
+Continuation ladder checked: selected next compiler corrections depend on
+this merged renewal and their held qualification, with no unmerged semantic
+stack. docs/UNBLOCKED_CONTAINMENT_WORK.md remains proposal/semantic-prerequisite
+work; docs/DEMO_TARGET_PROGRAM.md remains a specification target. Neither
+selects extra semantics or retired bootstrap work. No unrelated busywork is
+started. OD23 remains OPEN/unselected; frozen first-release history unchanged.
+Original startup symlink, installed480 tools and dirty prototype are preserved.
+This wait is invalidated prospectively when the actual handoff resumes work.
+
+
+# Cranelift selected renewal — actual GitHub signing boundary
+
+Written 2026-11-17T10:50:59.334004+00:00. Same owner, same activated Phase26 remainder.
+The earlier signature wait was invalidated prospectively to carry out the
+operator's concrete GitHub signing direction. That finite assessment is now
+complete; no signing key/signature or GitHub configuration was changed.
+
+Actual authenticated API reads: garthtrickett3760677, repository1263612197,
+admin/push allowed. Complete metadata:0 Actions secrets,0 environments,
+172 registered workflows;168 main workflow sources bound to GitHub blobs.
+No enrolled-key signer, attestation, external reusable signer or self-hosted
+job was identified in those current sources. Four non-main registered paths
+are listed separately, not counted as inspected current definitions.
+No secret values or local private keys were requested/read. No Actions run
+was dispatched or existing failed CI polled. This is not a whole-host key
+absence claim. GitHub account permission does not supply enrolled private key.
+
+Prepared/reviewed exact-key workflow proposal: fixed actual1964-byte a910
+message, known6778 public key, actual seven-day clock, exact owner/repository/
+ref/attempt, no checkout, private key confined to remote step, sanitized
+private diagnostics and only verified raw64-byte public signature uploaded.
+It is not installed/executed: the proposed enrolled-key secret does not exist
+and this direction does not authorize creating/uploading it.
+
+A reviewed seven-point alternative proposes an explicitly selected GitHub-
+generated one-shot Ed25519 release identity, preserving raw64/offline source-
+pinned verification. Actual public-key selection and fresh candidate assembly
+are required. No key was generated, no source enrollment changed, and this
+alternative remains UNSELECTED. Sigstore is a different/larger verifier
+protocol and is not substituted for the enrolled signature.
+
+Packet YAML/bash/AST/message/custody consistency PASS; all4069 nonoperational
+source hashes and the original required-production missing-signature FAIL101
+remain unchanged. Actual metadata and packet jobs finished/reaped0.
+
+Concrete pending input: select the reviewed different GitHub Ed25519 identity,
+or provision the existing enrolled key through an operator-controlled GitHub
+interface. The specific route-selection question is pending; no further generic
+renewal authorization is requested. Until then, no unchanged signing check,
+key generation, secret/configuration mutation, public workflow deployment,
+full production qualification or CI publication is performed.
+
+On actual selected/provisioned route: review exact implementation/provenance,
+execute genuine signing, independently verify signature, then complete all
+current-source/native/production/public/protected4GiB R5/nativeFP/full exact-
+head CI/artifact/review/rules/merge gates. Only after the separate renewal
+merges rebase held PR619/480 and continue original activated Phase26.2–26.6.
+The continuation ladder remains as recorded in the previous terminal; no
+unrelated semantics/retired route/busy documentation is activated. OD23 OPEN.
+
+## 2026-11-17 selected signed renewal continuation
+
+Earlier unsigned-signature waits are superseded prospectively. Actual GitHub
+identity/signature is source-enrolled and its current Rust crypto/history tests
+pass. The original frozen source census and its failures remain retained. The
+existing owner is correcting predecessor text-view composition and source-only
+fixture inventories, then re-enrolling/reviewing/freshly qualifying under the
+unchanged product limits. No full production/CI/merge or Phase26 completion is
+claimed. PR619 remains held until checked renewal merge; OD23 is unselected.

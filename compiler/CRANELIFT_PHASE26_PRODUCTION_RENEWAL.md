@@ -1,0 +1,158 @@
+# Selected epoch2 production renewal
+
+The operator delegated epoch2 renewal and then selected a GitHub-generated
+identity through “Whichever you rexkon”, after the enrolled private key was
+confirmed unavailable through GitHub. The selected identity is
+`gust-github-release-1`, public key
+`edb0cc88828921e2c3cc7cc6633f646a7b72537331b3ea578e365c8a5fd94dae`.
+Release epoch2, minimum package epoch2, key epochs2–2 and the seven-day maximum
+remain unchanged. This supersedes the earlier same-key parameter for this new
+candidate. No package, symbol, ABI, lifetime, resource or OD23 change is selected.
+
+The non-admitting issuer ran on GitHub as `44084383405`, attempt1, at reviewed
+commit `052cc79f573f0f2254a43f5ed4c9a0353e3958a4`. Artifact `14329041411`
+has ZIP SHA256 `4b7150808b6fb19708e20b8e469d3e1359b07f8f19156c1f2a7af17c6d38c8e6`.
+It generated its private key only in the ephemeral runner, verified its signature,
+and uploaded only public outputs. No private key was read into agent state,
+source or artifacts, and no repository secret was created. The issued key is
+one-shot: it is not a persistent GitHub signing service.
+
+The exact manifest SHA256 is
+`a855faf64b3df55301f30ff23f955b2f996e20158894b039b7c3eed3faae6ffd`.
+The canonical v2-domain message SHA256 is
+`9732f3393c5b0ee73ac61f3e35f483589ec354d36ef759412e1c116a9799ce31`.
+Actual assembly issue/expiry are `1794918937` / `1795523737`. Public provenance,
+identity and reviewed source-enrollment metadata are retained in `production/`.
+
+The worker embeds this exact public key and snapshot. Packages, public-identity
+files, environment variables and source requests cannot update worker trust.
+Future runs of the operational issuer can produce candidates but cannot replace
+the enrolled key. A future identity or epoch needs its own reviewed publication.
+The v2/raw64/offline verification policy is unchanged.
+
+Epoch1 worker, manifest, signature, snapshot and public-identity fixtures remain
+immutable in `production/epoch1/`. Its original predecessor archive is retained;
+a separately pinned v2 archive adds exact current-main blobs needed for the URL
+and public-identity successor. The original first-release authority and report
+remain historical. No old signature or qualification is relabeled as current.
+The actual enrolled revocation/withdrawal lists are empty; applicable contrary
+authorized records must be honored rather than cleared to admit a package.
+
+The candidate uses the sixteen exact production dependencies. The shared host
+is unchanged. All twelve artifact digests and the public signature were checked.
+The assembler's exact bytes are in the signed link provenance; local and CI
+reassembly must reproduce those bytes and the enrolled manifest. Updating zlib's
+acquisition URL to its official `/fossils/` location changes no archive digest,
+commands or test expectations. The Stdlib workflow change is its owner's commit.
+
+`phase26_production_renewal.py validate` verifies the actual signature and current
+wall-clock interval; `inversions` checks history and wrong-key, wrong-message,
+tamper, missing-signature, rollback and other refusals. The default Rust positive
+must verify the real current signature. The history positive explicitly uses the
+old key, and still rejects rollback at the new worker.
+
+Final additive registration requires this actual signature. Every predecessor
+registry row and assertion remains, using exact predecessor reconstruction.
+Current qualification uses separate `release-epoch2.json` and reachable-audit
+successors. Static/inversion, current worker/native/public/offline, fixed-point,
+product4GiB quota, exact-head CI/artifact parity, reviews/rules and checked merge
+remain mandatory. Public cryptographic verification alone is not qualification.
+
+`predecessor-record-control` exercises only the downstream record-refusal seam;
+the default full inversions still include it and every other control. A focused
+control pass cannot substitute for the complete source/production qualification.
+
+Qualification is established by current-source receipts and exact-head CI, not by
+this source record. Final registration, production/public/R5/fixed-point checks,
+artifact parity, reviews/rules and merge are mandatory. PR619 is held until this
+separate predecessor merges, then rebased. The full activated Phase26 remainder
+and OD23 remain open.
+# Cold-build execution environment
+
+The owning workflow measures paging before its actual native compiler build.
+It keeps the existing protected 4 GiB/two-CPU command and cgroup paging policy.
+The chosen precondition prepares 1200 MiB of effective available paging, checks
+at least 1152 MiB at payload entry, and permits at most a 1280 MiB job-owned
+file to cover the shortfall and filesystem rounding. These are bounded operating
+choices, not a universal compiler requirement or an explanation of the earlier
+CI kill. Existing paging is preserved; swap is never counted as build RAM.
+
+Provisioning requires live hosted-worker ancestry and matching public repository,
+run attempt, job, runner and exact checkout-tree metadata. Shared hosts may use
+existing capacity but cannot provision paging through this helper. Allocation
+counts with build outputs against the unchanged 2 GiB growth budget and 2 GiB
+disk reserve. The file becomes root-owned mode 0600 before activation.
+
+The controller retains resource and termination metadata separately from the
+qualified archive. Only the exact owned inode may be released, after confirmed
+payload termination and before the unchanged R5 recipe. Cleanup failures retain
+the file, fail the build and prevent R5. Artifact patterns contain metadata and
+logs only; paging contents are never uploaded. Epoch-1 evidence, the signed
+package, quota assertions and release-test expectations remain unchanged.
+
+The historical first-release workflow validator consumes its exact checked
+predecessor view through the existing successor adapter; its original predicate
+and inversions remain unchanged. The current physical workflow and execution
+wrapper remain separately pinned and exercised by the renewal caller controls.
+
+The ticket projection consumer shares one just-computed six-edge R4 view with
+the record builder. Existing standalone builders still scan freshly, physical
+file digests remain fresh, and no result is cached across calls. Complete
+old/new projection equality, observed scan counts, malformed-edge refusals and
+a later missing audited input qualify this extraction before publication.
+
+Repeated predecessor decoding uses a process-local immutable-data cache, limited
+to 64 entries and 128 MiB of conservatively charged keys, values and overhead.
+It stores decoded Base64 bytes and inherited digest sets keyed by actual input
+content, requested path and predecessor cohort. It never stores parsed mutable
+registries, live projections, filesystem presence or admission decisions. Mutable,
+unsupported and oversized inputs use the original uncached algorithm; failures
+are not cached. Eviction changes performance only.
+
+Every caller still resolves its baseline entry and registry-input seam and checks
+the physical current file and both pinned coordinates on every invocation. The
+inversions exercise byte and entry eviction, immutable returns, changed keys,
+uncached fallbacks and warm-cache missing/substituted inputs. Direct old/new
+return and error parity and the original complete timed guards remain required.
+The v5 predecessor archive also has an explicit immutable-history hash pin;
+earlier archive pins and refusal expectations are unchanged.
+
+R4 captures one fresh text, production and spelling view per call and supplies
+those complete values to the R3 record builder. Required arguments cannot fall
+back to old data. Defensive copies keep the nested record independent of sibling
+projection objects, while all record file digests are still read freshly.
+Standalone builders continue to scan on each independent call. R4 validation and
+production record consumers reuse their own just-captured view; the filename
+falsifier still calls the actual filename scanner after complete validation.
+These are per-call values, not a live-view or admission cache.
+
+The v6 archive retains all v5 values and adds only the exact base-main R3 script.
+Its dedicated history pin is enforced alongside every earlier pin. Complete
+old/new record equality, alias isolation, actual scan counts, fresh-input refusals
+and the unchanged timed qualification gates remain required.
+
+The hosted provenance lookup uses the existing automatic job token only for the
+two fixed public GitHub run/job GET endpoints, retaining `contents: read` and
+all runner, checkout and job checks. Redirects are refused. The token is removed
+from the process environment before child commands, never retained in evidence,
+and discarded before the protected build. API errors remain failures and retain
+only sanitized endpoint/status/rate-limit facts. Early provenance refusal now
+also records failure and positive no-paging-created cleanup evidence. The prior
+unauthenticated HTTP403 occurred before compiler execution, not during a build.
+
+An owning CI attempt reached both authenticated metadata endpoints, then refused
+the worker installation-root predicate before compiler execution. The actual
+installation path was absent from its retained evidence. Bounded observations
+now retain only the live ancestor PIDs, start ticks, executable paths and parent
+PIDs, associated with public run/job and checkout facts. They contain no argv or
+environment values and do not admit a runner. At most two distinct 128 KiB
+records cover initial admission and pre-provision revalidation; neither record
+overwrites the other. A subsequent authenticated failed-run artifact captured
+`/home/runner/actions-runner/cached/2.338.2/bin/Runner.Worker` as the live
+ancestor. Admission now also recognizes this exact cached layout with three ASCII
+numeric version components. The legacy root remains supported. Deceptive
+prefixes, extra depth, malformed versions, wrong directories and other binaries
+remain refused. Both layouts exercise the same run/job/checkout refusals and
+repeated live-identity checks; neither a path nor a captured record authorizes
+provisioning by itself. No compiler or paging command ran in either failed CI
+attempt, and full current-source qualification and authoritative CI remain gates.

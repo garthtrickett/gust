@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
 typedef struct { void* BaseAddress; size_t Offset; size_t Capacity; } os_Arena;

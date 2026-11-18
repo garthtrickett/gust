@@ -1,0 +1,14 @@
+{
+  "provisioned_utc": "2026-10-23T02:10:14.909226+00:00",
+  "key_id": "gust-native-release-1",
+  "algorithm": "Ed25519",
+  "release_signing_custody_withdrawal_owner": "garthtrickett",
+  "public_key_hex": "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550",
+  "public_key_bytes": 32,
+  "public_spki_sha256": "95e72a9af0a866f5d4a8fbf551744e86aadb582d32e7a2d570ba1c4cf9638450",
+  "public_pem_path": "/home/gust/.local/share/gust-release-signing/gust-native-release-1/public-key.pem",
+  "public_der_path": "/home/gust/.local/share/gust-release-signing/gust-native-release-1/public-key.der",
+  "private_material_policy": "New operator-owned private directory outside source/agent state/evidence, directory0700/key0600. Private bytes never read into agent outputs or archived. No existing secret accessed.",
+  "self_check": "OpenSSL key check and fresh sign/verify challenge PASS; not package qualification or production enrollment",
+  "authority_receipt": "/home/gust/phase26-recovery/phase26-release-activation-20261023/operator-activation.json"
+}

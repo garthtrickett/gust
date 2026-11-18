@@ -22,7 +22,7 @@ trap report_failure ERR
 
 archive="$scratch/zlib-1.3.2.tar.gz"
 curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
-    --retry 3 --max-time 90 https://zlib.net/zlib-1.3.2.tar.gz \
+    --retry 3 --max-time 90 https://zlib.net/fossils/zlib-1.3.2.tar.gz \
     --output "$archive"
 printf '%s  %s\n' \
     bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16 \

@@ -24615,3 +24615,9 @@ guard-cranelift-phase26-2-allocator-liveness:
     python3 scripts/phase26_2_allocator_registration.py validate
     python3 scripts/phase26_2_allocator_registration.py inversions
     python3 scripts/phase26_2_allocator_guard.py
+
+# Selected epoch2 worker renewal; no package-supplied trust updates.
+guard-cranelift-phase26-production-renewal:
+    python3 scripts/phase26_production_renewal_registration.py validate
+    python3 scripts/phase26_production_renewal_registration.py inversions
+    python3 scripts/phase26_production_renewal.py validate

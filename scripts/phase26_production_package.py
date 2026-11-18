@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Assemble public, unsigned production inputs; never access signing keys.
 
+The public identity is untrusted candidate data, never a worker trust update.
 The worker enrollment and qualification are separate from this preparation.
 The output must be a new directory, so a reviewed signing request is immutable
 by construction across subsequent assembly attempts.
@@ -10,13 +11,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-KEY = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b550"
+SIGNER_ID = "gust-github-release-1"
+EPOCH = 2
 SOURCE = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
 MEMBERS = ("crt1.o", "crti.o", "crtbeginT.o", "libc.a", "libm-2.39.a",
            "libmvec.a", "libgcc.a", "libgcc_eh.a", "crtend.o", "crtn.o")
@@ -28,10 +31,10 @@ def sha(path: Path) -> str:
 
 def assemble(package: Path, runtime: Path, receipt: Path, output: Path) -> None:
     identity = json.loads(receipt.read_text())
-    assert identity["key_id"] == "gust-native-release-1"
-    assert identity["public_key_hex"] == KEY
+    assert identity["key_id"] == SIGNER_ID
+    key = identity["public_key_hex"]
+    assert isinstance(key, str) and re.fullmatch(r"[0-9a-f]{64}", key)
     der = bytes.fromhex("302a300506032b6570032100" + identity["public_key_hex"])
-    assert der == bytes.fromhex("302a300506032b6570032100" + KEY)
     assert hashlib.sha256(der).hexdigest() == identity["public_spki_sha256"]
     assert sha(package / "zlib-1.3.2.tar.gz") == SOURCE
     for name in ("gust_zlib_adapter.c", "gust_zlib_adapter.h"):
@@ -79,7 +82,7 @@ def assemble(package: Path, runtime: Path, receipt: Path, output: Path) -> None:
     artifacts.append(("build_options", "link-provenance.json"))
     manifest = ["format: gust.approved_native_package.v2", "repository: garthtrickett/gust",
                 "release: phase26-native-release-1", "package_id: gust_zlib_1_3_2_production",
-                "epoch: 1", "signer: gust-native-release-1", "target: x86_64-unknown-linux-gnu",
+                f"epoch: {EPOCH}", f"signer: {SIGNER_ID}", "target: x86_64-unknown-linux-gnu",
                 "object_format: Elf", "license: Zlib", f"artifact_count: {len(artifacts)}"]
     manifest += [f"artifact: {kind}|{name}|{sha(destination / name)}" for kind, name in artifacts]
     ptr = b"RawPointer(Byte)".hex()
@@ -92,11 +95,11 @@ def assemble(package: Path, runtime: Path, receipt: Path, output: Path) -> None:
     message.write_bytes(b"gust-approved-native-package-v2\0" + manifest_path.read_bytes())
     issued = int(time.time())
     request = {"status": "UNSIGNED; preparation only, no production qualification",
-               "signer": identity["key_id"], "public_key_hex": KEY,
+               "signer": identity["key_id"], "public_key_hex": key,
                "canonical_message_path": str(message), "canonical_message_sha256": sha(message),
                "manifest_path": str(manifest_path), "manifest_sha256": sha(manifest_path),
-               "artifact_manifest": provenance, "release_epoch": 1, "minimum_package_epoch": 1,
-               "key_first_epoch": 1, "key_last_epoch": 1, "issued_unix_seconds": issued,
+               "artifact_manifest": provenance, "release_epoch": EPOCH, "minimum_package_epoch": EPOCH,
+               "key_first_epoch": EPOCH, "key_last_epoch": EPOCH, "issued_unix_seconds": issued,
                "expires_unix_seconds": issued + 604800, "maximum_validity_seconds": 604800,
                "signature_destination": str(destination / "manifest.sig"),
                "authority_receipt_sha256": sha(receipt),
