@@ -24621,6 +24621,7 @@ guard-cranelift-phase26-production-renewal:
     python3 scripts/phase26_production_renewal_registration.py validate
     python3 scripts/phase26_production_renewal_registration.py inversions
     python3 scripts/phase26_production_renewal.py validate
+
 # Lexical allocator proof identities and immutable actual-origin dependencies.
 guard-cranelift-phase26-2-allocator-identities:
     python3 scripts/phase26_2_allocator_identity_registration.py validate
