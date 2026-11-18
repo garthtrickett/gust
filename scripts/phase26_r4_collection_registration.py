@@ -253,11 +253,12 @@ def live_projections() -> dict:
     old = base_registry()["phase26_activation_audit"]
     current_text = r3.raw_text_surfaces()
     production = production_scan()
+    spelling = manifest_summary(source_sites())
     edges = {
             "text": {"previous": previous_owned_text(), "current": owned_text(current_text)},
-            "spelling": {"previous": old["zlib_adapter_r3_successor"]["spelling_inventory_successor"]["current_inventory_summary"], "current": manifest_summary(source_sites())},
+            "spelling": {"previous": old["zlib_adapter_r3_successor"]["spelling_inventory_successor"]["current_inventory_summary"], "current": spelling},
             "filename": {"previous": old["scoped_byte_copy_r2_successor"]["filename_site_successor"]["current_sites"], "current": filename_sites()},
-            "r3_record": {"previous": old["zlib_adapter_r3_successor"], "current": r3.build_record()},
+            "r3_record": {"previous": old["zlib_adapter_r3_successor"], "current": r3.build_record_from_inputs(current_text, production, spelling)},
             "production": {"previous": old["zlib_adapter_r3_successor"]["production_audit_successor"]["current_audit"], "current": production},
             "workflow": {"previous": base_bytes(".github/workflows/pr-fast.yml").decode(), "current": (ROOT / ".github/workflows/pr-fast.yml").read_text()},
         }
@@ -295,7 +296,8 @@ def write_record(value: dict) -> None:
 def validate() -> None:
     registry = json.loads(REGISTRY.read_text()); value = identity(registry)
     import phase26_production_registration as production
-    require(value == production.project(registry, "r4_record", build_record()), "R4 registration or live census drifted")
+    edges = live_projections()
+    require(value == production.project(registry, "r4_record", build_record_from_projections(edges)), "R4 registration or live census drifted")
     require(project_registry(registry) == base_registry(), "R4 changed a frozen registry field")
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     check_workflow(workflow)
@@ -307,7 +309,7 @@ def validate() -> None:
     require(levels["guards"].get(GUARD) == 2, "R4 owning test level drifted")
     del levels["guards"][GUARD]
     require(levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")), "R4 changed predecessor test levels")
-    for kind, edge in live_projections().items():
+    for kind, edge in edges.items():
         if kind == "text" and production.record(registry):
             # This census is already restricted to the R4-owned text subset.
             # Validate that exact subset before its predecessor projection.
@@ -388,7 +390,8 @@ def inversions() -> None:
     rejected("foreign forbidden tamper retains R3 rejection", lambda: r3.normalize_text_predecessor(
         registry, project(registry, "text", tampered)), "R3 text surface")
     print(f"{GUARD}: foreign rows and duplicates forwarded unchanged to predecessor owners")
-    changed_sites = copy.deepcopy(live_projections()["filename"]["current"])
+    from phase24_filename_behavior_characterization import source_sites as filename_sites
+    changed_sites = copy.deepcopy(filename_sites())
     changed_sites[0]["line"] += 1
     rejected("unregistered filename coordinate", lambda: project(registry, "filename", changed_sites), "R4 filename live projection drifted")
     rejected("stale current spelling view", lambda: check_spelling_review(registry, "substituted rendered report"), "R4 current spelling review is stale or missing")

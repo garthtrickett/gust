@@ -23,6 +23,7 @@ HISTORICAL_KEY = "6778b05d2ef8f7af4f553918b2b5658eba1d7919536ab3b64c69e63fd5e0b5
 DOMAIN = b"gust-approved-native-package-v2\0"
 EPOCHS = ("release_epoch", "minimum_package_epoch", "key_first_epoch", "key_last_epoch")
 HISTORY_PINS = {
+    "predecessor-baseline-v6.json.gz": "0f6cec4910fe8aabb4a53b5a7d830021c2b9767e307adddcec92b0942fa845d9",
     "predecessor-baseline-v5.json.gz": "dfc306e5b2eaf18a8c92dd5d4993efbc83a31ca8b3a4a50006499797ad565666",
     "predecessor-baseline-v4.json.gz": "5da70567528d2e2f3b70ca7bd3028816819d2ecdca0ae250ef8e4e61d82b6bc5",
     "predecessor-baseline-v3.json.gz": "86f54ea30392f3cab6ffd05eabac6c109190814eda50b64dbb62cacf9939e03c",

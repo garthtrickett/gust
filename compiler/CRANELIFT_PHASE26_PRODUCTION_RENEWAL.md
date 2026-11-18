@@ -116,3 +116,17 @@ uncached fallbacks and warm-cache missing/substituted inputs. Direct old/new
 return and error parity and the original complete timed guards remain required.
 The v5 predecessor archive also has an explicit immutable-history hash pin;
 earlier archive pins and refusal expectations are unchanged.
+
+R4 captures one fresh text, production and spelling view per call and supplies
+those complete values to the R3 record builder. Required arguments cannot fall
+back to old data. Defensive copies keep the nested record independent of sibling
+projection objects, while all record file digests are still read freshly.
+Standalone builders continue to scan on each independent call. R4 validation and
+production record consumers reuse their own just-captured view; the filename
+falsifier still calls the actual filename scanner after complete validation.
+These are per-call values, not a live-view or admission cache.
+
+The v6 archive retains all v5 values and adds only the exact base-main R3 script.
+Its dedicated history pin is enforced alongside every earlier pin. Complete
+old/new record equality, alias isolation, actual scan counts, fresh-input refusals
+and the unchanged timed qualification gates remain required.

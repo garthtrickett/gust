@@ -22,12 +22,13 @@ GUARD = "guard-cranelift-phase26-production-renewal"
 STATE = "GUST_LANE_STATE.md"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 HISTORY = "compiler/experiments/cranelift/production/epoch1/"
-BASELINE = HISTORY + "predecessor-baseline-v5.json.gz"
-BASELINE_SHA256 = "dfc306e5b2eaf18a8c92dd5d4993efbc83a31ca8b3a4a50006499797ad565666"
+BASELINE = HISTORY + "predecessor-baseline-v6.json.gz"
+BASELINE_SHA256 = "0f6cec4910fe8aabb4a53b5a7d830021c2b9767e307adddcec92b0942fa845d9"
 CHANGED = (
     "TASK.md", "justfile", "scripts/cranelift_test_levels.json",
     "scripts/phase26_2_allocator_registration.py", "scripts/phase26_production_registration.py",
     "scripts/phase26_release_registration.py",
+    "scripts/phase26_r3_zlib_adapter_registration.py",
     "scripts/phase26_r4_collection_registration.py", "scripts/phase26_ticket_publication_registration.py",
     "scripts/phase26_release_closure.py", "scripts/phase26_production_package.py",
     "compiler/experiments/cranelift/src/production_trust.rs",
@@ -47,6 +48,7 @@ ADDED = tuple(HISTORY + name for name in (
     "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz",
     "predecessor-baseline-v3.json.gz", "predecessor-baseline-v4.json.gz",
     "predecessor-baseline-v5.json.gz",
+    "predecessor-baseline-v6.json.gz",
     "public-identity.json")) + (
     ".github/workflows/phase26-github-release-signing.yml",
     "scripts/phase26_github_package_candidate.py",
@@ -64,6 +66,7 @@ ADDED = tuple(HISTORY + name for name in (
     "scripts/phase26_release_execution_controls.py",
     "scripts/phase26_predecessor_data.py",
     "scripts/phase26_predecessor_data_controls.py",
+    "scripts/phase26_fresh_view_controls.py",
     "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
 )
 RECIPE = ("\n# Selected epoch2 worker renewal; no package-supplied trust updates.\n" + GUARD + ":\n"
@@ -641,6 +644,11 @@ def predecessor_decode_controls():
     controls(sys.modules[__name__])
 
 
+def fresh_view_controls():
+    from phase26_fresh_view_controls import controls
+    controls(sys.modules[__name__])
+
+
 def projection_reuse_controls():
     """One live view per call; malformed views and later missing inputs fail closed."""
     import errno
@@ -820,6 +828,7 @@ def inversions():
     release_workflow_consumer_controls()
     projection_reuse_controls()
     predecessor_decode_controls()
+    fresh_view_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
@@ -830,4 +839,5 @@ if __name__ == "__main__":
      "release-workflow-controls": release_workflow_consumer_controls,
      "projection-reuse-controls": projection_reuse_controls,
      "predecessor-decode-controls": predecessor_decode_controls,
+     "fresh-view-controls": fresh_view_controls,
      "source-delivery-controls": source_delivery_controls}[sys.argv[1]]()

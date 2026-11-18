@@ -258,7 +258,7 @@ def build_record(previous):
     import phase26_r3_zlib_adapter_registration as r3
     import phase24_semantic_spelling_inventory as spelling
     edges = r4.live_projections()
-    edges["r4_record"] = {"current": r4.build_record()}
+    edges["r4_record"] = {"current": r4.build_record_from_projections(edges)}
     rows = r3.raw_text_surfaces()
     sites = spelling.source_sites()
     return dict(predecessor_main=BASE, owner="cranelift", guard=GUARD,
@@ -345,7 +345,7 @@ def inversions():
     require(sum(r["path"] == foreign["path"] for r in project(registry, "text", raw + [foreign])) == 2,
             "foreign duplicate hidden")
     edges = r4.live_projections()
-    edges["r4_record"] = {"current": r4.build_record()}
+    edges["r4_record"] = {"current": r4.build_record_from_projections(edges)}
     for name, edge in edges.items():
         kind = "r4_text" if name == "text" else name
         rejected("substituted " + kind, lambda kind=kind: project(registry, kind, None),

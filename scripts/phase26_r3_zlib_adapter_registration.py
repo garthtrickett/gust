@@ -273,14 +273,24 @@ def project_ci_workflow(registry: dict, workflow):
     from phase26_r4_collection_registration import project
     return project_ci_workflow_predecessor(registry, project(registry, "workflow", workflow))
 
-def build_record() -> dict:
-    from phase24_semantic_spelling_inventory import manifest_summary, source_sites
-    from phase23_production_release_audit import scan as production_scan
+def build_record_from_inputs(current_text, production, spelling_summary) -> dict:
+    """Build from complete fresh scans; retain independent nested record data."""
     base_registry = json.loads(base_bytes("scripts/cranelift_feature_registry.json"))
     old_summary = base_registry["phase26_activation_audit"][
         "scoped_byte_copy_r2_successor"]["spelling_inventory_successor"][
             "current_inventory_summary"]
-    current_text = raw_text_surfaces()
+    text_fields = {"path", "digest", "match_counts", "classification", "owner",
+                   "current_route", "deprecation_action", "removal_phase", "falsifier"}
+    require(isinstance(current_text, list) and
+            all(isinstance(row, dict) and set(row) == text_fields for row in current_text) and
+            isinstance(production, dict) and
+            set(production) == set(base_registry["phase23_production_release_audit"]["audit"]) and
+            isinstance(spelling_summary, dict) and set(spelling_summary) == set(old_summary),
+            "R3 record scan input shape drifted")
+    # The former producer ran its own scans. Preserve that independence when
+    # an enclosing producer supplies the same values as sibling projections.
+    current_text, production, spelling_summary = copy.deepcopy(
+        (current_text, production, spelling_summary))
     by_path = {row["path"]: row for row in current_text}
     changed_text = []
     added_text = []
@@ -291,7 +301,6 @@ def build_record() -> dict:
             changed_text.append({"path": path, "previous_row": old_text_row(path, row),
                                  "current_row": row})
     require(len(invocation_rows()) == 1, "R3 new compiler invocation census")
-    production = production_scan()
     require(production["repository_invocation_count"] == 257,
             "R3 production invocation count changed")
     previous_production = dict(production, repository_invocation_count=256)
@@ -321,9 +330,16 @@ def build_record() -> dict:
             "partial_extra_or_substituted_audit": "rejected"},
         "spelling_inventory_successor": {
             "previous_inventory_summary": old_summary,
-            "current_inventory_summary": manifest_summary(source_sites()),
+            "current_inventory_summary": spelling_summary,
             "partial_extra_or_substituted_inventory": "rejected"},
     }
+
+
+def build_record() -> dict:
+    from phase24_semantic_spelling_inventory import manifest_summary, source_sites
+    from phase23_production_release_audit import scan as production_scan
+    return build_record_from_inputs(raw_text_surfaces(), production_scan(),
+                                    manifest_summary(source_sites()))
 
 
 def validate() -> None:
