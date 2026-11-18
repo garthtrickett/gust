@@ -1,0 +1,63 @@
+name: Cranelift Phase26 Lexical Allocator Identities
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/**'
+      - 'scripts/phase26_2_*.py'
+      - 'scripts/phase26_bootstrap_bounded.py'
+      - 'scripts/phase26_release_registration.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'TASK.md'
+      - 'justfile'
+      - '.github/workflows/phase26-2-allocator-identity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/**'
+      - 'scripts/phase26_2_*.py'
+      - 'scripts/phase26_bootstrap_bounded.py'
+      - 'scripts/phase26_release_registration.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'TASK.md'
+      - 'justfile'
+      - '.github/workflows/phase26-2-allocator-identity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  qualification:
+    if: github.actor == vars.CODEX_GITHUB_ACTOR && (github.event_name != 'pull_request' || startsWith(github.head_ref, 'codex/'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install existing native build dependencies
+        run: |
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Use existing pinned native toolchain
+        run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-2-toolchain
+      - name: Build current native compiler from the verified previous-release bridge
+        run: python3 scripts/phase26_bootstrap_bounded.py make -j2 gust
+      - name: Qualify lexical proof identities and actual-origin dependencies
+        run: python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-2-allocator-identities
+      - name: Retain qualification and rejection evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase26-2-allocator-identity
+          include-hidden-files: true
+          if-no-files-found: error
+          path: build/guards/phase26_2_allocator_identity/

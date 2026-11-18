@@ -14,6 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import phase26_2_allocator_identity_registration as successor
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d"
@@ -145,10 +146,12 @@ def check_files(registry):
     row = identity(registry)
     for pin in row["changed_files"]:
         require(pin["previous_digest"] == sha(base_bytes(pin["path"])) and
-                sha((ROOT / pin["path"]).read_bytes()) == pin["current_digest"],
+                successor.prior_digest(registry, pin["path"],
+                    sha((ROOT / pin["path"]).read_bytes())) == pin["current_digest"],
                 "R4 changed file drifted: " + pin["path"] + " (epoch2 renewal)")
     for pin in row["added_files"]:
-        require(sha((ROOT / pin["path"]).read_bytes()) == pin["digest"],
+        require(successor.prior_digest(registry, pin["path"],
+                    sha((ROOT / pin["path"]).read_bytes())) == pin["digest"],
                 "renewal added file drifted: " + pin["path"])
 
 
@@ -195,7 +198,8 @@ def canonical_projection(kind, current):
         if edge["current_digest"] != previous["projections"]["text"]["current_digest"]:
             import phase26_r3_zlib_adapter_registration as r3
             import phase26_r4_collection_registration as r4
-            raw = r4.owned_text(r3.raw_text_surfaces())
+            raw = successor.project(json.loads(REGISTRY.read_text()), "r4_text",
+                r4.owned_text(r3.raw_text_surfaces()))
             normalized = fingerprint(canonical_projection("r4_text", raw))
             require(edge["current_digest"] in (fingerprint(raw), normalized),
                     "R4 r4_record live projection drifted (renewal)")
@@ -205,6 +209,7 @@ def canonical_projection(kind, current):
 
 
 def prior_digest(registry, path, live):
+    live = successor.prior_digest(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     pin = next(p for p in identity(registry)["changed_files"] if p["path"] == path)
@@ -214,13 +219,15 @@ def prior_digest(registry, path, live):
     # and path, never the final admission, current pin, or filesystem presence.
     predecessor = base_bytes("scripts/cranelift_feature_registry.json")
     admitted.update(inherited_digests(predecessor, path))
-    require(sha((ROOT / path).read_bytes()) == pin["current_digest"] and
+    require(successor.prior_digest(registry, path,
+                sha((ROOT / path).read_bytes())) == pin["current_digest"] and
             pin["previous_digest"] == sha(base_bytes(path)) and live in admitted,
             "R4 changed file drifted: " + path + " (epoch2 renewal)")
     return pin["previous_digest"]
 
 
 def prior_bytes(registry, path, live):
+    live = successor.prior_bytes(registry, path, live)
     if not record(registry) or path not in CHANGED:
         return live
     prior_digest(registry, path, sha(live))
@@ -228,6 +235,7 @@ def prior_bytes(registry, path, live):
 
 
 def project(registry, kind, current):
+    current = successor.project(registry, kind, current)
     if not record(registry):
         return current
     row = identity(registry)
@@ -262,12 +270,13 @@ def project(registry, kind, current):
 
 
 def project_registry(registry):
-    result = copy.deepcopy(registry)
+    result = successor.project_registry(registry)
     result.get("phase26_activation_audit", {}).pop(KEY, None)
     return result
 
 
 def prior_render_digest(registry, live):
+    live = successor.prior_render_digest(registry, live)
     if not record(registry):
         return live
     row = identity(registry)
@@ -390,10 +399,12 @@ def validate():
     require(project_registry(registry) == json.loads(base_bytes("scripts/cranelift_feature_registry.json")),
             "renewal changed predecessor or foreign registry rows")
     check_files(registry)
-    require((ROOT / "justfile").read_bytes() == base_bytes("justfile") + RECIPE.encode(),
+    require(successor.prior_bytes(registry, "justfile", (ROOT / "justfile").read_bytes()) ==
+            base_bytes("justfile") + RECIPE.encode(),
             "renewal owning recipe drifted")
     check_workflow_caller()
-    levels = json.loads((ROOT / "scripts/cranelift_test_levels.json").read_text())
+    levels = json.loads(successor.prior_bytes(registry, "scripts/cranelift_test_levels.json",
+        (ROOT / "scripts/cranelift_test_levels.json").read_bytes()))
     require(levels["guards"].pop(GUARD, None) == 2 and
             levels == json.loads(base_bytes("scripts/cranelift_test_levels.json")),
             "renewal test level or predecessor guard changed")

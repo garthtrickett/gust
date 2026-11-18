@@ -6087,3 +6087,42 @@ layout, with all independent ancestry/API/checkout/provisioning checks and
 explicit deceptive-layout/provenance refusals. Repeat all current-source mandatory
 qualification before corrective publication. CI, merge and the activated Phase26
 remainder remain open; no new identity or resource-slot decision is selected.
+## Phase26.2 lexical allocator proof prerequisite — 2026-10-24
+
+Under the existing remainder activation, the same compiler owner continues from merged PR618 `9df2eb10`. Compile-only deferred-order controls established a false rejection of an unrelated inner arena shadow: lifecycle metadata conflates fresh lexical declarations as `main::ctx`. Preserve the unqualified deferred-order branch and its failed evidence; publish no incomplete proof. The next coherent compiler prerequisite distinguishes allocator declarations in proof metadata, transports actual-origin owner dependencies through aliases/moves/aggregates/snapshots/joins, and restores lexical mappings without erasing effects on surviving outer allocators. Keep source type-brand meaning, MIR order, layout/runtime ABI and OD23 unchanged. Qualify shadowed-unrelated acceptance, outer dependencies acquired inside shadows, sibling/alias restoration, joins and exits, then complete local pins/fixedpoint/reviews/own exact-head CI/merge before resuming deferred order. No C-seed revival or intermediate bridge promotion.
+
+The current-checker self-source control exposed an overbroad draft check on
+unannotated compiler values. Under canonical26.2A, origin observation is not
+linear ownership authority: scalar projections carry no containing-storage
+identity, ordinary alias mutations conservatively taint observations, and
+unknown bookkeeping IDs cannot establish inequality. Arena/resource constraints
+and already-captured acquisition dependencies remain enforced. Preserve the
+failed draft evidence and qualify both self-source admission and actual resource
+use through a mutated alias before publication.
+
+The lexical-proof prerequisite also carries the operator's prospective 6 GiB
+bootstrap execution override, with Swap0 and existing CPU/disk/reserve policy.
+Use an independent bootstrap-only profile for canonical Make commands; preserve
+the release launcher's 4 GiB product/qualification assertions byte-for-byte.
+Qualify actual profile limits and both scoped/CI execution paths, command and
+environment restrictions, and current-workflow profile-mixup refusals. An
+up-to-date local Make command is not a clean bootstrap-memory qualification.
+
+CR-15's frozen wrong-brand rejection exposed duplicate diagnostic refinement:
+the lexical-origin annotation check ran even when ordinary type matching already
+rejected the initializer. Refine only ordinarily admitted annotations, preserving
+the exact original TypeMismatch diagnostic for nominal mismatches and the lexical
+identity rejection for same-type shadowed allocators. Keep the frozen oracle and
+all existing source expectations unchanged; qualify both paths on the rebuilt
+current compiler before corrective publication.
+
+### Checked production renewal and allocator-proof continuation — 2026-11-18
+
+PR621 merged as `39e37696`; its qualified tree, all 154 eligible PR workflows,
+Trusted and three owning artifact checks passed. The same compiler owner now
+rebases the complete held480 lexical allocator patch onto that checked main.
+Keep the merged authenticated cold product build at 4 GiB; the independent
+bootstrap profile remains 6 GiB/Swap0 for its own canonical Make routes.
+Preserve epoch1 history and all original implicit/explicit case payloads.
+Additive enrollment and every current-source/native/R5/FP/CI gate are fresh;
+no old 480 proof qualifies this combined source. OD23 remains unselected.
