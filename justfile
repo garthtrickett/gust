@@ -24627,4 +24627,5 @@ guard-cranelift-phase26-2-allocator-identities:
     python3 scripts/phase26_2_allocator_identity_registration.py validate
     python3 scripts/phase26_2_allocator_identity_registration.py inversions
     python3 scripts/phase26_bootstrap_bounded.py inversions
+    python3 scripts/phase26_production_toolchain_controls.py
     python3 scripts/phase26_2_allocator_identity_guard.py

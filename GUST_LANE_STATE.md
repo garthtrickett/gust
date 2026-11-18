@@ -978,3 +978,18 @@ New 39 predecessor capture passed; combined-source enrollment, reviews and
 all current native/R5/fixed-point/CI gates remain pending. No live CI observer.
 OD23 stays OPEN/unselected. This is active preparation, not a terminal or
 Phase26 completion claim.
+
+## 2026-11-18 allocator CI dependency correction
+
+The qualified 35f19bf3 allocator patch was published on PR619 against checked
+main39. Its sole observer stopped and was reaped at an actual pinned APT
+no-removal refusal before compilation. No Actions polling continues while that
+failure is unchanged. The same owner is active on the bounded correction:
+matching revisions of already-installed libc companions, preserving all sixteen
+canonical pins, no-remove, exact package population, active payload checks and
+all product/semantic boundaries. Authenticated archive preparation, the closed
+read-only solver plan, 45 current controls and additive enrollment passed.
+Those are preparation results. Committed review, actual isolated installation,
+all fresh current native/product/fixed-point gates and corrective CI/merge
+remain required. Older qualified receipts and the original CI failure stay
+preserved. OD23 and the full activated Phase26 remainder remain open.

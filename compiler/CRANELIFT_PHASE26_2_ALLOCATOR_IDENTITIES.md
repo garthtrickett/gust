@@ -192,3 +192,30 @@ The identical predecessor snippet emits both diagnostics too. This case proves
 rejection only; supported transport is covered by alias declaration, field
 overwrite and value-copy cases. Earlier private substring-level evidence is
 retained separately and is not the maintained strict matrix result.
+
+## Closed CI dependency revisions
+
+The current allocator publication reached the pinned-toolchain installation
+step before compilation. A newer runner's installed `libc6-i386` requires its
+matching newer libc; the unchanged `--no-remove` transaction correctly refused
+to remove it and its existing lib32/Clang dependents. A read-only local solver
+reproduced that refusal. This is an environment failure, not a native case pass
+or an allocator rejection.
+
+The correction keeps all sixteen canonical dependency pins unchanged. The
+separate `ci-toolchain-compatibility.json` locks the matching amd64 revisions of
+`libc6-i386` and `libc6-dbg`, authenticated against the original snapshot's signed
+Ubuntu package index. Only identities already installed on that runner are
+selected. The complete transaction must simulate without removals, new package
+identities or unselected revisions, then retain `--no-remove` during the real
+ephemeral-runner installation. Exact pre/post installed populations and versions
+are checked; shared-host packages are never installed or changed. Both owning
+workflows retain the transaction records independently of their native artifacts.
+
+Controls use a real, non-installed Debian archive to exercise digest, metadata
+and architecture refusals, plus missing/foreign package and solver/population
+refusals. The old installer is retained in a new exact-main predecessor archive;
+all earlier frozen archives, product limits, runtime resolution and signature
+authority remain unchanged. Prepared metadata and a successful solver plan are
+not installation or qualification. Current-source review, enrollment, native
+qualification, artifact parity and authoritative CI remain mandatory.

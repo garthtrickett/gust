@@ -6,6 +6,9 @@ on:
       - 'compiler/**'
       - 'scripts/phase26_2_*.py'
       - 'scripts/phase26_bootstrap_bounded.py'
+      - 'scripts/phase26_production_toolchain.py'
+      - 'scripts/phase26_toolchain_compatibility.py'
+      - 'scripts/phase26_production_toolchain_controls.py'
       - 'scripts/phase26_release_registration.py'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_test_levels.json'
@@ -18,6 +21,9 @@ on:
       - 'compiler/**'
       - 'scripts/phase26_2_*.py'
       - 'scripts/phase26_bootstrap_bounded.py'
+      - 'scripts/phase26_production_toolchain.py'
+      - 'scripts/phase26_toolchain_compatibility.py'
+      - 'scripts/phase26_production_toolchain_controls.py'
       - 'scripts/phase26_release_registration.py'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_test_levels.json'
@@ -61,3 +67,12 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           path: build/guards/phase26_2_allocator_identity/
+      - name: Retain closed existing-package transaction provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase26-2-allocator-identity-toolchain
+          if-no-files-found: error
+          path: |
+            build/phase26-2-toolchain/*.json
+            build/phase26-2-toolchain/apt-simulation.*

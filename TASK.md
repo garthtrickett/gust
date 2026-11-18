@@ -6089,6 +6089,19 @@ qualification before corrective publication. CI, merge and the activated Phase26
 remainder remain open; no new identity or resource-slot decision is selected.
 ## Phase26.2 lexical allocator proof prerequisite — 2026-10-24
 
+The corrected `35f19bf3` publication passed its local source/native/4GiB product
+gates, then owning CI refused the unchanged pinned APT transaction before
+compilation: installed i386/debug libc companions require their matching newer
+libc, and `--no-remove` prevents removal of those and dependent runner packages.
+Preserve that failure. The bounded correction retains the canonical sixteen
+pins and adds only authenticated, digest-locked matching revisions of explicitly
+allowlisted compatibility identities already installed on the ephemeral runner.
+Require closed no-removal/no-new-package solver and exact installed-population
+postchecks, actual archive/refusal controls, additive predecessor enforcement,
+committed reviews and fresh current-source qualification before republishing.
+No shared-host installation, package/trust pin relaxation, product quota change
+or resource-slot decision is selected.
+
 Under the existing remainder activation, the same compiler owner continues from merged PR618 `9df2eb10`. Compile-only deferred-order controls established a false rejection of an unrelated inner arena shadow: lifecycle metadata conflates fresh lexical declarations as `main::ctx`. Preserve the unqualified deferred-order branch and its failed evidence; publish no incomplete proof. The next coherent compiler prerequisite distinguishes allocator declarations in proof metadata, transports actual-origin owner dependencies through aliases/moves/aggregates/snapshots/joins, and restores lexical mappings without erasing effects on surviving outer allocators. Keep source type-brand meaning, MIR order, layout/runtime ABI and OD23 unchanged. Qualify shadowed-unrelated acceptance, outer dependencies acquired inside shadows, sibling/alias restoration, joins and exits, then complete local pins/fixedpoint/reviews/own exact-head CI/merge before resuming deferred order. No C-seed revival or intermediate bridge promotion.
 
 The current-checker self-source control exposed an overbroad draft check on

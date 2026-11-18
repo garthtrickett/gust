@@ -26,6 +26,9 @@ CONTROL_BASELINE = 'compiler/phase26-2-allocator-identity/predecessor-pin-contro
 CONTROL_BASELINE_SHA256 = '39852d3d4aa62f0b8298d8f81bda9609a0f8dd9722e05d048777edc28ceae6d2'
 CONTROL_CHANGED = ('scripts/phase26_2_allocator_registration.py',
     'scripts/phase26_predecessor_data.py')
+TOOLCHAIN_CHANGED = ('scripts/phase26_production_toolchain.py',)
+TOOLCHAIN_BASELINE = 'compiler/phase26-2-allocator-identity/ci-toolchain-predecessor-v1.json.gz'
+TOOLCHAIN_BASELINE_SHA256 = 'c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1'
 HISTORICAL_BASELINES = {
     'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz':
         '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b',
@@ -45,7 +48,7 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
-    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED)
+    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED)
 ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
     LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
@@ -56,7 +59,10 @@ ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, 
     'compiler/phase26-2-allocator-identity/primitive_cases.json',
     '.github/workflows/phase26-2-allocator-identity.yml',
     'compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md',
-    'scripts/phase26_bootstrap_bounded.py')
+    'scripts/phase26_bootstrap_bounded.py', TOOLCHAIN_BASELINE,
+    'scripts/phase26_toolchain_compatibility.py',
+    'scripts/phase26_production_toolchain_controls.py',
+    'compiler/experiments/cranelift/production/ci-toolchain-compatibility.json')
 BOOTSTRAP = 'scripts/phase26_bootstrap_bounded.py'
 RELEASE_WORKFLOW = '.github/workflows/phase26-release-closure.yml'
 PREDECESSOR_KEY = 'production_epoch2_renewal_successor_v1'
@@ -68,6 +74,7 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_allocator_identity_registration.py validate\n'
     '    python3 scripts/phase26_2_allocator_identity_registration.py inversions\n'
     '    python3 scripts/phase26_bootstrap_bounded.py inversions\n'
+    '    python3 scripts/phase26_production_toolchain_controls.py\n'
     '    python3 scripts/phase26_2_allocator_identity_guard.py\n')
 
 
@@ -138,6 +145,15 @@ def base_bytes(path):
     files = baseline()['files']
     if path in files:
         return decoded_payload(files[path])
+    if path in TOOLCHAIN_CHANGED:
+        raw = (ROOT/TOOLCHAIN_BASELINE).read_bytes()
+        require(sha(raw) == TOOLCHAIN_BASELINE_SHA256, 'toolchain predecessor archive bytes drifted')
+        value = json.loads(gzip.decompress(raw))
+        require(set(value) == {'schema', 'base', 'files'} and
+                value['schema'] == 'gust.ci_toolchain_predecessor.v1' and
+                value['base'] == BASE and set(value['files']) == set(TOOLCHAIN_CHANGED),
+                'toolchain predecessor identity or file population drifted')
+        return decoded_payload(value['files'][path])
     if path in PROFILE_CHANGED:
         return decoded_payload(profile_baseline()['files'][path])
     if path in CONTROL_CHANGED:
@@ -434,6 +450,24 @@ def workflow_profile(text, build_arguments, guard, trigger):
             'bootstrap/qualification workflow profile drifted')
 
 
+def toolchain_workflow_profile(text, artifact):
+    dependencies = ('phase26_production_toolchain.py', 'phase26_toolchain_compatibility.py',
+                    'phase26_production_toolchain_controls.py')
+    retention = ('      - name: Retain closed existing-package transaction provenance\n'
+        '        if: always()\n'
+        '        uses: actions/upload-artifact@v4\n'
+        '        with:\n'
+        '          name: '+artifact+'\n'
+        '          if-no-files-found: error\n'
+        '          path: |\n'
+        '            build/phase26-2-toolchain/*.json\n'
+        '            build/phase26-2-toolchain/apt-simulation.*\n')
+    require(all(text.count("      - 'scripts/"+name+"'") == 2 for name in dependencies) and
+            text.count('run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-2-toolchain') == 1 and
+            text.count(retention) == 1,
+            'closed toolchain workflow obligation drifted')
+
+
 def release_workflow_profile(text):
     # This predecessor now owns an authenticated cold 4GiB product build.
     # A preceding 6GiB bootstrap would warm it and invalidate that evidence.
@@ -529,6 +563,8 @@ def validate():
         require(False, str(error))
     for path, arguments, guard, trigger in WORKFLOWS:
         workflow_profile((ROOT/path).read_text(), arguments, guard, trigger)
+        artifact = 'phase26-2-allocator-'+('identity' if guard == GUARD else 'liveness')+'-toolchain'
+        toolchain_workflow_profile((ROOT/path).read_text(), artifact)
     release_workflow_profile((ROOT/RELEASE_WORKFLOW).read_text())
     require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
     levels = json.loads((ROOT/'scripts/cranelift_test_levels.json').read_text())
@@ -600,6 +636,19 @@ def inversions():
                 lambda changed=changed,arguments=arguments,guard=guard,trigger=trigger:
                     workflow_profile(changed, arguments, guard, trigger),
                 'bootstrap/qualification workflow profile drifted')
+    for path, _, guard, _ in WORKFLOWS:
+        workflow = (ROOT/path).read_text()
+        artifact = 'phase26-2-allocator-'+('identity' if guard == GUARD else 'liveness')+'-toolchain'
+        toolchain_workflow_profile(workflow, artifact)
+        for label, changed in (
+                ('omitted compatibility trigger', workflow.replace("      - 'scripts/phase26_toolchain_compatibility.py'\n", '', 1)),
+                ('bypassed installer', workflow.replace('run: python3 scripts/phase26_production_toolchain.py install-ci build/phase26-2-toolchain', 'run: true', 1)),
+                ('omitted transaction provenance', workflow.replace('          name: '+artifact+'\n', '', 1)),
+                ('disabled provenance', workflow.replace('      - name: Retain closed existing-package transaction provenance\n        if: always()', '      - name: Retain closed existing-package transaction provenance\n        if: false', 1))):
+            require(changed != workflow, 'toolchain workflow inversion did not move')
+            rejected('toolchain '+label, lambda changed=changed,artifact=artifact:
+                     toolchain_workflow_profile(changed, artifact),
+                     'closed toolchain workflow obligation drifted')
     workflow = (ROOT/RELEASE_WORKFLOW).read_text()
     build = 'run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution'
     qualification = 'run: python3 scripts/phase26_release_bounded.py just guard-cranelift-phase26-release-closure'
