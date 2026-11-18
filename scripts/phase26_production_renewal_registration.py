@@ -79,7 +79,9 @@ SOURCE_ARCHIVE = "compiler/experiments/cranelift/production/source/zlib-1.3.2.ta
 SOURCE_SHA256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
 WORKFLOW_STEP = ("      - name: Validate selected production trust renewal\n"
                  "        run: just " + GUARD + "\n")
-EXECUTION_BUILD = "        run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution\n"
+EXECUTION_BUILD = ("        env:\n"
+    "          GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}\n"
+    "        run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution\n")
 EXECUTION_METADATA = (
     "      - name: Retain bounded cold-build environment evidence\n"
     "        if: always()\n"
@@ -617,6 +619,11 @@ def execution_environment_controls():
     original = Path.read_text
     current = original(ROOT / WORKFLOW)
     mutations = (
+        ("omitted metadata credential", current.replace(
+            "          GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}\n", "", 1)),
+        ("changed metadata credential", current.replace(
+            "GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}",
+            "GUST_RELEASE_METADATA_TOKEN: unqualified", 1)),
         ("unprepared protected build", current.replace(EXECUTION_BUILD,
             "        run: python3 scripts/phase26_release_bounded.py make gust\n", 1)),
         ("omitted environment failure evidence", current.replace(EXECUTION_METADATA, "", 1)),

@@ -230,13 +230,11 @@ def build(output):
                         not output.exists(), "evidence directory is not fresh and owned")
     environment.require(not (environment.ROOT/"gust").exists(), "cached native build is not qualification")
     output.mkdir(parents=True)
+    # The automatic job credential belongs only to the supervisor's metadata
+    # reads. It must not enter subprocess environments or retained evidence.
+    token = os.environ.pop(environment.METADATA_TOKEN, None)
     start = environment.allocated()
-    environment.check_disk(start)
-    hosted = environment.hosted_runner() if os.environ.get("GITHUB_ACTIONS") == "true" else None
-    environment.write(output/"context.json", dict(utc=environment.utc(), hosted=hosted,
-        memory=environment.meminfo(), current_cgroup=str(environment.membership("self")),
-        quota_bytes=environment.COMPILER_CAP_BYTES, paging_target_bytes=environment.TARGET_PAGING))
-    paging = environment.Paging(output, start)
+    paging = None
     payload = {"empty": True}
     code = 1
     lifecycle = {"cleanup": False, "canceled": False}
@@ -251,7 +249,14 @@ def build(output):
 
     previous = {sig: signal.signal(sig, cancel) for sig in (signal.SIGTERM, signal.SIGINT)}
     try:
-        paging.prepare(hosted)
+        environment.check_disk(start)
+        hosted = environment.hosted_runner(token, output) if os.environ.get("GITHUB_ACTIONS") == "true" else None
+        environment.write(output/"context.json", dict(utc=environment.utc(), hosted=hosted,
+            memory=environment.meminfo(), current_cgroup=str(environment.membership("self")),
+            quota_bytes=environment.COMPILER_CAP_BYTES, paging_target_bytes=environment.TARGET_PAGING))
+        paging = environment.Paging(output, start)
+        paging.prepare(hosted, token)
+        token = None
         code = run_build(output, start, hosted, payload)
         environment.require(code == 0, "actual protected build failed: " + str(code))
         text = (output/"build.log").read_text()
@@ -263,9 +268,13 @@ def build(output):
             error_type=type(error).__name__, message=str(error), payload_empty=payload["empty"]))
         raise
     finally:
+        token = None
         lifecycle["cleanup"] = True
         try:
-            paging.cleanup(payload["empty"])
+            if paging is not None:
+                paging.cleanup(payload["empty"])
+            else:
+                environment.write(output/"paging-cleanup.json", dict(status="PASS no job-owned paging created"))
             environment.write(output/"terminal-disk.json", environment.check_disk(start))
         except BaseException as error:
             environment.write(output/"cleanup-failure.json", dict(utc=environment.utc(),

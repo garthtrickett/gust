@@ -58,6 +58,8 @@ jobs:
       - name: Validate selected production trust renewal
         run: just guard-cranelift-phase26-production-renewal
       - name: Build current native compiler
+        env:
+          GUST_RELEASE_METADATA_TOKEN: ${{ github.token }}
         run: python3 scripts/phase26_release_execution.py build build/guards/phase26_release_execution
       - name: Reproduce exact public native package inputs
         run: |

@@ -130,3 +130,12 @@ The v6 archive retains all v5 values and adds only the exact base-main R3 script
 Its dedicated history pin is enforced alongside every earlier pin. Complete
 old/new record equality, alias isolation, actual scan counts, fresh-input refusals
 and the unchanged timed qualification gates remain required.
+
+The hosted provenance lookup uses the existing automatic job token only for the
+two fixed public GitHub run/job GET endpoints, retaining `contents: read` and
+all runner, checkout and job checks. Redirects are refused. The token is removed
+from the process environment before child commands, never retained in evidence,
+and discarded before the protected build. API errors remain failures and retain
+only sanitized endpoint/status/rate-limit facts. Early provenance refusal now
+also records failure and positive no-paging-created cleanup evidence. The prior
+unauthenticated HTTP403 occurred before compiler execution, not during a build.

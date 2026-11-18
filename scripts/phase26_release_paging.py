@@ -16,6 +16,7 @@ import re
 import stat
 import subprocess
 import time
+import urllib.error
 import urllib.request
 
 from phase26_release_bounded import COMPILER_CAP_BYTES, effective_memory_cap
@@ -29,6 +30,7 @@ DISK_RESERVE = 2 * 1024 ** 3
 HOST_RESERVE = 1536 * 1024 ** 2
 COMMAND = ["python3", "scripts/phase26_release_bounded.py", "make", "gust"]
 WORKFLOW = ".github/workflows/phase26-release-closure.yml"
+METADATA_TOKEN = "GUST_RELEASE_METADATA_TOKEN"
 
 
 def require(condition, message):
@@ -108,14 +110,45 @@ def process_identity(pid):
                 parent=int(fields["PPid"].strip()))
 
 
-def public_api(path):
-    request = urllib.request.Request("https://api.github.com/repos/garthtrickett/gust/" + path,
-                                     headers={"Accept": "application/vnd.github+json",
-                                              "User-Agent": "gust-release-execution"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        raw = response.read(2 * 1024 ** 2 + 1)
-    require(len(raw) <= 2 * 1024 ** 2, "public provenance response exceeds bound")
-    return json.loads(raw)
+class NoMetadataRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, url):
+        # Authorization must never leave this fixed API origin, even by redirect.
+        return None
+
+
+def public_api(path, token, output):
+    require(re.fullmatch(r"actions/runs/[0-9]+(?:/jobs\?per_page=100)?", path) is not None,
+            "unqualified public metadata endpoint")
+    require(isinstance(token, str) and 0 < len(token) <= 4096 and token.isascii() and
+            not re.search(r"\s", token), "missing or invalid automatic metadata credential")
+    url = "https://api.github.com/repos/garthtrickett/gust/" + path
+    request = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json",
+        "User-Agent": "gust-release-execution", "Authorization": "Bearer " + token})
+    record = dict(utc=utc(), endpoint=path, authenticated=True)
+    try:
+        with urllib.request.build_opener(NoMetadataRedirect()).open(request, timeout=30) as response:
+            record["status"] = response.status
+            require(response.status == 200, "unexpected public metadata response status")
+            require(response.geturl() == url, "public metadata response changed origin or endpoint")
+            raw = response.read(2 * 1024 ** 2 + 1)
+        require(len(raw) <= 2 * 1024 ** 2, "public provenance response exceeds bound")
+        return json.loads(raw)
+    except urllib.error.HTTPError as error:
+        record["status"] = error.code
+        record["rate_limit"] = {name: (int(error.headers[name]) if error.headers[name].isdecimal()
+            else "unparsed") for name in (
+            "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After")
+            if error.headers and name in error.headers}
+        raise ValueError("release execution environment: public metadata request failed: " +
+                         path + " HTTP " + str(error.code)) from None
+    except (OSError, ValueError) as error:
+        record["error_type"] = type(error).__name__
+        raise ValueError("release execution environment: public metadata response unavailable or invalid: " +
+                         path) from None
+    finally:
+        # Never persist a request, authorization header, credential or error body.
+        with (output/"public-api.jsonl").open("a") as stream:
+            stream.write(json.dumps(record)+"\n")
 
 
 def validate_runner_evidence(environment, worker, run, jobs, checkout):
@@ -161,7 +194,7 @@ def validate_runner_evidence(environment, worker, run, jobs, checkout):
     return job
 
 
-def hosted_runner():
+def hosted_runner(token, output):
     require(os.getuid() != 0 and pwd.getpwuid(os.getuid()).pw_name == "runner" and
             Path.home() == Path("/home/runner") and
             ROOT == Path(os.environ.get("GITHUB_WORKSPACE", "")).resolve() and
@@ -181,8 +214,8 @@ def hosted_runner():
     environment = {name: os.environ.get(name, "") for name in names}
     require(environment["GITHUB_RUN_ID"].isdecimal() and
             environment["GITHUB_RUN_ATTEMPT"].isdecimal(), "invalid owning run identifiers")
-    run = public_api("actions/runs/" + environment["GITHUB_RUN_ID"])
-    jobs = public_api("actions/runs/" + environment["GITHUB_RUN_ID"] + "/jobs?per_page=100")
+    run = public_api("actions/runs/" + environment["GITHUB_RUN_ID"], token, output)
+    jobs = public_api("actions/runs/" + environment["GITHUB_RUN_ID"] + "/jobs?per_page=100", token, output)
     require(jobs["total_count"] == len(jobs["jobs"]) == 1, "unexpected owning job population")
     def git(*arguments):
         return subprocess.check_output(["git", *arguments], cwd=ROOT, text=True).strip()
@@ -241,7 +274,7 @@ class Paging:
         self.identity = None
         self.before = swap_rows()
 
-    def prepare(self, hosted):
+    def prepare(self, hosted, token=None):
         require(not self.file.parent.exists() and not self.file.parent.is_symlink(),
                 "unowned prior paging directory must remain untouched")
         available = paging_capacity(membership("self"))
@@ -251,7 +284,7 @@ class Paging:
         if available >= TARGET_PAGING:
             return
         require(hosted is not None, "insufficient existing paging outside ephemeral owning CI")
-        verified = hosted_runner()
+        verified = hosted_runner(token, self.output)
         require(isinstance(hosted, dict) and all(name in hosted for name in
                 ("environment", "worker", "checkout", "job", "run")) and
                 all(hosted[name] == verified[name] for name in ("environment", "worker", "checkout")) and

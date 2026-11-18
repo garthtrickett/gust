@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import urllib.error
 from unittest.mock import patch
 
 import phase26_release_execution as execution
@@ -23,6 +24,98 @@ def rejected(label, function, diagnostic, expected=ValueError):
         print(label + ": REJECTED (expected assertion)")
     else:
         raise ValueError(label + ": ACCEPTED")
+
+
+def metadata_api_controls(root):
+    """Exercise authorization/transport and early failure without real credentials or network."""
+    token = "synthetic-job-credential"
+    endpoint = "actions/runs/42"
+    url = "https://api.github.com/repos/garthtrickett/gust/" + endpoint
+    request_seen = []
+
+    class Response:
+        status = 200
+        def __init__(self, raw=b'{"id":42}', final=url):
+            self.raw, self.final = raw, final
+        def __enter__(self):return self
+        def __exit__(self, *args):pass
+        def geturl(self):return self.final
+        def read(self, limit):
+            assert limit == 2*1024**2+1
+            return self.raw[:limit]
+
+    def opened(request, timeout):
+        assert request.full_url in (url, url+"/jobs?per_page=100")
+        assert request.get_method() == "GET" and timeout == 30
+        assert request.get_header("Authorization") == "Bearer " + token
+        request_seen.append(request.full_url)
+        return Response(final=request.full_url)
+
+    def opener(handler):
+        assert isinstance(handler, paging.NoMetadataRedirect)
+        result = __import__("types").SimpleNamespace(open=opened)
+        return result
+
+    with patch.object(paging.urllib.request, "build_opener", side_effect=opener):
+        for index, path in enumerate((endpoint, endpoint+"/jobs?per_page=100")):
+            case = root/("api-accepted-"+str(index));case.mkdir()
+            assert paging.public_api(path, token, case) == {"id": 42}
+            recorded = json.loads((case/"public-api.jsonl").read_text())
+            assert recorded["endpoint"] == path and recorded["status"] == 200 and recorded["authenticated"]
+            assert token not in (case/"public-api.jsonl").read_text()
+        assert request_seen == [url, url+"/jobs?per_page=100"]
+        for value in (None, "", "bad\ncredential"):
+            rejected("missing/invalid job credential", lambda v=value: paging.public_api(endpoint, v, root),
+                     "missing or invalid automatic metadata credential")
+        for value in ("https://other.invalid/", "actions/runs/42/../secrets", "actions/runs/42/jobs?per_page=101"):
+            rejected("unqualified metadata path", lambda v=value: paging.public_api(v, token, root),
+                     "unqualified public metadata endpoint")
+        assert request_seen == [url, url+"/jobs?per_page=100"]
+    request = paging.urllib.request.Request(url, headers={"Authorization": "Bearer " + token})
+    assert paging.NoMetadataRedirect().redirect_request(request, None, 302, "redirect", {},
+        "https://other.invalid/") is None
+    for name, response in (("malformed", Response(b"not json")),
+                           ("oversized", Response(b" "*(2*1024**2+1))),
+                           ("redirected", Response(final="https://other.invalid/"))):
+        case = root/("api-"+name);case.mkdir()
+        with patch.object(paging.urllib.request, "build_opener") as factory:
+            factory.return_value.open.return_value = response
+            rejected(name+" metadata", lambda: paging.public_api(endpoint, token, case),
+                     "public metadata response unavailable or invalid: "+endpoint)
+        assert token not in (case/"public-api.jsonl").read_text()
+    case = root/"api-rate-limit";case.mkdir()
+    error = urllib.error.HTTPError(url, 403, token, {"X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": "123", "Authorization": token}, None)
+    with patch.object(paging.urllib.request, "build_opener") as factory:
+        factory.return_value.open.side_effect = error
+        rejected("metadata API rate limit", lambda: paging.public_api(endpoint, token, case),
+                 "public metadata request failed: "+endpoint+" HTTP 403")
+    raw = (case/"public-api.jsonl").read_text()
+    assert token not in raw and json.loads(raw)["rate_limit"] == {
+        "X-RateLimit-Remaining": 0, "X-RateLimit-Reset": 123}
+    case = root/"early-metadata-failure";case.mkdir()
+    def unavailable(credential, output):
+        assert credential == token and paging.METADATA_TOKEN not in os.environ
+        raise ValueError("release execution environment: controlled metadata refusal")
+    with patch.object(paging, "ROOT", case), patch.object(paging, "allocated", return_value=0), \
+         patch.object(paging, "check_disk", return_value={}), \
+         patch.object(paging, "hosted_runner", side_effect=unavailable), \
+         patch.object(paging, "Paging", side_effect=AssertionError("paging must not begin")), \
+         patch.object(execution, "run_build", side_effect=AssertionError("build must not begin")), \
+         patch.dict(os.environ, {"GITHUB_ACTIONS": "true", paging.METADATA_TOKEN: token}):
+        rejected("early metadata refusal retained", lambda: execution.build(Path("build/guards/phase26_release_execution")),
+                 "controlled metadata refusal")
+        assert paging.METADATA_TOKEN not in os.environ
+    evidence = case/"build/guards/phase26_release_execution"
+    assert json.loads((evidence/"failure.json").read_text())["payload_empty"]
+    assert json.loads((evidence/"paging-cleanup.json").read_text())["status"] == "PASS no job-owned paging created"
+    assert (evidence/"terminal-disk.json").is_file()
+    assert all(token not in p.read_text() for p in evidence.iterdir())
+    # The actual hosted command's allowlist must exclude both credential name and bytes.
+    with patch.dict(os.environ, {paging.METADATA_TOKEN: token}):
+        command = execution.hosted_command({"job": {"started_at": paging.utc()}}, "run-r"+"0"*32+".scope")
+        assert all(token not in value and paging.METADATA_TOKEN not in value for value in command)
+    print("RELEASE_METADATA_PUBLIC_AUTH_CONTROLS_PASS; no real credentials, network or provisioning")
 
 
 def controls():
@@ -97,6 +190,7 @@ def controls():
     parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="controls-", dir=parent) as temporary:
         root = Path(temporary)
+        metadata_api_controls(root)
         output = root/"evidence"
         output.mkdir()
         (root/"build/guards").mkdir(parents=True)
