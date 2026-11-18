@@ -22,11 +22,13 @@ GUARD = "guard-cranelift-phase26-production-renewal"
 STATE = "GUST_LANE_STATE.md"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 HISTORY = "compiler/experiments/cranelift/production/epoch1/"
-BASELINE = HISTORY + "predecessor-baseline-v4.json.gz"
-BASELINE_SHA256 = "5da70567528d2e2f3b70ca7bd3028816819d2ecdca0ae250ef8e4e61d82b6bc5"
+BASELINE = HISTORY + "predecessor-baseline-v5.json.gz"
+BASELINE_SHA256 = "dfc306e5b2eaf18a8c92dd5d4993efbc83a31ca8b3a4a50006499797ad565666"
 CHANGED = (
     "TASK.md", "justfile", "scripts/cranelift_test_levels.json",
     "scripts/phase26_2_allocator_registration.py", "scripts/phase26_production_registration.py",
+    "scripts/phase26_release_registration.py",
+    "scripts/phase26_r4_collection_registration.py", "scripts/phase26_ticket_publication_registration.py",
     "scripts/phase26_release_closure.py", "scripts/phase26_production_package.py",
     "compiler/experiments/cranelift/src/production_trust.rs",
     "compiler/experiments/cranelift/src/production_trust_tests.rs",
@@ -44,6 +46,7 @@ ADDED = tuple(HISTORY + name for name in (
     "manifest.txt", "manifest.sig", "snapshot.json", "production_trust.rs",
     "predecessor-baseline.json.gz", "predecessor-baseline-v2.json.gz",
     "predecessor-baseline-v3.json.gz", "predecessor-baseline-v4.json.gz",
+    "predecessor-baseline-v5.json.gz",
     "public-identity.json")) + (
     ".github/workflows/phase26-github-release-signing.yml",
     "scripts/phase26_github_package_candidate.py",
@@ -633,6 +636,104 @@ def execution_environment_controls():
     print("EPOCH2_EXECUTION_ENVIRONMENT_CALLER_CONTROLS_PASS", flush=True)
 
 
+def projection_reuse_controls():
+    """One live view per call; malformed views and later missing inputs fail closed."""
+    import errno
+    from unittest.mock import patch
+    import phase26_r4_collection_registration as r4
+    import phase26_ticket_publication_registration as ticket
+    kinds = ("text", "spelling", "filename", "r3_record", "production", "workflow")
+    shape = {kind: {"previous": None, "current": None} for kind in kinds}
+    malformed = [("omitted edge", {k: v for k, v in shape.items() if k != "text"}),
+                 ("extra edge", dict(shape, unexpected={"previous": None, "current": None}))]
+    for field in ("previous", "current"):
+        changed = copy.deepcopy(shape)
+        del changed["text"][field]
+        malformed.append(("missing " + field, changed))
+    changed = copy.deepcopy(shape)
+    changed["text"]["unexpected"] = None
+    malformed.append(("extra edge field", changed))
+    changed = copy.deepcopy(shape)
+    changed["text"] = []
+    malformed.append(("non-record edge", changed))
+    for label, value in malformed:
+        try:
+            r4.build_record_from_projections(value)
+        except SystemExit as error:
+            require("R4 record projection input shape drifted" in str(error),
+                    label + ": REJECTED (different assertion): " + str(error))
+        else:
+            raise SystemExit(label + ": ACCEPTED")
+        print(label + ": REJECTED (expected projection shape)", flush=True)
+
+    calls = []
+    original_scan = r4.live_projections
+    def observed():
+        calls.append(True)
+        return original_scan()
+    target = ROOT / "README.md"
+    original_text = Path.read_text
+    missing_reads = []
+    def missing(path, *args, **kwargs):
+        if path == target:
+            missing_reads.append(True)
+            raise FileNotFoundError(errno.ENOENT, "deliberately missing audited dependency", str(target))
+        return original_text(path, *args, **kwargs)
+    with patch.object(r4, "live_projections", observed):
+        ticket.current_projections()
+        require(len(calls) == 1, "current projection consumer repeated its live scan")
+        with patch.object(Path, "read_text", missing):
+            try:
+                ticket.current_projections()
+            except FileNotFoundError as error:
+                require(error.filename == str(target) and missing_reads,
+                        "missing audited dependency: REJECTED (different file)")
+            else:
+                raise SystemExit("missing audited dependency: ACCEPTED cached view")
+        require(len(calls) == 2, "independent projection call reused an old view")
+    print("RENEWAL_SHARED_SCAN_FRESH_INPUT_CONTROLS_PASS; no cross-call cache", flush=True)
+
+
+def release_workflow_consumer_controls():
+    """Exercise the real validate consumer; downstream projections retain their full suite."""
+    import contextlib
+    import io
+    from unittest.mock import patch
+    import phase26_release_registration as release
+    expected = base_bytes(WORKFLOW).decode()
+    seen = []
+    original_identity = release.workflow_identity
+    original_read = Path.read_bytes
+
+    def observed(text):
+        require(text == expected, "release consumer did not receive exact predecessor workflow")
+        seen.append(text)
+        original_identity(text)
+
+    # Isolate this actual call site after its physical checks. The original
+    # complete validate/inversions still run independently in the full census.
+    with patch.object(release, "workflow_identity", observed), \
+            patch.object(release, "current_projections", lambda: {}), \
+            contextlib.redirect_stdout(io.StringIO()):
+        release.validate()
+        require(seen == [expected], "release workflow consumer was not actually observed")
+        current = original_read(ROOT / WORKFLOW)
+        for label, raw in (("physical workflow rollback", base_bytes(WORKFLOW)),
+                           ("physical workflow substitution", current + b"\n")):
+            seen.clear()
+            with patch.object(Path, "read_bytes", lambda p, raw=raw:
+                    raw if p == ROOT / WORKFLOW else original_read(p)):
+                try:
+                    release.validate()
+                except SystemExit as error:
+                    require("R4 changed file drifted" in str(error),
+                            label + ": REJECTED (different assertion): " + str(error))
+                else:
+                    raise SystemExit(label + ": ACCEPTED")
+            require(not seen, label + " reached historical view before physical rejection")
+    print("RENEWAL_ACTUAL_RELEASE_WORKFLOW_CONSUMER_PASS; full historical guard remains required", flush=True)
+
+
 def inversions():
     validate()
     registry = json.loads(REGISTRY.read_text())
@@ -711,6 +812,8 @@ def inversions():
     workflow_caller_controls()
     source_delivery_controls()
     execution_environment_controls()
+    release_workflow_consumer_controls()
+    projection_reuse_controls()
     print("EPOCH2_RENEWAL_ENROLLMENT_INVERSIONS_PASS")
 
 
@@ -718,4 +821,6 @@ if __name__ == "__main__":
     {"generate": generate, "validate": validate, "inversions": inversions,
      "predecessor-record-control": predecessor_record_control,
      "workflow-caller-controls": workflow_caller_controls,
+     "release-workflow-controls": release_workflow_consumer_controls,
+     "projection-reuse-controls": projection_reuse_controls,
      "source-delivery-controls": source_delivery_controls}[sys.argv[1]]()

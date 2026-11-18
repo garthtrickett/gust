@@ -137,9 +137,12 @@ def prior_render_digest(registry, live):
 def current_projections():
     import phase26_r4_collection_registration as r4
     import phase26_r3_zlib_adapter_registration as r3
+    # One current scan supplies both the exposed edges and their record. No
+    # cross-call cache: every independent invocation scans its inputs again.
+    edges = r4.live_projections()
     result = {("r4_text" if key == "text" else key): edge["current"]
-              for key, edge in r4.live_projections().items()}
-    result["r4_record"] = r4.build_record()
+              for key, edge in edges.items()}
+    result["r4_record"] = r4.build_record_from_projections(edges)
     result["text"] = r3.raw_text_surfaces()
     return result
 

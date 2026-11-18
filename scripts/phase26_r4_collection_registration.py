@@ -263,7 +263,11 @@ def live_projections() -> dict:
         }
     return edges
 
-def build_record() -> dict:
+def build_record_from_projections(projections: dict) -> dict:
+    require(isinstance(projections, dict) and
+            set(projections) == {"text", "spelling", "filename", "r3_record", "production", "workflow"} and
+            all(isinstance(edge, dict) and set(edge) == {"previous", "current"}
+                for edge in projections.values()), "R4 record projection input shape drifted")
     return {"contract_version": VERSION, "predecessor_main_sha": BASE, "owner": "cranelift", "owning_guard": GUARD,
         "release_status": "capability_only_wrapper_and_release_open",
         "failure_scope": "deterministic_process_native_trap_no_unwind",
@@ -273,7 +277,11 @@ def build_record() -> dict:
         "added_files": [{"path": path, "digest": digest(path)} for path in ADDED],
         "projections": {kind: {"previous_digest": projection_digest(edge["previous"]),
             "current_digest": projection_digest(edge["current"])}
-            for kind, edge in live_projections().items()}}
+            for kind, edge in projections.items()}}
+
+def build_record() -> dict:
+    # Existing callers still obtain a fresh live view and fresh physical digests.
+    return build_record_from_projections(live_projections())
 
 def write_record(value: dict) -> None:
     # Insert only the successor. Preserve historical registry bytes, including

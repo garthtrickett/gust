@@ -89,3 +89,14 @@ payload termination and before the unchanged R5 recipe. Cleanup failures retain
 the file, fail the build and prevent R5. Artifact patterns contain metadata and
 logs only; paging contents are never uploaded. Epoch-1 evidence, the signed
 package, quota assertions and release-test expectations remain unchanged.
+
+The historical first-release workflow validator consumes its exact checked
+predecessor view through the existing successor adapter; its original predicate
+and inversions remain unchanged. The current physical workflow and execution
+wrapper remain separately pinned and exercised by the renewal caller controls.
+
+The ticket projection consumer shares one just-computed six-edge R4 view with
+the record builder. Existing standalone builders still scan freshly, physical
+file digests remain fresh, and no result is cached across calls. Complete
+old/new projection equality, observed scan counts, malformed-edge refusals and
+a later missing audited input qualify this extraction before publication.
