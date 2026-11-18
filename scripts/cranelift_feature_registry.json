@@ -48087,7 +48087,7 @@
         {
           "path": "scripts/phase26_production_registration.py",
           "previous_digest": "aa9dcae656c83a8fb08be97e440a9562505f851808e95d1682f4817713bfcaeb",
-          "current_digest": "0d0cc90077b68f40dd41df24c3ae1f303ced236a35c8d118aeaafe7a4a72ef33"
+          "current_digest": "07031f228d5224ca8ac2a52393ef4c6e9929d2d7a0c994d4877116fec017139f"
         },
         {
           "path": "scripts/phase26_release_registration.py",
@@ -48095,9 +48095,14 @@
           "current_digest": "fc9be59bc7e33220f4db0f9356b4e10aac0df052836a675471b1c60231c43327"
         },
         {
+          "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+          "previous_digest": "e1f84d83c6919b93429625eef5ce511f392b25dcd3e5fa0c6b564b11cf07207d",
+          "current_digest": "5206597c2350c041503ff27be36e607a831ff06281a74571fcab65a4eb28be9a"
+        },
+        {
           "path": "scripts/phase26_r4_collection_registration.py",
           "previous_digest": "eaa3a9e3d93fdf81ae095cc22956dc936ce95d5fff39d0a6003348148550ca4e",
-          "current_digest": "a075d14a220237dff023b667e7fb2ff9ae8a5587a98494d5651e86a61022d566"
+          "current_digest": "5e538b65aba4cca76da11eb0b32d67b102b7e3c1bbd944106803705e52721e44"
         },
         {
           "path": "scripts/phase26_ticket_publication_registration.py",
@@ -48208,6 +48213,10 @@
           "digest": "dfc306e5b2eaf18a8c92dd5d4993efbc83a31ca8b3a4a50006499797ad565666"
         },
         {
+          "path": "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v6.json.gz",
+          "digest": "0f6cec4910fe8aabb4a53b5a7d830021c2b9767e307adddcec92b0942fa845d9"
+        },
+        {
           "path": "compiler/experiments/cranelift/production/epoch1/public-identity.json",
           "digest": "5116cf043f6aa8b42a8018f14aa195722d738a1ab0ddc8d04db62c472aac8529"
         },
@@ -48241,19 +48250,19 @@
         },
         {
           "path": "compiler/phase26-release/release-epoch2.json",
-          "digest": "b3bdf0b7f3ee9c262759979d94990c7b11fda38f6eb2fc2ca3da9330c07a5d4a"
+          "digest": "2a5f3b32fa286b920b283f563ce6e9729e594cf88fbc4a6084a47717543a28f5"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
-          "digest": "c8d059510076b5ed11f185a392e17895549ea6282cc45df7161ae7862941ab16"
+          "digest": "f927ce7a63447b86b6574dac8f9fcb668ef232f5be3bc17445175b6176d696dd"
         },
         {
           "path": "scripts/phase26_production_renewal.py",
-          "digest": "33c8b9124de7b01c2f77cfa69681d3a81d84b8aa5137168a296032fa25d4ac24"
+          "digest": "dc95cb0f6736939f86340a1b46ea958e099f19db7214e66053db9f304ea3c0c1"
         },
         {
           "path": "scripts/phase26_production_renewal_registration.py",
-          "digest": "1549e8dc175a3f41d5293b9b0a65dca3c7ba017334d5ca8eea56566759aba58c"
+          "digest": "ad0c95d987b7897fcaf3d9a456edcf052155acb378e625136d41a96ebc9812e2"
         },
         {
           "path": "scripts/phase26_release_execution.py",
@@ -48276,23 +48285,27 @@
           "digest": "a617c771babcfcdb60ff079cc38b69c6220b347c21fe6b8dc55703e30db3c36d"
         },
         {
+          "path": "scripts/phase26_fresh_view_controls.py",
+          "digest": "7c251c77adcc1338a01370cdc57730e1aa8ca09e30fb12a652fc093416096916"
+        },
+        {
           "path": "compiler/CRANELIFT_PHASE26_PRODUCTION_RENEWAL.md",
-          "digest": "70f1489e2e7f45aa7e241dbb2ab36cea7ab894df9d7fad2d14f24aaab0f170cc"
+          "digest": "9710332973f4ef388827d82631ec912c147135023bf0b274ccf6309adf0512d1"
         }
       ],
       "owned_text": {
-        "text": "0a684965c037345638f728d15c6d6bb3ea299b311fc6a3bc0e52a9229d433880",
-        "r4_text": "bdd96d8f92ce2d60300ee89e1369965a0bf2f3478e594e1a231463604f0d487e"
+        "text": "139a5c9386703cac3bc017a9b84c3a284db6b25ea82a8c316c2a68cac9ae68fb",
+        "r4_text": "7e4cabd5204fd2ee0a8b51ede1e860f6d25839572e137b3f6e34d2d4e8cb2cad"
       },
       "projections": {
-        "r4_text": "e1ffe46360dc22aa23e58cdbaf672220cbc54a13f0fcd43a978d23af2fe6af90",
+        "r4_text": "41dc8c163a95f822538d0d9903d89b56d755efd9a27bcf873dcbd2478c0c5783",
         "spelling": "13a1b95d4397ec0e4b483073406c3bfae8f9470355661f8ef1d1a8e6df7163df",
         "filename": "9a409e447cfa02b5571c28deafefb489bff9fed41213552fd2537db5f80ae6f2",
-        "r3_record": "286bcb8257f29c3ff085882c766e9e39eab91492addb5ce39fa94f624c8e55eb",
+        "r3_record": "647e34f697679176ee6ee97090c33c603ccd6e8f939ffa4e0bf92af04e539447",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "738e9b6906c27939d1fb38bdd90e877b8ec37b8bf43f7c70215b236083ae1271",
-        "text": "f5722dc0746e03e6c1149b8fd813e8d1e8f8085fd647f85b2ca48daabfdda3ac"
+        "r4_record": "be43d44018c57ba3a7fbc2c6f61f83aff26daa25a69391a9c0f0ac9c85028725",
+        "text": "87118cb9b913bd845a304489ae94a2fc98022b9d599aa31389fc10b55fdf20b9"
       },
       "spelling_render_current_digest": "daab8f7fb0577dd259105e925da52014ff8fbdf390572f61a2148616dbf4a1af"
     },
