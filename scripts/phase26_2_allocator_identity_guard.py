@@ -193,6 +193,7 @@ def qualify(compiler, output, cases_path):
     (proof / 'compile.stdout').write_bytes(result.stdout)
     (proof / 'compile.stderr').write_bytes(result.stderr)
     internal = dict(source_sha256=digest(proof_source), command=command,
+                    original_proof_assertions=12, presentation_assertions=4,
                     compile_exit=result.returncode, executed=False,
                     stdout_sha256=digest(proof / 'compile.stdout'),
                     stderr_sha256=digest(proof / 'compile.stderr'),
@@ -207,7 +208,7 @@ def qualify(compiler, output, cases_path):
                         run_stdout_sha256=digest(proof / 'run.stdout'),
                         run_stderr_sha256=digest(proof / 'run.stderr'),
                         pass_result=execution.returncode == 0 and
-                        execution.stdout == b'1\n' * 12 and not execution.stderr)
+                        execution.stdout == b'1\n' * 16 and not execution.stderr)
     print(json.dumps(dict(internal_proof_facts=internal)), flush=True)
     primitive = qualify_primitive_observations(compiler, output, primitive_source, primitive_cases)
     after = {str(path): digest(path) for path in inputs}

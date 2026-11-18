@@ -126,6 +126,66 @@ func main() int {
         if std.str_eq(checker.env_allocator_formal_brand(
             qualified_left_type, "unused", &env, &ctx), "left__brand") == 0 { return 19; }
         os.LogInt(1);
+
+        // Four presentation checks follow the original twelve proof checks.
+        mut display_env := checker.env_new(&ctx);
+        display_env.current_function_identity_scope = "display";
+        mut display_scope := checker.scope_new(empty[Index[checker.Scope[ctx], ctx]], &ctx);
+        display_env.current_allocator_scope = display_scope;
+        mut arena_type: ast.Type[ctx];
+        arena_type.tag = 4;
+        ctx[display_scope].bindings.Insert("ctx", arena_type);
+        display_env.variable_types.Insert("ctx", arena_type);
+        checker.env_allocator_record_binding(&display_env, "ctx",
+            checker.allocator_identity_proof("first-origin", 0, &ctx), &ctx);
+        mut first_state := checker.env_arena_lifecycle_get_state(&display_env, "first-origin", &ctx);
+        if std.str_eq(first_state.arena_identity, "first-origin") == 0 ||
+           std.str_eq(first_state.diagnostic_name, "display::ctx") == 0 { return 20; }
+        if std.str_eq(checker.env_arena_lifecycle_diagnostic_identity(
+            &display_env, "first-origin", &ctx), "display::ctx") == 0 { return 20; }
+        os.LogInt(1);
+
+        ctx[display_scope].bindings.Insert("alias", arena_type);
+        display_env.variable_types.Insert("alias", arena_type);
+        checker.env_allocator_record_binding(&display_env, "alias",
+            checker.allocator_identity_proof("first-origin", 0, &ctx), &ctx);
+        if std.str_eq(checker.env_arena_lifecycle_diagnostic_identity(
+            &display_env, "first-origin", &ctx), "display::ctx") == 0 { return 21; }
+        if len(display_env.arena_lifecycle_states.Keys(&ctx)) != 1 { return 21; }
+        os.LogInt(1);
+
+        mut arena_identifier: ast.Expression[ctx];
+        arena_identifier.tag = 0;
+        arena_identifier.Identifier.name = "ctx";
+        arena_identifier.Identifier.span = span;
+        mut arena_expression: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(&ctx);
+        ctx.Set(arena_expression, arena_identifier);
+        if checker.env_arena_lifecycle_apply_expression(
+            &display_env, arena_expression, "free", span, &ctx) != 1 { return 22; }
+        mut shadow_scope := checker.scope_new(display_scope, &ctx);
+        ctx[shadow_scope].bindings.Insert("ctx", arena_type);
+        display_env.current_allocator_scope = shadow_scope;
+        checker.env_allocator_record_binding(&display_env, "ctx",
+            checker.allocator_identity_proof("second-origin", 0, &ctx), &ctx);
+        first_state = checker.env_arena_lifecycle_get_state(&display_env, "first-origin", &ctx);
+        mut second_state := checker.env_arena_lifecycle_get_state(&display_env, "second-origin", &ctx);
+        if std.str_eq(first_state.arena_identity, second_state.arena_identity) == 1 ||
+           std.str_eq(first_state.diagnostic_name, second_state.diagnostic_name) == 0 { return 22; }
+        if first_state.state != checker.arena_lifecycle_state_freed() ||
+           second_state.state != checker.arena_lifecycle_state_live() { return 22; }
+        if checker.env_arena_lifecycle_apply_expression(
+            &display_env, arena_expression, "allocation", span, &ctx) != 1 { return 22; }
+        os.LogInt(1);
+
+        checker.env_arena_lifecycle_ensure(&display_env, "unnamed-origin", &ctx);
+        if std.str_eq(checker.env_arena_lifecycle_diagnostic_identity(
+            &display_env, "unnamed-origin", &ctx), "unnamed-origin") == 0 { return 23; }
+        mut missing_state := checker.env_arena_lifecycle_get_state(&display_env, "absent-origin", &ctx);
+        if len(missing_state.arena_identity) != 0 || len(missing_state.diagnostic_name) != 0 { return 23; }
+        if std.str_eq(checker.env_arena_lifecycle_diagnostic_identity(
+            &display_env, "absent-origin", &ctx), "absent-origin") == 0 { return 23; }
+        if len(display_env.arena_lifecycle_states.Keys(&ctx)) != 3 { return 23; }
+        os.LogInt(1);
     }
     return 0;
 }

@@ -64,8 +64,9 @@ still admit. The source language's existing brand restrictions do not supply an
 equal-root-set/swapped-field-origin construction; no new brand relationship is
 invented to manufacture one. Unknown-root copy controls do not by themselves
 isolate an explicitly unknown field from fallback to an equally unknown root.
-A separate internal proof-fact native control requires twelve exact successful
-checks (twelve `1` lines, exit zero) and covers that distinction against a known
+A separate internal proof-fact native control retains twelve original successful
+checks and adds four presentation checks (sixteen `1` lines, exit zero). It
+covers that distinction against a known
 root and an absent-field fallback, without asserting that mixed metadata is a
 public source construction.
 
@@ -179,7 +180,7 @@ The owning matrix additionally compiles a native parser/typechecker unit and
 requires 18 controls: field Free/use, overwrite, self/value copy, copy snapshots,
 known/unknown replacement, Arena value aliases, lexical shadows, nested fields
 and prefix-neighbor isolation. The unit executes; its source snippets never
-lower or execute. All 45 existing cases, 12 internal proof checks and the two
+lower or execute. All 45 existing cases, 12 original internal proof checks and the two
 visibly unqualified implicit-call payloads remain required unchanged. Preparation
 and source enrollment are not native qualification; fresh build, owning guards,
 matrices, pins, fixed point, R5 and authoritative CI remain mandatory.
@@ -219,3 +220,23 @@ all earlier frozen archives, product limits, runtime resolution and signature
 authority remain unchanged. Prepared metadata and a successful solver plan are
 not installation or qualification. Current-source review, enrollment, native
 qualification, artifact parity and authoritative CI remain mandatory.
+
+## Frozen lifecycle diagnostic parity
+
+The owning PR Fast Arena.Free parity guard rejects the current candidate when
+an internal acquisition identity is printed instead of the frozen source name.
+The rejection itself and its `ArenaUseAfterFree` code agree; exact diagnostic
+bytes still must agree. Keep that guard and its frozen oracle unchanged.
+
+Lifecycle state therefore carries a presentation-only name captured from its
+first typed Arena binding. Aliases retain that name. Distinct shadow identities
+may have the same source-facing name while keeping separate lookup keys,
+dependency sets and lifecycle states. An unnamed state retains the raw-identity
+fallback. Display metadata never participates in proof or invalidation.
+
+The original twelve internal assertions remain byte-for-byte before four added
+checks for the source-facing name, alias stability, independent same-named
+shadows and unnamed/absent fallback. The report identifies the original twelve
+and four presentation checks separately; all sixteen must execute successfully.
+Source preparation does not clear the failed CI guard: fresh compiler, exact
+frozen parity, matrices, pins, product/R5/fixed point, reviews and CI are required.

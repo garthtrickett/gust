@@ -993,3 +993,23 @@ Those are preparation results. Committed review, actual isolated installation,
 all fresh current native/product/fixed-point gates and corrective CI/merge
 remain required. Older qualified receipts and the original CI failure stay
 preserved. OD23 and the full activated Phase26 remainder remain open.
+
+## 2026-11-18 Arena.Free diagnostic parity correction
+
+The actual PR Fast nested-brand job on 09c97906 failed its Arena.Free frozen
+diagnostic comparison. The same unchanged guard child reproduces locally:
+both reject with status1 and ArenaUseAfterFree, but the candidate prints an
+internal acquisition proof ID instead of main::destination. Its local and CI
+failures remain preserved. The sole local observer was intentionally stopped;
+ORPHANED after that stop is not a CI verdict. No CI polling continues on that
+failed head.
+
+All seven owning artifact checks passed separately; they do not clear this
+failure or authorize merge. The same owner is preparing a presentation-only
+name in internal lifecycle state, retaining raw proof identities and all old
+comparisons, plus four controls after the unchanged original twelve. The source
+change is unqualified. Additive enrollment, committed reviews, a fresh compiler,
+exact frozen parity, all current matrices/pins/R5/fixed point and corrective CI
+remain mandatory. Product quotas, frozen first-release history, the startup
+symlink and the old prototype remain preserved. Full Phase26 stays active;
+OD23 is open and unselected.

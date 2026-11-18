@@ -6139,3 +6139,15 @@ bootstrap profile remains 6 GiB/Swap0 for its own canonical Make routes.
 Preserve epoch1 history and all original implicit/explicit case payloads.
 Additive enrollment and every current-source/native/R5/FP/CI gate are fresh;
 no old 480 proof qualifies this combined source. OD23 remains unselected.
+
+### Owning CI lifecycle diagnostic correction — 2026-11-18
+
+The same PR619 owner reproduced the exact native/frozen Arena.Free diagnostic
+comparison failure on 09c97906. Preserve declaration-specific proof identities
+while restoring the original human-facing allocator name through separate
+presentation metadata. Keep all eight frozen diagnostic comparisons unchanged,
+retain the original twelve internal proof assertions, and add four presentation
+invariants. This is a correction to the selected lexical prerequisite, not the
+held deferred-order patch. Fresh committed review, additive enrollment and all
+current-source/native/product/fixed-point/CI gates precede corrective publication.
+OD23 and the full Phase26 remainder remain open.

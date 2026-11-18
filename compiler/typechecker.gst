@@ -654,6 +654,7 @@ type BrandIdentity[ctx] struct {
 
 type ArenaLifecycleState[ctx] struct {
     arena_identity: str,
+    diagnostic_name: str,
     state: int,
     allocation_observations: int,
     clone_destination_observations: int,
@@ -13256,7 +13257,7 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
                     message = std.Concat(message, " while resource '");
                     message = std.Concat(message, obligation.storage_name);
                     message = std.Concat(message, "' still depends on allocator '");
-                    message = std.Concat(message, identity);
+                    message = std.Concat(message, env_arena_lifecycle_diagnostic_identity(env, identity, ctx));
                     message = std.Concat(message, "'");
                     report_error(2, message, span, env, ctx);
                     return 0;
@@ -13299,6 +13300,7 @@ func env_arena_lifecycle_ensure(env: *TypeEnvironment[ctx], identity: str, ctx: 
         } else {
             mut state: ArenaLifecycleState[ctx];
             state.arena_identity = std.Clone(ctx, identity);
+            state.diagnostic_name = std.Clone(ctx, "");
             state.state = arena_lifecycle_state_live();
             state.allocation_observations = 0;
             state.clone_destination_observations = 0;
@@ -13368,10 +13370,37 @@ func env_allocator_record_binding(env: *TypeEnvironment[ctx], binding: str, proo
         }
         if len(proof.identity) > 0 {
             env_arena_lifecycle_ensure(env, proof.identity, ctx);
+            env_arena_lifecycle_record_diagnostic_binding(env, binding, proof.identity, ctx);
             mut key := arena_lifecycle_binding_key(env, binding, ctx);
             (*env).arena_lifecycle_bindings.Insert(std.Clone(ctx, key), std.Clone(ctx, proof.identity));
         }
     }
+}
+
+// Presentation belongs to the first actual Arena binding. Proof identities
+// remain declaration-specific even when shadows have the same display name.
+func env_arena_lifecycle_record_diagnostic_binding(env: *TypeEnvironment[ctx], binding: str, identity: str, ctx: &Arena) {
+    unsafe {
+        guard binding_type := (*env).variable_types.Get(binding) else { return; }
+        if typechecker_is_arena_value_or_ref(binding_type, ctx) == 0 { return; }
+        guard existing := (*env).arena_lifecycle_states.Get(identity) else { return; }
+        if len(existing.diagnostic_name) > 0 { return; }
+        mut named_state := existing;
+        named_state.diagnostic_name = arena_lifecycle_binding_key(env, binding, ctx);
+        (*env).arena_lifecycle_states.Insert(std.Clone(ctx, identity), named_state);
+    }
+}
+
+func env_arena_lifecycle_diagnostic_identity(env: *TypeEnvironment[ctx], identity: str, ctx: &Arena) str {
+    unsafe {
+        guard state := (*env).arena_lifecycle_states.Get(identity) else {
+            return std.Clone(ctx, identity);
+        }
+        if len(state.diagnostic_name) > 0 {
+            return std.Clone(ctx, state.diagnostic_name);
+        }
+    }
+    return std.Clone(ctx, identity);
 }
 
 func env_arena_lifecycle_record_binding(env: *TypeEnvironment[ctx], binding: str, identity: str, ctx: &Arena) {
@@ -14006,7 +14035,7 @@ func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: 
             mut state := lookup.Val;
             if state.state == arena_lifecycle_state_freed() {
                 mut message := "Semantic Error: [ArenaUseAfterFree] Arena identity '";
-                message = std.Concat(message, identity);
+                message = std.Concat(message, env_arena_lifecycle_diagnostic_identity(env, identity, ctx));
                 message = std.Concat(message, "' is already freed; rejected ");
                 message = std.Concat(message, arena_lifecycle_operation_description(operation, ctx));
                 report_error(2, message, span, env, ctx);
@@ -14017,7 +14046,7 @@ func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: 
                 mut pending_deferred_free := (*env).arena_lifecycle_deferred_frees.Get(identity);
                 if pending_deferred_free.Ok {
                     mut message_deferred_repeat := "Semantic Error: [ArenaUseAfterFree] Arena identity '";
-                    message_deferred_repeat = std.Concat(message_deferred_repeat, identity);
+                    message_deferred_repeat = std.Concat(message_deferred_repeat, env_arena_lifecycle_diagnostic_identity(env, identity, ctx));
                     message_deferred_repeat = std.Concat(message_deferred_repeat, "' already has a deferred Free; rejected repeated Free");
                     report_error(2, message_deferred_repeat, span, env, ctx);
                     return 0;
@@ -14052,6 +14081,7 @@ func env_arena_lifecycle_get_state(env: *TypeEnvironment[ctx], identity: str, ct
         }
         mut absent: ArenaLifecycleState[ctx];
         absent.arena_identity = std.Clone(ctx, "");
+        absent.diagnostic_name = std.Clone(ctx, "");
         absent.state = arena_lifecycle_state_live();
         absent.allocation_observations = 0;
         absent.clone_destination_observations = 0;

@@ -48067,12 +48067,12 @@
         {
           "path": "compiler/typechecker.gst",
           "previous_digest": "54f9d3b21d0f28c7819de8bf4254daa643fbd5829340c2c0a69ae3d586441d9f",
-          "current_digest": "60faef45d04945c1d762214cfbb4486e6173f4c0d8c91d4733a92f3fa5c74838"
+          "current_digest": "2824c01275dc525448c55cb8a638c860e1fba8f630093ab3f601ec06aaa27889"
         },
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "9d4b9ee18c772f9272888ab5b3b5294adddd7ce3e7f5c36726e9cd9518bc0ca7"
+          "current_digest": "c611f0f491d88109d022dc637e797fe0e856ae3dd9d34955d9015656d2ff24a5"
         },
         {
           "path": "justfile",
@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "ffd419423bd89d4cb86ac2adc1132a5365020a15ce5cdf188d82409d14364566"
+          "current_digest": "ce437dddd973b2b0a2d2e730911faf29566580346fa35e5e712432494a137fb5"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "0b238c49a613b76fdddf15dd40b897b62a37d8c14114c40bfa6c897ccd5294e3"
+          "current_digest": "dd09da0f0c6a2c68fe89ce3ddeeebb3b0571d166486b0f8ddbae07a8d9420b23"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48168,7 +48168,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
-          "digest": "776eff850d8536df2d2cb1c79faced7dafe065fd4d9d8a5abd3a4efbf40e42b7"
+          "digest": "c6297a69ca2db7edabdfac341d3e5aa5da84c90b62ae8c319c160a3d6299c142"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/cases.json",
@@ -48176,7 +48176,7 @@
         },
         {
           "path": "compiler/phase26-2-allocator-identity/proof_facts.gst",
-          "digest": "310961f77ef9205be719430268ba27543b1c296c1f4ca1169929cacf25f11af2"
+          "digest": "944b32dd480b3d16cbcd952c9b27cb10fea98442a0afffb39a01f80abbb185fe"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/primitive_fields.gst",
@@ -48192,7 +48192,7 @@
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
-          "digest": "59c564f00c3e712d6404a2e284f5b2f86e3ace2b3b88475b122f678c18ea2c53"
+          "digest": "90a797f141beb2ac17425a4c5ca5c9ccd2f8d74e9865ea3395a9a6a76df66d18"
         },
         {
           "path": "scripts/phase26_bootstrap_bounded.py",
@@ -48216,20 +48216,20 @@
         }
       ],
       "owned_text": {
-        "text": "ac48fcea6981f3a21d86e33489aaadd78ccf29c595c829ef08b06bbaeca91f80",
-        "r4_text": "f3083266df022ebfdc6df84ab5926ebb2ffc124386db96f726941cc7c69b3c06"
+        "text": "cf0f09340577e7087e9f5f505517b0764dab275970f6519b1029a6466499ac7c",
+        "r4_text": "e2d92ad3c4a997cb83f14558e68858b9100939b1ec78e67ef8c3953b418a64d3"
       },
       "projections": {
-        "r4_text": "5debb3670763a9544ef8c9b49156b22718892a6de53fee67753ef7298a91e4c7",
-        "spelling": "207df3dd044b838a71ef1504a238cb2c7876ebab55b73a0527966106d3a02b62",
-        "filename": "124be9dcf114ac7832e5f831ca1dee8584d56eed74f345f83c01f363d4d513d9",
-        "r3_record": "b8c004cac8ca5f300b0dab3038d1bd09a999dd05321a826794c5f8b58f970345",
+        "r4_text": "2567b3822792cadb57f3c809932a0ab3626b9b38f5e4a86bee3801d0195b584d",
+        "spelling": "d9b48b11733469c19268687769bd4d7aa873a0b00fdacbb116f8dc084f81eaea",
+        "filename": "8f33c3c68148a40f6215768e282a245bfa7bbeb7424fdbe200132d5f8043edd6",
+        "r3_record": "fa4d4037e40f03d57c0a40b34705aa7cd06bc6811fc5260672cf717a0180c60a",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "98e8ce103dfca7330b8e195ef3b8a2d307297d9c2129fad56d9e7c3e9110f796",
-        "text": "c6c388fd5020e3a5356e8b745df36b2badbae8773cb765cd6d7ed758dc6049ad"
+        "r4_record": "c1828408c2ac8f5fcd4b60157a463cb6c1550efe6cafe72857daefa6877b3ff7",
+        "text": "f963421fda52de1ae86ddc475a6beb25d37ab03b6e49df4eabea82176c4f95c2"
       },
-      "spelling_render_current_digest": "42cdf9865b27e4f84038c7e53a21ffe1cb09e4e6bdcbee85282c77db5084044a"
+      "spelling_render_current_digest": "9fa2ae29971fe59ed1d3526f58848b4d1eaee111844ced55fb97a100e3a0df61"
     },
     "production_epoch2_renewal_successor_v1": {
       "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",
