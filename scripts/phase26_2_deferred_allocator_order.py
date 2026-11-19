@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = 'f803970e3c37dce1bebe8b04a6ed5b5317ac44673efd854f7e6c4dac51e505ca'
+CASE_DIGEST = 'b33b16f594d395df1ef80ab1600da19ce135d207bd64d40ee3f8aef6fb69ca21'
 
 
 def digest(path):
@@ -25,7 +25,8 @@ def validate(value=None, checker=None):
     value = json.loads(CASES.read_text()) if value is None else value
     canonical = json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
     assert hashlib.sha256(canonical).hexdigest() == CASE_DIGEST, 'deferred allocator case contract drifted'
-    assert len(value['cases']) == 31 and sum(c['original_baseline'] for c in value['cases']) == 8
+    assert len(value['cases']) == 32 and sum(c['original_baseline'] for c in value['cases']) == 8
+    assert len(value['unqualified_fixture_attempts']) == 3
     assert value['support_sha256'] == digest(SUPPORT), 'deferred allocator support drifted'
     assert value['internal_control_sha256'] == digest(INTERNAL), 'deferred allocator observation controls drifted'
     source = CHECKER.read_text() if checker is None else checker
@@ -69,6 +70,9 @@ def inversions():
     changed = copy.deepcopy(value)
     changed['cases'].pop()
     changes.append(('missing late unknown control', changed, source, 'deferred allocator case contract drifted'))
+    changed = copy.deepcopy(value)
+    changed['unqualified_fixture_attempts'][0]['original_case']['source'] += '\n'
+    changes.append(('original failed fixture overwritten', changed, source, 'deferred allocator case contract drifted'))
     for label, obligation in (
         ('missing return simulation', 'env_validate_resource_deferred_exit(env, 1, 0, escaping_allocator_dependencies, stmt.Return.span, ctx);'),
         ('missing loop unwind', 'env_validate_resource_deferred_exit(env, 2, (*env).resource_loop_scope_depth, allocator_dependencies_empty(ctx), stmt.Expression.span, ctx);'),

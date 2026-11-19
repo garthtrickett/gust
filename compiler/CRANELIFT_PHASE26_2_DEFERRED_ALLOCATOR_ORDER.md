@@ -35,14 +35,24 @@ claim that every such program is unsafe. Registration-time producer arguments
 are never substituted for their unknown later values. Promoting these cohorts
 requires its own generic execution-time dependency proof and controls.
 
-The 31-case matrix preserves all eight original source payloads and expectations.
+The 32-case matrix preserves all eight original source payloads and expectations.
 Four original unsafe orders remain compile-only negatives. Four original safe
 orders and eleven additional positive controls may execute only after compilation
-with the current-source compiler. Twelve further negatives include aliases,
+with the current-source compiler. Thirteen further negatives include aliases,
 loop cleanup order and continuation, conditional field origins, return
 transport, and the explicit unsupported cohorts. Four internal native metadata
 assertions prove observation snapshot isolation, restoration, agreement and
 one-sided-field uncertainty; synthetic identities never address real allocators.
+
+Three initial fixture attempts stay verbatim under visibly unqualified
+metadata. Direct Arena reassignment conflicts with the existing immutable
+binding rule; a conditional break did not prove absence of a normal backedge;
+and `VectorNew` did not exercise a directly represented caller lifecycle hook.
+The active controls instead check the immutable-binding refusal and a distinct
+late scalar assignment, make the break fixture's other path explicitly
+terminating, and use the existing `ArenaAlloc` lifecycle hook after break.
+No resource/cleanup output assertion is relaxed. The original constructor
+route remains an unqualified separate compiler assessment, not safety evidence.
 Negative controls use a refusing driver and must diagnose before its handshake;
 they never compile or execute a suspect native program. The matrix records
 exact inputs, tools, compile diagnostics, positive ELFs, outputs and statuses.

@@ -113,26 +113,8 @@
       "original_baseline": false
     },
     {
-      "name": "native_original_binding_assignment",
-      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); alias = ctx; defer protected.consume(owner); return 0;\n}\n",
-      "mode": "native",
-      "stdout": "41\n",
-      "exit": 0,
-      "diagnostic": null,
-      "original_baseline": false
-    },
-    {
       "name": "native_break_frame_cleanup",
       "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); defer ctx.Free(); while 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); if 1 == 1 { break; } } return 0;\n}\n",
-      "mode": "native",
-      "stdout": "41\n",
-      "exit": 0,
-      "diagnostic": null,
-      "original_baseline": false
-    },
-    {
-      "name": "native_break_inner_auto_before_loop_free",
-      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); break; } } return 0;\n}\n",
       "mode": "native",
       "stdout": "41\n",
       "exit": 0,
@@ -239,15 +221,6 @@
       "original_baseline": false
     },
     {
-      "name": "reject_break_free_continuation",
-      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); break; } mut values: std.Vector[int,ctx] := std.VectorNew(ctx); values.Push(1); return 0; }\n",
-      "mode": "reject",
-      "stdout": null,
-      "exit": 1,
-      "diagnostic": "[ArenaUseAfterFree]",
-      "original_baseline": false
-    },
-    {
       "name": "unsupported_continue_entry_allocator",
       "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); mut i := 0; while i < 1 { defer ctx.Free(); i = i + 1; continue; } return 0; }\n",
       "mode": "reject",
@@ -282,7 +255,84 @@
       "exit": 0,
       "diagnostic": null,
       "original_baseline": false
+    },
+    {
+      "name": "reject_immutable_arena_reassignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); alias = ctx; defer protected.consume(owner); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "Reassignment of immutable allocator binding 'alias' is strictly prohibited",
+      "original_baseline": false
+    },
+    {
+      "name": "native_late_scalar_storage_assignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); mut token := 11; defer os.LogInt(token); token = 33; return 0;\n}\n",
+      "mode": "native",
+      "stdout": "33\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_break_inner_cleanup_explicit_termination",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); break; } return 0; } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_break_free_direct_allocation",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); break; } mut item: Index[int,ctx] := os.ArenaAlloc(ctx); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ArenaUseAfterFree]",
+      "original_baseline": false
     }
   ],
-  "internal_control_sha256": "e7e952948758f0d27a904716acd08ec552e272e2c941946be9e6411749bad9b6"
+  "internal_control_sha256": "e7e952948758f0d27a904716acd08ec552e272e2c941946be9e6411749bad9b6",
+  "unqualified_fixture_attempts": [
+    {
+      "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
+      "reason": "Canonical immutable Arena binding contract prohibits the attempted assignment; old native expectation never qualified.",
+      "original_case": {
+        "name": "native_original_binding_assignment",
+        "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); alias = ctx; defer protected.consume(owner); return 0;\n}\n",
+        "mode": "native",
+        "stdout": "41\n",
+        "exit": 0,
+        "diagnostic": null,
+        "original_baseline": false
+      }
+    },
+    {
+      "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
+      "reason": "Possible implicit backedge is not excluded by current proof; explicit fallback termination retains the actual break cleanup-order oracle without assuming constant-folded control flow.",
+      "original_case": {
+        "name": "native_break_inner_auto_before_loop_free",
+        "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); break; } } return 0;\n}\n",
+        "mode": "native",
+        "stdout": "41\n",
+        "exit": 0,
+        "diagnostic": null,
+        "original_baseline": false
+      }
+    },
+    {
+      "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
+      "reason": "VectorNew does not exercise a directly represented existing caller lifecycle hook here; frontend handshake admission is unqualified, ordinary comparison hits a separate source-route boundary. ArenaAlloc isolates actual selected loop-exit state propagation.",
+      "original_case": {
+        "name": "reject_break_free_continuation",
+        "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); break; } mut values: std.Vector[int,ctx] := std.VectorNew(ctx); values.Push(1); return 0; }\n",
+        "mode": "reject",
+        "stdout": null,
+        "exit": 1,
+        "diagnostic": "[ArenaUseAfterFree]",
+        "original_baseline": false
+      }
+    }
+  ]
 }
