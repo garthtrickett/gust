@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = '8adb102d5010cc67b4d44969efbc06f99056579b52fe93458c5d40e09acaa2c7'
+CASE_DIGEST = 'f803970e3c37dce1bebe8b04a6ed5b5317ac44673efd854f7e6c4dac51e505ca'
 
 
 def digest(path):
@@ -25,7 +25,7 @@ def validate(value=None, checker=None):
     value = json.loads(CASES.read_text()) if value is None else value
     canonical = json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
     assert hashlib.sha256(canonical).hexdigest() == CASE_DIGEST, 'deferred allocator case contract drifted'
-    assert len(value['cases']) == 29 and sum(c['original_baseline'] for c in value['cases']) == 8
+    assert len(value['cases']) == 31 and sum(c['original_baseline'] for c in value['cases']) == 8
     assert value['support_sha256'] == digest(SUPPORT), 'deferred allocator support drifted'
     assert value['internal_control_sha256'] == digest(INTERNAL), 'deferred allocator observation controls drifted'
     source = CHECKER.read_text() if checker is None else checker
@@ -49,7 +49,8 @@ def validate(value=None, checker=None):
         '(*env).arena_lifecycle_states = alternative_lifecycle_if;',
         '(*env).resource_loop_exit_frees.Insert(std.Clone(ctx, destroyed[f]), 1);',
         'typechecker_join_allocator_observations(consequence_observations_if, alternative_observations_if, ctx)',
-        'if mode == 3 && entry.Ok && entry.Val.state != arena_lifecycle_state_freed() {',
+        'if mode == 3 && env_validate_resource_loop_backedge(env, freed, span, ctx) == 0 { valid = 0; }',
+        'env_validate_resource_loop_backedge(env, env_resource_freed_allocator_set(env, ctx), ctx[body_idx].span, ctx);',
     ):
         assert obligation in source, 'deferred allocator proof missing: ' + obligation
     returned = source.split('mut escaping_allocator_dependencies := allocator_dependencies_empty(ctx);', 1)[1]
@@ -76,6 +77,7 @@ def inversions():
         ('missing sibling restore', '(*env).arena_lifecycle_states = alternative_lifecycle_if;'),
         ('lost loop destruction', '(*env).resource_loop_exit_frees.Insert(std.Clone(ctx, destroyed[f]), 1);'),
         ('last branch field treated as exact', 'typechecker_join_allocator_observations(consequence_observations_if, alternative_observations_if, ctx)'),
+        ('unchecked normal backedge', 'env_validate_resource_loop_backedge(env, env_resource_freed_allocator_set(env, ctx), ctx[body_idx].span, ctx);'),
     ):
         assert obligation in source
         changes.append((label, value, source.replace(obligation, '/* omitted by control */', 1), 'deferred allocator proof missing: ' + obligation))

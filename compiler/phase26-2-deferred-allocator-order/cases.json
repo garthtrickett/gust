@@ -264,6 +264,24 @@
       "exit": 1,
       "diagnostic": "[ResourceDeferredUnresolved]",
       "original_baseline": false
+    },
+    {
+      "name": "unsupported_fallthrough_entry_allocator",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); mut i := 0; while i < 2 { defer ctx.Free(); i = i + 1; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_fallthrough_fresh_iteration",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut i := 0; while i < 2 { mut ctx := os.Arena.New(); defer ctx.Free(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); defer protected.consume(owner); i = i + 1; } return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
     }
   ],
   "internal_control_sha256": "e7e952948758f0d27a904716acd08ec552e272e2c941946be9e6411749bad9b6"

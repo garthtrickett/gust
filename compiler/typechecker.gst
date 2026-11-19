@@ -13331,6 +13331,39 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
     }
 }
 
+func env_resource_freed_allocator_set(env: *TypeEnvironment[ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
+    mut freed: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+    unsafe {
+        mut keys := (*env).arena_lifecycle_states.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            guard state := (*env).arena_lifecycle_states.Get(keys[i]) else { return freed; };
+            if state.state == arena_lifecycle_state_freed() { freed.Insert(std.Clone(ctx, keys[i]), 1); }
+            i = i + 1;
+        }
+    }
+    return freed;
+}
+
+func env_validate_resource_loop_backedge(env: *TypeEnvironment[ctx], freed: std.HashMap[str, int, ctx], span: token.Span, ctx: &Arena) int {
+    unsafe {
+        mut keys := freed.Keys(ctx);
+        mut i := 0;
+        while i < len(keys) {
+            mut entry := (*env).resource_loop_entry_lifecycle.Get(keys[i]);
+            if entry.Ok && entry.Val.state != arena_lifecycle_state_freed() {
+                // A zero/one-iteration traversal cannot prove the final
+                // iteration. A fresh allocator declared within this iteration
+                // is absent from entry facts and does not acquire this refusal.
+                report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Loop backedge destroys an allocator visible at loop entry; next-iteration lifetime is not proved", span, env, ctx);
+                return 0;
+            }
+            i = i + 1;
+        }
+    }
+    return 1;
+}
+
 func env_record_resource_deferred_action(env: *TypeEnvironment[ctx], kind: int, identity: str, expression: Index[ast.Expression[ctx], ctx], span: token.Span, ctx: &Arena) {
     unsafe {
         mut path := env_allocator_storage_path(expression, ctx);
@@ -13467,14 +13500,7 @@ func env_validate_resource_deferred_exit(env: *TypeEnvironment[ctx], mode: int, 
         mut actions := (*env).resource_deferred_actions;
         if len(actions) == 0 && mode < 2 { return 1; }
         mut owners := typechecker_clone_resource_acquisition_obligation_map((*env).resource_acquisition_obligations, ctx);
-        mut freed: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
-        mut prior_lifecycle := (*env).arena_lifecycle_states.Keys(ctx);
-        mut p := 0;
-        while p < len(prior_lifecycle) {
-            guard state := (*env).arena_lifecycle_states.Get(prior_lifecycle[p]) else { return 0; };
-            if state.state == arena_lifecycle_state_freed() { freed.Insert(std.Clone(ctx, prior_lifecycle[p]), 1); }
-            p = p + 1;
-        }
+        mut freed := env_resource_freed_allocator_set(env, ctx);
         mut discharged: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
         mut valid := 1;
         mut depth := (*env).current_resource_scope_depth;
@@ -13510,17 +13536,10 @@ func env_validate_resource_deferred_exit(env: *TypeEnvironment[ctx], mode: int, 
             depth = depth - 1;
         }
         if mode >= 2 && valid == 1 {
+            if mode == 3 && env_validate_resource_loop_backedge(env, freed, span, ctx) == 0 { valid = 0; }
             mut destroyed := freed.Keys(ctx);
             mut f := 0;
             while f < len(destroyed) {
-                mut entry := (*env).resource_loop_entry_lifecycle.Get(destroyed[f]);
-                if mode == 3 && entry.Ok && entry.Val.state != arena_lifecycle_state_freed() {
-                    // Proving a later iteration after destroying an entry
-                    // allocator requires more than this single-iteration
-                    // proof. Never silently assume that iteration is last.
-                    report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Continue destroys an allocator visible at loop entry; next-iteration lifetime is not proved", span, env, ctx);
-                    valid = 0;
-                }
                 (*env).resource_loop_exit_frees.Insert(std.Clone(ctx, destroyed[f]), 1);
                 f = f + 1;
             }
@@ -18113,6 +18132,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 body_idx, env, while_scope, 1, ctx
             );
             (*env).resource_loop_scope_depth = parent_loop_scope_depth;
+            if typechecker_resource_block_terminates(body_idx, env, ctx) == 0 {
+                env_validate_resource_loop_backedge(env, env_resource_freed_allocator_set(env, ctx), ctx[body_idx].span, ctx);
+            }
             if is_diverging_block(body_idx, env, ctx) == 1 {
                 (*env).arena_lifecycle_states = parent_lifecycle_while;
                 (*env).arena_lifecycle_deferred_frees = parent_deferred_frees_while;

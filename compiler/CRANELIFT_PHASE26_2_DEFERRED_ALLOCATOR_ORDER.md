@@ -28,17 +28,17 @@ retained conservatively.
 
 Three proof cohorts remain explicitly unsupported: a deferred consumer that
 creates its owner from a late producer instead of captured existing storage,
-an unresolved late Free receiver, and a continue that destroys an allocator
+an unresolved late Free receiver, and a loop backedge that destroys an allocator
 already visible at loop entry without a next-iteration lifetime proof. These refuse
 with `ResourceDeferredUnresolved`. This is a compiler proof limitation, not a
 claim that every such program is unsafe. Registration-time producer arguments
 are never substituted for their unknown later values. Promoting these cohorts
 requires its own generic execution-time dependency proof and controls.
 
-The 29-case matrix preserves all eight original source payloads and expectations.
+The 31-case matrix preserves all eight original source payloads and expectations.
 Four original unsafe orders remain compile-only negatives. Four original safe
-orders and ten additional positive controls may execute only after compilation
-with the current-source compiler. Eleven further negatives include aliases,
+orders and eleven additional positive controls may execute only after compilation
+with the current-source compiler. Twelve further negatives include aliases,
 loop cleanup order and continuation, conditional field origins, return
 transport, and the explicit unsupported cohorts. Four internal native metadata
 assertions prove observation snapshot isolation, restoration, agreement and
