@@ -48081,7 +48081,7 @@
       "defer_order_native_invocations": [
         {
           "path": "scripts/phase26_2_deferred_allocator_order.py",
-          "line": 224,
+          "line": 302,
           "recipe": "none",
           "compiler_token": "python_argv",
           "selection": "explicit_cranelift",
@@ -48094,7 +48094,7 @@
         },
         {
           "path": "scripts/phase26_2_deferred_allocator_order.py",
-          "line": 255,
+          "line": 333,
           "recipe": "none",
           "compiler_token": "python_argv",
           "selection": "explicit_cranelift",
@@ -48110,12 +48110,12 @@
         {
           "path": "compiler/typechecker.gst",
           "previous_digest": "54f9d3b21d0f28c7819de8bf4254daa643fbd5829340c2c0a69ae3d586441d9f",
-          "current_digest": "589889bc2e190fc77b028829f7b751d2184cbe6b40a1d829ef71bc6cbaeca90e"
+          "current_digest": "c63ef6d5d45d839c9495390192446aea8d88184a2ab9f8a5eea6a48f16e58e01"
         },
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "65dfd0d91ca66d67941ac4f2513b0a74166bddc1ddb50310d6be12f9a1cf9409"
+          "current_digest": "ece74c9d76499b2c68fa991573a10ef4e254426618262851c02334003fa73cfe"
         },
         {
           "path": "justfile",
@@ -48135,12 +48135,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "52f4bf9081ce118a9afdbbfebc9f7107e1c7c08c16c2e92d2e403ea70f77b302"
+          "current_digest": "cdffc5524ed4c0580a37220528499427756476b165d66f1bd4d374d4a61c1fac"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "6e12cf497870ad624f976b0baa127cd728379c84a97ab4f47079e0cce7d647dc"
+          "current_digest": "ade349ce2131b2d1fb7e562e060b292fa89eadb74ec4fc1e07620406e7ab4b68"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48224,19 +48224,19 @@
         },
         {
           "path": "scripts/phase26_2_deferred_allocator_order.py",
-          "digest": "985aba3cea31b4dafdec5c4ca307a89e2042bb1ca506c6799d21e588390fe765"
+          "digest": "42f0e1b9a187d0598e443bd21a4baeea8f5380050bf6b3731038c6eb134dc707"
         },
         {
           "path": "compiler/phase26-2-deferred-allocator-order/cases.json",
-          "digest": "32e6964183c1f909922c600dea34dd312ac403ffd5918c7a76f3e75ade3b35b7"
+          "digest": "ad0a17f01b755c8b73f98d9fe9d50ebe09fe488f63e24ea6852f3c49879fe010"
         },
         {
           "path": "compiler/phase26-2-deferred-allocator-order/observation_facts.gst",
-          "digest": "fa0b09a0252dfedbd6f87fd73532ecaf8d45c7f97ed69567d2de6ab1df1be6f6"
+          "digest": "0226adb1dd4b547982690b0ef343862b4ad12eacae0042ac7b96273e0037aadb"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md",
-          "digest": "d43c41682e09ff317684cac0ae901f119626a9982d0875f7212f6301ab9dc202"
+          "digest": "6ce8b30e71216d40319dcd923d2efdd9a6e558c60113ff4659107c989dc9b529"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz",
@@ -48332,20 +48332,20 @@
         }
       ],
       "owned_text": {
-        "text": "e2bcbe50b3324c6df7cc9b17388e106b3d7be04bea2718983bb59f923ae06935",
-        "r4_text": "b6060ade61817b179c4d34a94cc55e5b8cde22dbe120a2057d53d8bdd679f1d9"
+        "text": "3ce8fcade1abdba4d170469d68585657c154b8e7a449b83943e32b22599ab762",
+        "r4_text": "6ae4f838bf3ef5473f2564508193167940f51138148e4ec3044805dfb023c4b0"
       },
       "projections": {
-        "r4_text": "d8cedad38dad779ba2296dbf078220af99083d8ba9dc2bb8a8bb1675a0c75bdb",
-        "spelling": "6fb1566d81ed24d493bcab0dfc0d89c5944ef0947a45e487d468d0d8ea694353",
-        "filename": "f7e5b1c7efefc63f52b4ca4eb2ff847856a80c7091e40e0d368986adad0e6f61",
-        "r3_record": "f5a24ccc83788ed8a0f2f6402dda21306abbd6a35311213386f12c97c31fb72f",
+        "r4_text": "5668c31b00a9465efb054e273a4b48b556ec52ae0966ae309bfcfb9e48d94d2a",
+        "spelling": "09e118bd9543a308e5da6c0649ddcff6dbc27cd8bd67efa1e8e79523cb2a9bac",
+        "filename": "336aa6d87ff7d9667161e0481a7a246eb87c413db8738ecf1933e7c8ae13f993",
+        "r3_record": "83cfc1eec5e43e11fed830d2311de0b4aa82b261c93621c14d09ff6385e84869",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "e6612b33ff5363da2b191e074d3a3f4b977fc282d7eb59fe61d896635c70ddb9",
-        "text": "3eda40f08b36814495fd38d090f27f29e5016cfb9b320a49c0d8a6777753d6f9"
+        "r4_record": "576cd33dd20c6747eaac611784d58bc9e6a83684ad79bcc2b238c2ccd416b8cd",
+        "text": "06e21f01cd797a4944434fc1c3182eb6d3710eee30542ae2f9cf6aae1e3ae54c"
       },
-      "spelling_render_current_digest": "e8ffcd77110e3c62868a5bb08030084880cef415b9bc02afeda033c6fc04be0f"
+      "spelling_render_current_digest": "ab5918a59d8377bb62c16f028b0d21d315093b6dbd2587a893cc5de4a46456b8"
     },
     "production_epoch2_renewal_successor_v1": {
       "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",

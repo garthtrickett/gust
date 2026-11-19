@@ -2331,7 +2331,7 @@
     "compiler/token.gst": "c9ae01b68effcde501c21a0305f091e2af436b1de2ce70da3506e90d3e431fa8",
     "compiler/type_diff_target.gst": "fef85ca78693ed2a91a3526be51ad893075af37fd2b5799edefbfc4f44c3d16e",
     "compiler/type_dump_entry.gst": "ddf26f754ce6293e75b7deb57dd71614170b124486c67f3fdd12bacd5187cdb9",
-    "compiler/typechecker.gst": "589889bc2e190fc77b028829f7b751d2184cbe6b40a1d829ef71bc6cbaeca90e",
+    "compiler/typechecker.gst": "c63ef6d5d45d839c9495390192446aea8d88184a2ab9f8a5eea6a48f16e58e01",
     "compiler/typechecker_address_origin_borrowed_field_test_entry.gst": "85686d36013ba564be72a72531f16ace3212b4deb02ae1cb88bb9cee1cd9510f",
     "compiler/typechecker_address_origin_container_element_test_entry.gst": "774885983d86fd1bb5e1d60f75546086345d6d91c2bba32afd9193a52f9ab4cd",
     "compiler/typechecker_address_origin_local_stack_test_entry.gst": "8562c883c8e64c20194cc2d7ed3ef89732955725e7ae4487c5303eec39a40e4a",
@@ -2685,10 +2685,10 @@
     "compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz": "7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee",
     "scripts/phase22_opening.py": "ae7584baedec4f35f3537decba6b8de2ae4b19b17b55c3f53e4052ae96b6cc19",
     "compiler/phase26-2-defer-lexical/owned-disk-scan-predecessor-v1.json.gz": "38fae8d1b71ffb732f023eec5e8d344ba4785a5d63f9ba07201e44bdf424cb09",
-    "scripts/phase26_2_deferred_allocator_order.py": "985aba3cea31b4dafdec5c4ca307a89e2042bb1ca506c6799d21e588390fe765",
-    "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md": "d43c41682e09ff317684cac0ae901f119626a9982d0875f7212f6301ab9dc202",
-    "compiler/phase26-2-deferred-allocator-order/cases.json": "32e6964183c1f909922c600dea34dd312ac403ffd5918c7a76f3e75ade3b35b7",
-    "compiler/phase26-2-deferred-allocator-order/observation_facts.gst": "fa0b09a0252dfedbd6f87fd73532ecaf8d45c7f97ed69567d2de6ab1df1be6f6"
+    "scripts/phase26_2_deferred_allocator_order.py": "42f0e1b9a187d0598e443bd21a4baeea8f5380050bf6b3731038c6eb134dc707",
+    "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md": "6ce8b30e71216d40319dcd923d2efdd9a6e558c60113ff4659107c989dc9b529",
+    "compiler/phase26-2-deferred-allocator-order/cases.json": "ad0a17f01b755c8b73f98d9fe9d50ebe09fe488f63e24ea6852f3c49879fe010",
+    "compiler/phase26-2-deferred-allocator-order/observation_facts.gst": "0226adb1dd4b547982690b0ef343862b4ad12eacae0042ac7b96273e0037aadb"
   },
   "origin_dispositions": {
     "safe": "scalar inputs and pure classified errors",
