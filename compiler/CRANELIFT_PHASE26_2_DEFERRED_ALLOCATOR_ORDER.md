@@ -26,19 +26,23 @@ original live owners. Lifecycle maps are isolated across function, branch,
 match, loop, guard and return checks, with possibly freed continuing paths
 retained conservatively.
 
-Two proof cohorts remain explicitly unsupported: a deferred consumer that
+Three proof cohorts remain explicitly unsupported: a deferred consumer that
 creates its owner from a late producer instead of captured existing storage,
-and a deferred Free whose late receiver identity is unresolved. Both refuse
+an unresolved late Free receiver, and a continue that destroys an allocator
+already visible at loop entry without a next-iteration lifetime proof. These refuse
 with `ResourceDeferredUnresolved`. This is a compiler proof limitation, not a
 claim that every such program is unsafe. Registration-time producer arguments
-are never substituted for their unknown later values. Promoting either cohort
+are never substituted for their unknown later values. Promoting these cohorts
 requires its own generic execution-time dependency proof and controls.
 
-The 26-case matrix preserves all eight original source payloads and expectations.
+The 29-case matrix preserves all eight original source payloads and expectations.
 Four original unsafe orders remain compile-only negatives. Four original safe
 orders and ten additional positive controls may execute only after compilation
-with the current-source compiler. Eight further negatives include aliases,
-loop cleanup order, return transport, and the explicit unsupported cohorts.
+with the current-source compiler. Eleven further negatives include aliases,
+loop cleanup order and continuation, conditional field origins, return
+transport, and the explicit unsupported cohorts. Four internal native metadata
+assertions prove observation snapshot isolation, restoration, agreement and
+one-sided-field uncertainty; synthetic identities never address real allocators.
 Negative controls use a refusing driver and must diagnose before its handshake;
 they never compile or execute a suspect native program. The matrix records
 exact inputs, tools, compile diagnostics, positive ELFs, outputs and statuses.
