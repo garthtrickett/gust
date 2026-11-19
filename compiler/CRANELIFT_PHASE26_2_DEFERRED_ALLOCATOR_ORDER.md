@@ -40,8 +40,8 @@ Four original unsafe orders remain compile-only negatives. Four original safe
 orders and eleven additional positive controls may execute only after compilation
 with the current-source compiler. Thirteen further negatives include aliases,
 loop cleanup order and continuation, conditional field origins, return
-transport, and the explicit unsupported cohorts. Four internal native metadata
-assertions prove observation snapshot isolation, restoration, agreement and
+transport, and the explicit unsupported cohorts. Four internal native output
+groups cover observation snapshot isolation, restoration, agreement and
 one-sided-field uncertainty; synthetic identities never address real allocators.
 
 The complete 54-case matrix adds five positive controls and seventeen refusals
@@ -63,6 +63,24 @@ Existing primitive lifecycle identity observations remain available; deferred
 Free additionally requires a known, unexposed late receiver. Direct Arena
 references retain the existing binding constraints and lifecycle checks. The
 unchanged clone-destination guard remains a required compatibility check.
+
+The maintained primitive control `inner_writes_outer_holder` exposed a false
+refusal when the new join combined both physical values even for `if true`.
+Select physical observations only for an actual literal Bool node. Both arms
+remain checked, and lifecycle maps and immutable resource dependencies keep
+their existing conservative joins. Comparisons, names, calls, casts and integer
+conditions do not select an arm. Exposure sets and indirect-write uncertainty
+still union across both arms, even when a literal selects a physical value.
+Fields absent on the selected arm remain explicit unknowns; they cannot regain
+a declared origin through fallback.
+
+All 54 existing case objects and the original primitive18 remain unchanged.
+Additional internal parser/typechecker controls cover 18 literal/nonliteral,
+one-sided, shadow, termination, exposure and indirect-write source cases. The
+native metadata unit executes the checker on these sources; it never compiles
+or executes the represented user programs. Direct snapshot assertions retain
+the conservative taint and missing-field properties. The four output groups
+remain unchanged; a failed assertion exits before the last group is printed.
 
 Three initial fixture attempts stay verbatim under visibly unqualified
 metadata. Direct Arena reassignment conflicts with the existing immutable

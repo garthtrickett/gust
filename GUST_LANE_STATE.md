@@ -1092,3 +1092,21 @@ read-only reconciliation passed the real registration validator and complete
 source/pin/foreign-byte checks without rerunning generation. Final committed
 source58, protected4GiB production/public R5, native fixed point, strict104,
 current regressions, CI and merge remain mandatory and pending.
+
+The final2a source59 checkpoint passed all commands with stable sources. Its
+protected cold renewal/build/package and unchanged Arena.Free/Stdlib clone
+checks passed, but no full qualification completed. Exact disabled-driver
+stderr and isolated host-context harness failures were preserved and corrected
+prospectively. Old inactive guard outputs were moved intact before rerunning
+the unchanged owning workflow. That workflow passed45 source cases and the
+original12 plus presentation4 assertions, then failed one original primitive18
+acceptance: `inner_writes_outer_holder`. All17 other primitive cases passed.
+
+The actual failure and matrix are preserved; all four installed tool bytes were
+verified against existing immutable retained archive members before any future
+replacement. The same owner is correcting literal-Bool physical observations
+only, retaining conservative taint/resource/lifecycle joins and every existing
+case expectation. The successor is unqualified and all earlier2a gates remain
+historical. Committed reviews, enrollment, current bootstrap/native/strict104,
+protected4GiB R5/public/fixed point, authoritative CI and merge remain required.
+Full Phase26.2–26.6/20requirements stays active; OD23 stays OPEN/unselected.

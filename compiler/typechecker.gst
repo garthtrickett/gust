@@ -18563,7 +18563,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             } else {
                 (*env).arena_lifecycle_states = typechecker_join_arena_lifecycle_maps(consequence_lifecycle_if, alternative_lifecycle_if, ctx);
                 (*env).arena_lifecycle_deferred_frees = typechecker_union_int_maps(consequence_deferred_frees_if, alternative_deferred_frees_if, ctx);
-                env_restore_allocator_observations(typechecker_join_allocator_observations(consequence_observations_if, alternative_observations_if, ctx), ctx);
+                env_restore_allocator_observations(typechecker_if_allocator_observations(cond_idx, consequence_observations_if, alternative_observations_if, ctx), ctx);
             }
             if typechecker_resource_block_terminates(cons_idx, env, ctx) == 1 {
                 (*env).resource_acquisition_obligations = alternative_resource_obligations_if;
@@ -19730,6 +19730,42 @@ func typechecker_join_allocator_observations(left: std.Vector[ResourceAllocatorO
             while k < len(keys) { result.observations.Insert(std.Clone(ctx, keys[k]), allocator_identity_proof("", 1, ctx)); k = k + 1; }
         }
         joined.Push(result);
+        i = i + 1;
+    }
+    return joined;
+}
+
+func typechecker_if_allocator_observations(condition_idx: Index[ast.Expression[ctx], ctx], consequence: std.Vector[ResourceAllocatorObservationSnapshot[ctx], ctx], alternative: std.Vector[ResourceAllocatorObservationSnapshot[ctx], ctx], ctx: &Arena) std.Vector[ResourceAllocatorObservationSnapshot[ctx], ctx] {
+    mut joined := typechecker_join_allocator_observations(consequence, alternative, ctx);
+    mut selected := consequence;
+    unsafe {
+        mut condition := ctx[condition_idx];
+        // Select physical values only for literal Bool nodes. Names, calls,
+        // comparisons, casts and integer conditions retain the unknown join.
+        if condition.tag != 3 { return joined; }
+        if condition.Bool.val == 0 { selected = alternative; }
+        else if condition.Bool.val != 1 { return joined; }
+    }
+    mut i := 0;
+    while i < len(joined) {
+        mut merged := joined[i];
+        mut s := 0;
+        while s < len(selected) {
+            if selected[s].scope == merged.scope {
+                mut keys := selected[s].observations.Keys(ctx);
+                mut k := 0;
+                while k < len(keys) {
+                    guard proof := selected[s].observations.Get(keys[k]) else { return joined; }
+                    merged.observations.Insert(std.Clone(ctx, keys[k]), proof);
+                    k = k + 1;
+                }
+            }
+            s = s + 1;
+        }
+        // Keep the join's exposure/indirect-write union, including taint from
+        // either arm. One-sided fields missing in the selected arm stay
+        // explicit unknowns rather than falling through to a declared origin.
+        joined.Set(i, merged);
         i = i + 1;
     }
     return joined;

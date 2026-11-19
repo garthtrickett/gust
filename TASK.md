@@ -6235,3 +6235,16 @@ reference exposure or unrepresented indirect writes. Preserve the original32
 case payloads and expectations and add fresh-field, alias, unknown-factory,
 branch/exposure and owner-overlap controls. No library compensation, changed
 native capability expectation or new alias/lifetime semantics is authorized.
+
+The current owning workflow also exposed a false refusal in the unchanged
+primitive18: an outer field updated under literal `if true` was joined with
+the impossible other value. Correct only literal-Bool physical-observation
+selection, preserving both-arm checking, conservative lifecycle/resource joins,
+the complete exposure/indirect-write union and explicit unknown one-sided fields.
+Names, comparisons, calls, casts and integer conditions remain conservative.
+Keep all original54 order cases and primitive18 expectations unchanged; add
+internal current-checker source controls and direct snapshot assertions.
+Preserve the failed owning matrix and current tools before replacement, then
+obtain committed reviews, additive enrollment and fresh current-source/native/
+protected-product/fixed-point/publication gates. No old2a pass qualifies the
+corrected source or closes a Phase26 row.

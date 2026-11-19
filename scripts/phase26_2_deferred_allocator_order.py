@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = 'f38104f0592f6c5e5bf8fd8d7ac84831816527f8ee03abcc6530af774c01a145'
+CASE_DIGEST = '546137729864a0fefd54044a8d244a8b6b18edf0f73a1ed6927362ce9eb62c92'
 
 
 def digest(path):
@@ -28,9 +28,18 @@ def validate(value=None, checker=None):
     assert len(value['cases']) == 54 and sum(c['original_baseline'] for c in value['cases']) == 8
     original32 = json.dumps(value['cases'][:32], sort_keys=True, separators=(',', ':')).encode()
     assert hashlib.sha256(original32).hexdigest() == '6d11471af2986e33c2c5b00ea9269885fa161508ade37ad24ec1a5637f111685', 'original32 controls changed'
+    original54 = json.dumps(value['cases'], sort_keys=True, separators=(',', ':')).encode()
+    assert value['original54_cases_sha256'] == hashlib.sha256(original54).hexdigest() == 'ef229dbe96fd8c7bfb3f63785c9c4b41df9e392bb4e75a8824ef1f766624c066', 'original54 controls changed'
     assert len(value['unqualified_fixture_attempts']) == 3
     assert value['support_sha256'] == digest(SUPPORT), 'deferred allocator support drifted'
     assert value['internal_control_sha256'] == digest(INTERNAL), 'deferred allocator observation controls drifted'
+    literal = value['literal_source_controls']
+    assert len(literal) == len({row['name'] for row in literal}) == 18
+    unit = INTERNAL.read_text()
+    for index, row in enumerate(literal):
+        call = ('if check_literal_observation_source(' + json.dumps(row['source']) + ', ' +
+                json.dumps(row['expected_diagnostic']) + ', &ctx) == 0 { return ' + str(60 + index) + '; }')
+        assert call in unit, 'literal observation source control missing: ' + row['name']
     source = CHECKER.read_text() if checker is None else checker
     for obligation in (
         'type ResourceDeferredAction[ctx] struct {',
@@ -67,7 +76,10 @@ def validate(value=None, checker=None):
         '(*env).resource_deferred_actions = parent_resource_deferred_actions;',
         '(*env).arena_lifecycle_states = alternative_lifecycle_if;',
         '(*env).resource_loop_exit_frees.Insert(std.Clone(ctx, destroyed[f]), 1);',
-        'typechecker_join_allocator_observations(consequence_observations_if, alternative_observations_if, ctx)',
+        'typechecker_if_allocator_observations(cond_idx, consequence_observations_if, alternative_observations_if, ctx)',
+        'mut joined := typechecker_join_allocator_observations(consequence, alternative, ctx);',
+        'if condition.tag != 3 { return joined; }',
+        'merged.observations.Insert(std.Clone(ctx, keys[k]), proof);',
         'if mode == 3 && env_validate_resource_loop_backedge(env, freed, span, ctx) == 0 { valid = 0; }',
         'env_validate_resource_loop_backedge(env, env_resource_freed_allocator_set(env, ctx), ctx[body_idx].span, ctx);',
     ):
@@ -98,7 +110,10 @@ def inversions():
         ('automatic cleanup wrongly precedes return defers', 'if mode != 1 {'),
         ('missing sibling restore', '(*env).arena_lifecycle_states = alternative_lifecycle_if;'),
         ('lost loop destruction', '(*env).resource_loop_exit_frees.Insert(std.Clone(ctx, destroyed[f]), 1);'),
-        ('last branch field treated as exact', 'typechecker_join_allocator_observations(consequence_observations_if, alternative_observations_if, ctx)'),
+        ('last branch field treated as exact', 'typechecker_if_allocator_observations(cond_idx, consequence_observations_if, alternative_observations_if, ctx)'),
+        ('literal taint union omitted', 'mut joined := typechecker_join_allocator_observations(consequence, alternative, ctx);'),
+        ('nonliteral condition treated as known', 'if condition.tag != 3 { return joined; }'),
+        ('literal selected value discarded', 'merged.observations.Insert(std.Clone(ctx, keys[k]), proof);'),
         ('unchecked normal backedge', 'env_validate_resource_loop_backedge(env, env_resource_freed_allocator_set(env, ctx), ctx[body_idx].span, ctx);'),
         ('unknown receiver treated as known', 'if receiver.present == 0 || receiver.unresolved == 1 || len(receiver.identity) == 0 {'),
         ('physical observation substituted for resource proof', 'mut allocator := env_deferred_allocator_proof(env, action, ctx);'),
@@ -194,7 +209,9 @@ def native(output):
         (internal / 'run.status').write_text(str(run.returncode) + '\n')
         internal_record.update(executed=True, run_exit=run.returncode, elf_sha256=digest(binary))
         internal_pass = run.returncode == 0 and run.stdout == b'1\n1\n1\n1\n' and not run.stderr
-    internal_record.update(passed=internal_pass, files={p.name: digest(p) for p in internal.iterdir() if p.is_file()})
+    internal_record.update(passed=internal_pass, literal_source_controls=18,
+                           literal_user_programs_executed=False,
+                           files={p.name: digest(p) for p in internal.iterdir() if p.is_file()})
     (output / 'internal.json').write_text(json.dumps(internal_record, indent=2) + '\n')
     after = {path: digest(ROOT / path) for path in inputs}
     allocated = sum(p.stat().st_blocks * 512 for p in output.rglob('*') if p.is_file())

@@ -491,7 +491,7 @@
       "original_baseline": false
     }
   ],
-  "internal_control_sha256": "7a580b99c3265857dd2539930898b278e47cccf5f70d75df49470edfc7c7e90a",
+  "internal_control_sha256": "241e0e9965e6dc308c80f91e576d8ac059974278daabcf5b7168bc221e5e8d2f",
   "unqualified_fixture_attempts": [
     {
       "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
@@ -531,6 +531,99 @@
         "diagnostic": "[ArenaUseAfterFree]",
         "original_baseline": false
       }
+    }
+  ],
+  "original54_cases_sha256": "ef229dbe96fd8c7bfb3f63785c9c4b41df9e392bb4e75a8824ef1f766624c066",
+  "literal_source_controls": [
+    {
+      "name": "original_inner_writes_outer_holder",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "literal_false_without_else",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if false { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(second,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "literal_false_with_else",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if false { holder.arena = first; } else { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "literal_true_with_else",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } else { holder.arena = first; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "unknown_bool_parameter",
+      "source": "type Holder struct { arena: Arena } func probe(flag: bool) { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if flag { holder.arena = second; } defer holder.arena.Free(); } func main() { probe(true); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "named_bool_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut flag := true; if flag { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "comparison_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if 1 == 1 { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "uninitialized_unselected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut holder: Holder; if false { holder.arena = first; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "initialized_selected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut holder: Holder; if true { holder.arena = first; } holder.arena.Free(); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "nested_holder_shadow",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { mut holder: Holder; holder.arena = second; } holder.arena.Free(); mut value := std.Clone(second,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "exposure_before_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := &holder; if true { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "exposure_in_selected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { mut alias := &holder; } else { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "exposure_in_unselected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } else { mut alias := &holder; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "indirect_write_before_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := &holder; unsafe { (*alias).arena = second; } if true { holder.arena = first; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "selected_arm_terminates",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; return; } else { holder.arena = first; } defer holder.arena.Free(); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "call_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func yes() bool { return true; } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if yes() { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "cast_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if (true as bool) { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "integer_is_not_bool_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if 1 { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
     }
   ]
 }
