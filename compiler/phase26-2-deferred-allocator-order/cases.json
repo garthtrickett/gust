@@ -491,7 +491,7 @@
       "original_baseline": false
     }
   ],
-  "internal_control_sha256": "79eb0039efa5014dcf63fd59097435c56d7cd02db84b089b94dde3145eab0755",
+  "internal_control_sha256": "0226adb1dd4b547982690b0ef343862b4ad12eacae0042ac7b96273e0037aadb",
   "unqualified_fixture_attempts": [
     {
       "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
@@ -624,6 +624,120 @@
       "name": "integer_is_not_bool_literal",
       "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if 1 { holder.arena = second; } defer holder.arena.Free(); }",
       "expected_diagnostic": "[BrandIdentityMismatch]"
+    }
+  ],
+  "diagnostic_precedence_controls": [
+    {
+      "name": "exit_0_prior_0_storage_0",
+      "index": "0",
+      "mode": 0,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_0_prior_0_storage_1",
+      "index": "1",
+      "mode": 0,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_0_prior_1_storage_0",
+      "index": "2",
+      "mode": 0,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_0_prior_1_storage_1",
+      "index": "3",
+      "mode": 0,
+      "prior_error": 1,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_1_prior_0_storage_0",
+      "index": "4",
+      "mode": 1,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_1_prior_0_storage_1",
+      "index": "5",
+      "mode": 1,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_1_prior_1_storage_0",
+      "index": "6",
+      "mode": 1,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_1_prior_1_storage_1",
+      "index": "7",
+      "mode": 1,
+      "prior_error": 1,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_2_prior_0_storage_0",
+      "index": "8",
+      "mode": 2,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_2_prior_0_storage_1",
+      "index": "9",
+      "mode": 2,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_2_prior_1_storage_0",
+      "index": "10",
+      "mode": 2,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_2_prior_1_storage_1",
+      "index": "11",
+      "mode": 2,
+      "prior_error": 1,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_3_prior_0_storage_0",
+      "index": "12",
+      "mode": 3,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_3_prior_0_storage_1",
+      "index": "13",
+      "mode": 3,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_3_prior_1_storage_0",
+      "index": "14",
+      "mode": 3,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_3_prior_1_storage_1",
+      "index": "15",
+      "mode": 3,
+      "prior_error": 1,
+      "valid_storage": 1
     }
   ]
 }

@@ -6269,3 +6269,12 @@ valid consumption. Keep exact nominal TypeMismatch parity, same-type shadow
 BrandIdentityMismatch, every original54 case and all existing error-free cleanup
 checks. Re-enroll, obtain committed reviews and qualify the corrected source;
 the preceding head's successful components do not qualify this successor.
+
+The first batched16 diagnostic-control unit compiled successfully but exhausted
+unchanged fixed TLS scratch before producing output. Preserve that failure
+without attributing its precise site. Run the same16 registered tuples in
+separate processes of the same unit, retaining the default four groups and
+original18 source/four argument controls. Add four malformed diagnostic-mode
+refusals and require all physical outputs/unit hashes. Runtime, scratch, caps,
+deadlines and the compiler correction stay unchanged. Current-source reviews,
+enrollment and all native/product/fixed-point/publication gates still apply.

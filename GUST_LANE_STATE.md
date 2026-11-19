@@ -1136,3 +1136,12 @@ All original54/source18/primitive18 and frozen CR15 expectations remain unchange
 Committed reviews, additive enrollment, fresh current-source/native/product/FP
 qualification and normal CI/merge remain required. Full Phase26 stays active;
 OD23 remains OPEN/unselected, and earlier passes do not qualify this correction.
+
+The95f2 correction's focused static checks passed. Its new unit compiled with
+the preserved qualified tools, then exhausted fixed TLS scratch before output.
+That actual exit1 is retained; no current compiler or end-to-end CR15 pass is
+claimed. The same owner is isolating the same16 tuples in registered independent
+unit invocations, preserving all assertions/default groups/original18 controls
+and adding malformed-argument refusals. No compiler logic, runtime or resource
+budget changes accompany this fixture correction. Fresh committed review and
+current-source qualification remain pending; no CI observer or publication.

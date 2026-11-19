@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = '29eec781ba9cb6310eee3084c519e5bf7f8121be74f23ce836c5e125116f08c8'
+CASE_DIGEST = 'c16b925fe887e2d5978a9ceaee07aaa39d86737949f74cb5351704e33d05caf6'
 
 
 def digest(path):
@@ -43,10 +43,23 @@ def validate(value=None, checker=None):
     assert 'if len(args) != 1 { return 2; }' in unit and 'if len(args) == 4 {' in unit
     assert 'if literal_observation_source_index(args[2], args[3]) < 0 { return 2; }' in unit
     assert 'if check_literal_observation_source(args[2], args[3], &ctx) == 0 { return 1; }' in unit
-    for prior, storage, code in ((1, 0, 32), (1, 1, 33), (0, 0, 34), (0, 1, 35)):
-        assert ('if check_deferred_error_precedence(exit_mode, ' + str(prior) + ', ' + str(storage) +
-                ', &ctx) == 0 { return ' + str(code) + '; }') in unit, 'deferred diagnostic precedence control missing'
-    assert 'while exit_mode < 4 {' in unit, 'deferred diagnostic exit-mode coverage missing'
+    diagnostic = value['diagnostic_precedence_controls']
+    expected_diagnostic = [dict(name='exit_' + str(mode) + '_prior_' + str(prior) + '_storage_' + str(storage),
+                                index=str(mode * 4 + prior * 2 + storage),
+                                mode=mode, prior_error=prior, valid_storage=storage)
+                           for mode in range(4) for prior in range(2) for storage in range(2)]
+    assert diagnostic == expected_diagnostic, 'deferred diagnostic tuple population drifted'
+    for row in diagnostic:
+        assert ('if std.str_eq(label, ' + json.dumps(row['index']) + ') == 1 { return ' +
+                row['index'] + '; }') in unit, 'deferred diagnostic argument missing'
+    for obligation in ('if len(args) == 3 {',
+                       'if std.str_eq(args[1], "diagnostic-precedence") == 0 { return 2; }',
+                       'if index < 0 { return 2; }',
+                       'mut mode := index / 4;',
+                       'mut prior_error := index / 2 - mode * 2;',
+                       'mut valid_storage := index - (index / 2) * 2;',
+                       'if check_deferred_error_precedence(mode, prior_error, valid_storage, &ctx) == 0 { return 1; }'):
+        assert obligation in unit, 'deferred diagnostic isolated invocation missing: ' + obligation
     source = CHECKER.read_text() if checker is None else checker
     deferred_exit = source.split('func env_validate_resource_deferred_exit(', 1)[1].split('\nfunc ', 1)[0]
     precedence = 'if len((*env).errors) != 0 { return 1; }'
@@ -118,6 +131,11 @@ def inversions():
     before_exit, after_exit = source.split(marker, 1)
     changed_exit = after_exit.replace('if len((*env).errors) != 0 { return 1; }', '/* omitted by control */', 1)
     changes.append(('earlier diagnostic precedence omitted', value, before_exit + marker + changed_exit, 'deferred diagnostic precedence missing'))
+    changed_exit = after_exit.replace('if len((*env).errors) != 0 { return 1; }', '', 1)
+    changed_exit = changed_exit.replace('mut actions := (*env).resource_deferred_actions;',
+        'mut actions := (*env).resource_deferred_actions;\n        if len((*env).errors) != 0 { return 1; }', 1)
+    changes.append(('earlier diagnostic precedence moved after simulation entry', value,
+                    before_exit + marker + changed_exit, 'deferred diagnostic precedence follows simulation'))
     for label, obligation in (
         ('missing return simulation', 'env_validate_resource_deferred_exit(env, 1, 0, escaping_allocator_dependencies, stmt.Return.span, ctx);'),
         ('missing loop unwind', 'env_validate_resource_deferred_exit(env, 2, (*env).resource_loop_scope_depth, allocator_dependencies_empty(ctx), stmt.Expression.span, ctx);'),
@@ -211,6 +229,54 @@ def qualify_literal_sources(binary, output):
     return report
 
 
+def qualify_diagnostic_precedence(binary, output):
+    """Keep every exact tuple in its own current-checker process."""
+    controls = json.loads(CASES.read_text())['diagnostic_precedence_controls']
+    directory = output / 'diagnostic_precedence_controls'
+    directory.mkdir()
+    unit_hash = digest(binary)
+    rows, bad_rows = [], []
+
+    def execute(name, arguments, expected_exit, expected_stdout):
+        folder = directory / name
+        folder.mkdir()
+        command = [str(binary), *arguments]
+        run = subprocess.run(command, cwd=folder, capture_output=True, timeout=15)
+        (folder / 'run.stdout').write_bytes(run.stdout)
+        (folder / 'run.stderr').write_bytes(run.stderr)
+        (folder / 'run.status').write_text(str(run.returncode) + '\n')
+        return dict(name=name, command=command, run_exit=run.returncode,
+                    passed=run.returncode == expected_exit and run.stdout == expected_stdout and not run.stderr,
+                    unit_sha256=unit_hash, user_program_executed=False,
+                    files={p.name: digest(p) for p in folder.iterdir() if p.is_file()})
+
+    for case in controls:
+        row = execute(case['name'], ['diagnostic-precedence', case['index']], 0, b'1\n')
+        rows.append(row)
+        (output / 'diagnostic-controls.json').write_text(json.dumps(dict(cases=rows), indent=2) + '\n')
+        if not row['passed']:
+            break
+    cases_passed = len(rows) == len(controls) == 16 and all(row['passed'] for row in rows)
+    if cases_passed:
+        for name, arguments in (
+            ('missing_case', ['diagnostic-precedence']),
+            ('extra_argument', ['diagnostic-precedence', '0', 'extra']),
+            ('unknown_case', ['diagnostic-precedence', '16']),
+            ('unknown_mode', ['invalid-mode', '0']),
+        ):
+            row = execute(name, arguments, 2, b'')
+            bad_rows.append(row)
+            if not row['passed']:
+                break
+    passed = cases_passed and len(bad_rows) == 4 and all(row['passed'] for row in bad_rows)
+    report = dict(status='PASS' if passed else 'FAIL', cases=rows, argument_refusals=bad_rows,
+                  unit_sha256=unit_hash, represented_user_programs_executed=0,
+                  checker_executions=len(rows), accepted_checker_executions=sum(row['passed'] for row in rows),
+                  argument_check_executions=len(bad_rows), expected_argument_refusals=sum(row['passed'] for row in bad_rows))
+    (output / 'diagnostic-controls.json').write_text(json.dumps(report, indent=2) + '\n')
+    return report
+
+
 def native(output):
     cases = validate()
     budget = 128 * 1024 ** 2
@@ -285,14 +351,16 @@ def native(output):
                            files={p.name: digest(p) for p in internal.iterdir() if p.is_file()})
     (output / 'internal.json').write_text(json.dumps(internal_record, indent=2) + '\n')
     literal = qualify_literal_sources(binary, output) if internal_pass else None
+    diagnostic = qualify_diagnostic_precedence(binary, output) if internal_pass else None
     after = {path: digest(ROOT / path) for path in inputs}
     allocated = sum(p.stat().st_blocks * 512 for p in output.rglob('*') if p.is_file())
     passed = (inputs == after and tools == {name: digest(ROOT / name) for name in tools} and
               allocated <= budget and internal_pass and literal is not None and
-              literal['status'] == 'PASS' and all(r['passed'] for r in rows))
+              literal['status'] == 'PASS' and diagnostic is not None and
+              diagnostic['status'] == 'PASS' and all(r['passed'] for r in rows))
     result = dict(status='PASS' if passed else 'FAIL', scope='Captured bound-owner cleanup order only; unsupported late producers/unknown Free explicitly refused; no OD23 slot decision or full Phase26 closure',
                   source_before=inputs, source_after=after, tools=tools, cases=rows,
-                  internal=internal_record, literal_controls=literal,
+                  internal=internal_record, literal_controls=literal, diagnostic_controls=diagnostic,
                   owned_allocated_bytes=allocated, owned_output_budget_bytes=budget)
     (output / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
     assert passed, 'deferred allocator order matrix failed; read first differing case'

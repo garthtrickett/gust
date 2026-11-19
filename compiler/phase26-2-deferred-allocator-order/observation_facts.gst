@@ -83,6 +83,25 @@ func check_deferred_error_precedence(mode: int, prior_error: int, valid_storage:
         return 1;
     }
 }
+func diagnostic_precedence_index(label: str) int {
+    if std.str_eq(label, "0") == 1 { return 0; }
+    if std.str_eq(label, "1") == 1 { return 1; }
+    if std.str_eq(label, "2") == 1 { return 2; }
+    if std.str_eq(label, "3") == 1 { return 3; }
+    if std.str_eq(label, "4") == 1 { return 4; }
+    if std.str_eq(label, "5") == 1 { return 5; }
+    if std.str_eq(label, "6") == 1 { return 6; }
+    if std.str_eq(label, "7") == 1 { return 7; }
+    if std.str_eq(label, "8") == 1 { return 8; }
+    if std.str_eq(label, "9") == 1 { return 9; }
+    if std.str_eq(label, "10") == 1 { return 10; }
+    if std.str_eq(label, "11") == 1 { return 11; }
+    if std.str_eq(label, "12") == 1 { return 12; }
+    if std.str_eq(label, "13") == 1 { return 13; }
+    if std.str_eq(label, "14") == 1 { return 14; }
+    if std.str_eq(label, "15") == 1 { return 15; }
+    return 0 - 1;
+}
 func check_literal_observation_source(source: str, expected: str, ctx: &Arena) int {
     unsafe {
         mut lex: lexer.Lexer[ctx];
@@ -139,6 +158,17 @@ func main() int {
     mut ctx := os.Arena.New();
     unsafe {
         mut args := os.Args(&ctx);
+        if len(args) == 3 {
+            if std.str_eq(args[1], "diagnostic-precedence") == 0 { return 2; }
+            mut index := diagnostic_precedence_index(args[2]);
+            if index < 0 { return 2; }
+            mut mode := index / 4;
+            mut prior_error := index / 2 - mode * 2;
+            mut valid_storage := index - (index / 2) * 2;
+            if check_deferred_error_precedence(mode, prior_error, valid_storage, &ctx) == 0 { return 1; }
+            os.LogInt(1);
+            return 0;
+        }
         if len(args) == 4 {
             if std.str_eq(args[1], "literal-source") == 0 { return 2; }
             if literal_observation_source_index(args[2], args[3]) < 0 { return 2; }
@@ -147,16 +177,6 @@ func main() int {
             return 0;
         }
         if len(args) != 1 { return 2; }
-        // Each exit mode preserves earlier diagnostics/facts, but still checks
-        // clean unsafe orders and performs clean valid consumption transitions.
-        mut exit_mode := 0;
-        while exit_mode < 4 {
-            if check_deferred_error_precedence(exit_mode, 1, 0, &ctx) == 0 { return 32; }
-            if check_deferred_error_precedence(exit_mode, 1, 1, &ctx) == 0 { return 33; }
-            if check_deferred_error_precedence(exit_mode, 0, 0, &ctx) == 0 { return 34; }
-            if check_deferred_error_precedence(exit_mode, 0, 1, &ctx) == 0 { return 35; }
-            exit_mode = exit_mode + 1;
-        }
         mut env := checker.env_new(&ctx);
         mut scope := checker.scope_new(empty[Index[checker.Scope[ctx], ctx]], &ctx);
         env.current_allocator_scope = scope;

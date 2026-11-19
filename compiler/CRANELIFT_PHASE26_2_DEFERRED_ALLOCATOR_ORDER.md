@@ -35,6 +35,15 @@ modes with earlier errors, clean invalid storage and clean valid consumption;
 the exact frozen CR15 nominal mismatch and same-type lexical rejection remain
 required compatibility checks.
 
+The diagnostic tuples execute independently through the same checker unit's
+registered argument mode. The initial batched16 fixture compiled but exhausted
+fixed TLS scratch before output; its failure remains retained without a precise
+exhaustion-site claim. All16 exact mode/prior-error/storage tuples require exit0,
+one `1` line and empty stderr. Four new malformed-mode calls require exit2 and
+empty output. Default four-group output, original18 source controls and original
+four argument refusals remain unchanged: 35 successful checker-unit invocations
+and eight argument refusals represent zero user-program executions.
+
 Three proof cohorts remain explicitly unsupported: a deferred consumer that
 creates its owner from a late producer instead of captured existing storage,
 an unresolved late Free receiver, and a loop backedge that destroys an allocator
