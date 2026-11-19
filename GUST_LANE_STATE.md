@@ -1,3 +1,19 @@
+# Cranelift ACTIVE native deferred lexical bindings — 2026-11-19
+
+PR619 is checked merged at59ef3f3f; its completion evidence remains historical.
+The same owner/worktree continues the activated Phase26 remainder. Safe scalar
+native evidence confirms an outer defer reads inner22 instead of outer11 on
+early return; ordinary fallthrough11 and late assignment33 pass. No unsafe
+resource program ran. The separate allocator-order baseline remains FAIL.
+
+This prospectively supersedes prior waits: implement and qualify the bounded
+lexical-storage binding prerequisite under TASK.md before allocator simulation.
+No live jobs or CI observer at activation. No cleanup-order, ABI, resource/move,
+product-limit or OD23 selection; no old-source pass qualifies changed source.
+All current-source review/build/native/pins/R5/FP/CI/merge gates remain required.
+
+---
+
 # Cranelift ACTIVE CR15 diagnostic correction — 2026-10-26T05:21:02.637796+00:00
 
 Current PR619 CR15 CI failure reproduced before worker: the annotation lexical
@@ -1013,3 +1029,13 @@ exact frozen parity, all current matrices/pins/R5/fixed point and corrective CI
 remain mandatory. Product quotas, frozen first-release history, the startup
 symlink and the old prototype remain preserved. Full Phase26 stays active;
 OD23 is open and unselected.
+
+## 2026-11-19 — native lexical prerequisite: disk sampler correction active
+
+The current2a source55 checkpoint passed, but its protected cold build failed
+on vanished owned phase10 temporary children during GNUdu traversal. The
+controller terminated and confirmed the payload empty; no native9/R5 pass is
+claimed. Exact partial tools and failure evidence are preserved. The same owner
+is implementing and enrolling bounded complete-scan recovery and refusal
+controls, with product4GiB quotas, deadlines, source/native/R5/FP/CI gates and
+OD23 boundaries unchanged. Fresh committed-source qualification remains pending.

@@ -1,6 +1,8 @@
 """Synthetic execution-environment refusals; no host paging activation."""
 from __future__ import annotations
 
+from contextlib import redirect_stderr
+import io
 import json
 import os
 from pathlib import Path
@@ -24,6 +26,98 @@ def rejected(label, function, diagnostic, expected=ValueError):
         print(label + ": REJECTED (expected assertion)")
     else:
         raise ValueError(label + ": ACCEPTED")
+
+
+def owned_disk_scan_controls(root):
+    """Real owned files plus deterministic readdir/stat disappearance and refusal controls."""
+    case = root/"disk-scan"
+    build, target = case/"build", case/"src/runtime-rs/target"
+    build.mkdir(parents=True)
+    target.mkdir(parents=True)
+    data = build/"data"
+    data.write_bytes(b"owned allocation\n"*512)
+    os.link(data, target/"same-inode")
+    foreign = case/"foreign"
+    foreign.mkdir()
+    (foreign/"not-owned").write_bytes(b"outside selected roots\n"*4096)
+    (build/"link").symlink_to(foreign, target_is_directory=True)
+    real_run = subprocess.run
+    command = ["du", "-s", "-B1", "--", str(build), str(target)]
+    def real_total():
+        result = real_run(command, capture_output=True, text=True, check=True,
+                          env=dict(os.environ, LC_ALL="C"))
+        assert not result.stderr
+        return sum(int(line.split()[0]) for line in result.stdout.splitlines())
+    with patch.object(paging, "ROOT", case):
+        assert paging.allocated() == real_total(), "GNUdu hardlink/symlink allocation changed"
+        temporary = build/"temporary"
+        temporary.write_bytes(b"deleted protocol input\n"*512)
+        error = "du: cannot access '"+str(temporary)+"': No such file or directory\n"
+        calls = []
+        def disappearing_scan(arguments, **kwargs):
+            calls.append(arguments)
+            assert kwargs["env"]["LC_ALL"] == "C"
+            if len(calls) == 1:
+                temporary.unlink()
+                return subprocess.CompletedProcess(arguments, 1, "999999999999\tpartial\n", error)
+            return real_run(arguments, **kwargs)
+        retained = io.StringIO()
+        with patch.object(subprocess, "run", side_effect=disappearing_scan), redirect_stderr(retained):
+            observed = paging.allocated()
+        assert len(calls) == 2, "Transient owned child did not cause one complete rescan"
+        assert retained.getvalue() == error, "Transient disk diagnostic was not retained"
+        assert not temporary.exists(), "Controlled temporary was not actually deleted"
+        assert observed == real_total(), "Failed partial scan was accepted"
+        failures = [
+            ("permission error", 1, "du: cannot read directory '"+str(build)+"': Permission denied\n"),
+            ("unknown exit", 2, error),
+            ("signal exit", -15, error),
+            ("missing diagnostic", 1, ""),
+            ("foreign child", 1, "du: cannot access '"+str(foreign/"missing")+"': No such file or directory\n"),
+            ("descendant symlink escape", 1, "du: cannot access '"+str(build/"link/missing")+"': No such file or directory\n"),
+            ("missing root", 1, "du: cannot access '"+str(build)+"': No such file or directory\n"),
+            ("mixed diagnostics", 1, error+"du: controlled unknown failure\n"),
+            ("parent traversal", 1, "du: cannot access '"+str(build)+"/../foreign/missing': No such file or directory\n"),
+            ("noncanonical child", 1, "du: cannot access '"+str(build)+"/./missing': No such file or directory\n"),
+        ]
+        for label, code, stderr in failures:
+            result = subprocess.CompletedProcess(["du"], code, "999999999999\tpartial\n", stderr)
+            with patch.object(subprocess, "run", return_value=result) as scan, redirect_stderr(io.StringIO()):
+                rejected(label+" disk scan", paging.allocated,
+                         str(subprocess.CalledProcessError(code, ["du"])), subprocess.CalledProcessError)
+                assert scan.call_count == 1, "Unknown scan failure was retried"
+        result = subprocess.CompletedProcess(["du"], 1, "999999999999\tpartial\n", error)
+        with patch.object(subprocess, "run", return_value=result) as scan, redirect_stderr(io.StringIO()):
+            rejected("exhausted transient disk scans", paging.allocated,
+                     str(subprocess.CalledProcessError(1, ["du"])), subprocess.CalledProcessError)
+            assert scan.call_count == 3, "Disk scan attempts are not bounded at three"
+        huge_free = __import__("types").SimpleNamespace(f_bavail=16*1024**3, f_frsize=1)
+        with patch.object(paging, "allocated", return_value=paging.GROWTH_BUDGET+1), \
+             patch.object(os, "statvfs", return_value=huge_free):
+            rejected("owned disk growth bound retained", lambda: paging.check_disk(0),
+                     "owned disk growth or reserve exhausted")
+        no_free = __import__("types").SimpleNamespace(f_bavail=0, f_frsize=1)
+        with patch.object(paging, "allocated", return_value=0), patch.object(os, "statvfs", return_value=no_free):
+            rejected("owned disk reserve retained", lambda: paging.check_disk(0),
+                     "owned disk growth or reserve exhausted")
+    missing = root/"disk-root-disappears"
+    (missing/"build").mkdir(parents=True)
+    def root_disappears(arguments, **kwargs):
+        (missing/"build").rmdir()
+        return subprocess.CompletedProcess(arguments, 1, "123\tpartial\n",
+            "du: cannot access '"+str(missing/"build/temporary")+"': No such file or directory\n")
+    with patch.object(paging, "ROOT", missing), patch.object(subprocess, "run", side_effect=root_disappears) as scan, \
+         redirect_stderr(io.StringIO()):
+        rejected("root vanished between scans", paging.allocated,
+                 "owned output root disappeared during disk scan")
+        assert scan.call_count == 1
+    linked = root/"disk-linked-root"
+    linked.mkdir()
+    (linked/"build").symlink_to(build, target_is_directory=True)
+    with patch.object(paging, "ROOT", linked), \
+         patch.object(subprocess, "run", side_effect=AssertionError("escaped root must not be scanned")):
+        rejected("symlinked owned disk root", paging.allocated, "owned output root escapes worktree")
+    print("RELEASE_OWNED_DISK_SCAN_CONTROLS_PASS; GNUdu totals, deletion recovery, bounded retries and refusals")
 
 
 def metadata_api_controls(root):
@@ -307,6 +401,7 @@ def controls():
     parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="controls-", dir=parent) as temporary:
         root = Path(temporary)
+        owned_disk_scan_controls(root)
         metadata_api_controls(root)
         worker_observation_controls(root, env, worker, run, job, checkout)
         output = root/"evidence"

@@ -15,6 +15,7 @@ import pwd
 import re
 import stat
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -264,16 +265,43 @@ def hosted_runner(token, output):
     return dict(environment=environment, worker=worker, run=run, job=job, checkout=checkout)
 
 
+def disappeared_owned_child(message, paths):
+    match = re.fullmatch(r"du: cannot access '([^'\n]+)': No such file or directory", message)
+    if match is None:
+        return False
+    path = Path(match[1])
+    return (path.is_absolute() and str(path) == match[1] and ".." not in path.parts and
+            any(path != root and path.is_relative_to(root) and
+                path.resolve(strict=False).is_relative_to(root.resolve()) for root in paths))
+
+
 def allocated():
-    paths = [ROOT / name for name in ("build", "src/runtime-rs/target",
-             "compiler/experiments/cranelift/target", "gust", "gust_bootstrap",
-             "gust-native-backend", "gust-runtime-package.a", "to.log") if (ROOT/name).exists()]
-    require(all(not path.is_symlink() and path.resolve().is_relative_to(ROOT) for path in paths),
-            "owned output root escapes worktree")
-    if not paths:
-        return 0
-    result = subprocess.check_output(["du", "-s", "-B1", "--", *map(str, paths)], text=True)
-    return sum(int(line.split()[0]) for line in result.splitlines())
+    initial_paths = None
+    # Compiler-owned temporary children can disappear between du's readdir/stat.
+    # Discard that partial result; only a complete fresh scan supplies a total.
+    for attempt in range(3):
+        paths = [ROOT / name for name in ("build", "src/runtime-rs/target",
+                 "compiler/experiments/cranelift/target", "gust", "gust_bootstrap",
+                 "gust-native-backend", "gust-runtime-package.a", "to.log") if (ROOT/name).exists()]
+        require(all(not path.is_symlink() and path.resolve().is_relative_to(ROOT) for path in paths),
+                "owned output root escapes worktree")
+        require(initial_paths is None or set(initial_paths) <= set(paths),
+                "owned output root disappeared during disk scan")
+        if initial_paths is None:
+            initial_paths = paths
+        if not paths:
+            return 0
+        result = subprocess.run(["du", "-s", "-B1", "--", *map(str, paths)],
+                                capture_output=True, text=True, env=dict(os.environ, LC_ALL="C"))
+        if result.stderr:
+            sys.stderr.write(result.stderr)
+        if result.returncode == 0:
+            return sum(int(line.split()[0]) for line in result.stdout.splitlines())
+        messages = result.stderr.splitlines()
+        transient = (result.returncode == 1 and messages and
+                     all(disappeared_owned_child(message, paths) for message in messages))
+        if not transient or attempt == 2:
+            result.check_returncode()
 
 
 def check_disk(start):

@@ -1,0 +1,59 @@
+{
+  "schema": "gust.defer_lexical.cases.v1",
+  "cases": [
+    {
+      "name": "fallthrough_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n if 1 == 1 { mut token := 22; }\n return 0;\n}\n",
+      "stdout": "11\n",
+      "exit": 0
+    },
+    {
+      "name": "early_return_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n if 1 == 1 { mut token := 22; return 0; }\n return 0;\n}\n",
+      "stdout": "11\n",
+      "exit": 0
+    },
+    {
+      "name": "late_assignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n token = 33;\n return 0;\n}\n",
+      "stdout": "33\n",
+      "exit": 0
+    },
+    {
+      "name": "later_declaration",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n if 1 == 1 { defer os.LogInt(token); mut token := 22; }\n return 0;\n}\n",
+      "stdout": "11\n11\n",
+      "exit": 0
+    },
+    {
+      "name": "nested_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n if 1 == 1 { mut token := 22; defer os.LogInt(token); defer os.LogInt(44); if 1 == 1 { mut token := 55; return 0; } }\n return 0;\n}\n",
+      "stdout": "44\n22\n11\n",
+      "exit": 0
+    },
+    {
+      "name": "break_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n while 1 == 1 { mut token := 22; defer os.LogInt(token); if 1 == 1 { mut token := 99; break; } }\n return 0;\n}\n",
+      "stdout": "22\n11\n",
+      "exit": 0
+    },
+    {
+      "name": "continue_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n mut i := 0; while i < 2 { mut token := 20 + i; defer os.LogInt(token); i = i + 1; if 1 == 1 { mut token := 99; continue; } }\n return 0;\n}\n",
+      "stdout": "20\n21\n11\n",
+      "exit": 0
+    },
+    {
+      "name": "late_vector_write",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n mut values: std.Vector[int, ctx] := std.VectorNew(ctx); values.Push(0); defer os.LogInt(values[0]); if 1 == 1 { defer values.Set(0, token); token = 33; mut token := 22; }\n return 0;\n}\n",
+      "stdout": "33\n33\n",
+      "exit": 0
+    },
+    {
+      "name": "match_payload_shadow",
+      "source": "import \"support.gst\" as protected;\ntype Choice enum { Picked { token: int } }\nfunc log_ref(value: &int) { unsafe { os.LogInt(*value); } }\nfunc main() int {\n mut ctx := os.Arena.New(); defer ctx.Free();\n mut value := 11; mut token := &value; defer log_ref(token);\n mut choice: Choice;\n unsafe { choice.tag = 0; choice.Picked.token = 22; }\n match choice { Picked { token } => {\n  defer log_ref(token);\n  if 1 == 1 { mut value := 99; mut token := &value; return 0; }\n } }\n return 0;\n}\n",
+      "stdout": "22\n11\n",
+      "exit": 0
+    }
+  ]
+}

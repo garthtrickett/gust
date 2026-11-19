@@ -2554,6 +2554,12 @@ struct Local {
     place: Place,
 }
 
+#[derive(Clone)]
+struct ScheduledDefer {
+    expression: usize,
+    bindings: HashMap<String, Local>,
+}
+
 fn make_stack_place(
     builder: &mut FunctionBuilder<'_>,
     layout: &TypeLayout,
@@ -4079,7 +4085,7 @@ struct FunctionLowerer<'a, 'm> {
     function: &'a Function,
     abi: FunctionAbi,
     scopes: Vec<HashMap<String, Local>>,
-    defers: Vec<Vec<usize>>,
+    defers: Vec<Vec<ScheduledDefer>>,
     scope_cleanups: Vec<Option<usize>>,
     loops: Vec<(Block, Block, usize)>,
     sret: Option<Value>,
@@ -6551,7 +6557,17 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             }
             "UnsafeScope" => self.lower_block(builder, node.children[0]),
             "ScheduleDefer" => {
-                self.defers.last_mut().unwrap().push(node.children[0]);
+                // Capture declaration identity, not values: deferred reads and
+                // writes still use the original storage at scope exit.
+                let bindings = self
+                    .scopes
+                    .iter()
+                    .flat_map(|scope| scope.iter().map(|(name, local)| (name.clone(), local.clone())))
+                    .collect();
+                self.defers.last_mut().unwrap().push(ScheduledDefer {
+                    expression: node.children[0],
+                    bindings,
+                });
                 Ok(false)
             }
             "Return" => {
@@ -6574,7 +6590,10 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         scope: usize,
     ) -> Result<(), Box<dyn Error>> {
         for deferred in self.defers[scope].clone().into_iter().rev() {
-            self.lower_expression(builder, deferred, None)?;
+            let active_scopes = std::mem::replace(&mut self.scopes, vec![deferred.bindings]);
+            let result = self.lower_expression(builder, deferred.expression, None);
+            self.scopes = active_scopes;
+            result?;
         }
         Ok(())
     }

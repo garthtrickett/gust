@@ -6163,3 +6163,40 @@ assertion. Keep the predecessor guard bytes and prove rollback, substitution
 and assertion-removal refusals. Current-source enrollment, reviews, focused
 actual guard execution and all mandatory qualification/publication gates remain
 required; no CI success or Phase26 closure is inferred.
+
+### Native deferred lexical-binding prerequisite — 2026-11-19
+
+PR619 merged as `59ef3f3f` with qualified-tree equality, all 158 eligible PR
+workflows plus Trusted and seven owning artifact checks passed. Its allocator
+proof identities are complete; canonical26.2 and the activated remainder remain
+open. The resumed deferred-order baseline admits four unsafe order controls;
+that failure stays unqualified and no unsafe resource witness was executed.
+
+Before implementing allocator-order simulation, correct the demonstrated native
+lexical-binding defect: an outer deferred integer read on early return resolves
+an inner same-name variable. Capture the visible local storage bindings when
+ScheduleDefer is lowered, then evaluate against those bindings on existing exits.
+Retain late value evaluation, LIFO order, automatic cleanup order, canonical MIR,
+resource/move semantics, ABI and runtime symbols unchanged. Cover fallthrough,
+return, break/continue, match payload scopes, later declarations and assignments
+with safe native source controls. No retired C route or intermediate seed is
+activated. Preserve original scalar3 and allocator-order baseline failures.
+
+Exit gate: committed Spec/Standards review; actual current-source native controls
+and rollback refusals; complete discovered source/pattern validators and additive
+enrollment; fresh bootstrap, original strict104/180s, protected4GiB full R5/public
+production and native fixed point; source/provenance/local-CI artifact checks;
+normal fresh-main/actual-file workflow census and own exact-head CI, reviews,
+rules and checked merge. Bootstrap6GiB is separate from product4GiB. Resume the
+held deferred allocator validation after this prerequisite merges, then continue
+activated26.2–26.6/20requirements. OD23 remains OPEN/unselected.
+
+The corrected fixture's first cold qualification stopped at an owned `du`
+traversal error after temporary phase10 request/bundle deletion. Its source55
+checkpoint and failed build remain separate. Within this prerequisite, correct
+only that sampler race with at most three complete scans for exact owned-child
+ENOENT diagnostics; discard partial totals and reject unknown/foreign/root
+errors, symlink escapes and exhaustion. Preserve GNUdu allocation semantics,
+all product quotas/deadlines and exact merged59 predecessor bytes. Run the
+additive real-file/error/budget controls in the owning recipe, re-enroll exact
+bytes and obtain committed reviews before fresh full qualification and CI.
