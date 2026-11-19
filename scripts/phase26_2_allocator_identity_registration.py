@@ -30,10 +30,10 @@ TOOLCHAIN_CHANGED = ('scripts/phase26_production_toolchain.py',)
 TOOLCHAIN_BASELINE = 'compiler/phase26-2-allocator-identity/ci-toolchain-predecessor-v1.json.gz'
 TOOLCHAIN_BASELINE_SHA256 = 'c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1'
 DEFER_WORKER = 'compiler/experiments/cranelift/src/full_program.rs'
-DEFER_INVOCATION_ADAPTER = 'scripts/phase26_r3_zlib_adapter_registration.py'
+DEFER_INVOCATION_ADAPTER = 'scripts/phase22_opening.py'
 DEFER_RUNNER = 'scripts/phase26_2_defer_lexical.py'
-DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz'
-DEFER_BASELINE_SHA256 = '2277e1a4ba4686bc6cb13e0205109b658dd308326ae3c9be24539591803b4109'
+DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz'
+DEFER_BASELINE_SHA256 = '7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee'
 R3_GUARD = 'scripts/phase26_r3_zlib_adapter_guard.sh'
 R3_BASELINE = 'compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz'
 R3_BASELINE_SHA256 = '4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b'
@@ -57,7 +57,8 @@ CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
     *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED, R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER)
-ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz', DEFER_BASELINE, 'scripts/phase26_2_defer_lexical.py',
+ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
+    'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz', DEFER_BASELINE, 'scripts/phase26_2_defer_lexical.py',
     'compiler/phase26-2-defer-lexical/cases.json',
     'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md', *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
@@ -662,6 +663,12 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    import phase22_opening as opening
+    import phase26_r3_zlib_adapter_registration as r3
+    require(not any(p['path'] == DEFER_RUNNER for p in opening.scan_invocations()),
+            'global deferred invocation projection did not move')
+    require(r3.normalize_invocations(registry, r3.invocation_rows()) == [],
+            'R3 partial invocation compatibility drifted')
     calls = defer_invocation_rows()
     require(normalize_defer_invocations(registry, calls) == [],
             'deferred lexical invocation projection did not move')

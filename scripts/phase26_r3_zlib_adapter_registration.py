@@ -212,9 +212,6 @@ def invocation_rows() -> list[dict]:
 
 
 def normalize_invocations(registry: dict, rows: list[dict]) -> list[dict]:
-    if registry.get('phase26_activation_audit', {}).get('allocator_identity_successor_v1'):
-        from phase26_2_allocator_identity_registration import normalize_defer_invocations
-        rows = normalize_defer_invocations(registry, rows)
     if not record(registry):
         return rows
     expected = identity(registry)["phase22_invocation_successor"]["added_rows"]

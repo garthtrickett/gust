@@ -24,13 +24,16 @@ The owning allocator identity recipe additionally runs
 Nine source controls cover fallthrough, early return, late assignment, later
 declarations, nested LIFO, break, continue, a late vector write and match-payload
 shadowing. The match fixture initializes its local enum before its bounded raw
-payload access; no resource owner or dangling reference is used. Canonical case
+payload access; all same-named bindings in that control are live `&int`
+references, so the old wrong lookup also cannot manufacture an integer pointer.
+No resource owner or dangling reference is used. Canonical case
 bytes and expected outputs are pinned; changing the oracle or dropping coverage
 must refuse. The owning workflow retains these native artifacts separately.
 
-The exact predecessor worker is retained in `predecessor-worker-and-invocation-v2.json.gz` and
+The exact predecessor worker is retained in `predecessor-worker-and-global-census-v3.json.gz` and
 checked before projecting its old pins. The new compiler invocation is
-enrolled exactly and removed only from the closed historical census. Missing,
+enrolled exactly and removed only at the complete global census entry. The
+original R3 helper still accepts its own partial row set unchanged. Missing,
 extra and substituted calls refuse; foreign calls remain visible. Existing foreign registry authority and
 all protected product limits remain intact. Current-source committed reviews,
 bootstrap/native/fixed-point/strict104/public/production qualification, complete
