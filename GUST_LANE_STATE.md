@@ -1,3 +1,19 @@
+# Cranelift ACTIVE native deferred lexical bindings — 2026-11-19
+
+PR619 is checked merged at59ef3f3f; its completion evidence remains historical.
+The same owner/worktree continues the activated Phase26 remainder. Safe scalar
+native evidence confirms an outer defer reads inner22 instead of outer11 on
+early return; ordinary fallthrough11 and late assignment33 pass. No unsafe
+resource program ran. The separate allocator-order baseline remains FAIL.
+
+This prospectively supersedes prior waits: implement and qualify the bounded
+lexical-storage binding prerequisite under TASK.md before allocator simulation.
+No live jobs or CI observer at activation. No cleanup-order, ABI, resource/move,
+product-limit or OD23 selection; no old-source pass qualifies changed source.
+All current-source review/build/native/pins/R5/FP/CI/merge gates remain required.
+
+---
+
 # Cranelift ACTIVE CR15 diagnostic correction — 2026-10-26T05:21:02.637796+00:00
 
 Current PR619 CR15 CI failure reproduced before worker: the annotation lexical

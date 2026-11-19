@@ -66,7 +66,9 @@ jobs:
           name: phase26-2-allocator-identity
           include-hidden-files: true
           if-no-files-found: error
-          path: build/guards/phase26_2_allocator_identity/
+          path: |
+            build/guards/phase26_2_allocator_identity/
+            build/guards/phase26_2_defer_lexical/
       - name: Retain closed existing-package transaction provenance
         if: always()
         uses: actions/upload-artifact@v4

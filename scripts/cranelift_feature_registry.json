@@ -48063,6 +48063,21 @@
       "phase26_2_status": "OPEN",
       "od23": "OPEN; no slot ownership or admission selected",
       "operational_state_excluded": "GUST_LANE_STATE.md",
+      "defer_native_invocations": [
+        {
+          "path": "scripts/phase26_2_defer_lexical.py",
+          "line": 81,
+          "recipe": "none",
+          "compiler_token": "python_argv",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]"
+        }
+      ],
       "changed_files": [
         {
           "path": "compiler/typechecker.gst",
@@ -48072,12 +48087,12 @@
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "20d54fd57ee4d093bfacaac2d37735f9a6631bccb5436c7fcef60d7c3ae1235a"
+          "current_digest": "24fa0dbd35955a08068792155cc281046dc73a1acc23f071ad57c5353806d482"
         },
         {
           "path": "justfile",
           "previous_digest": "1a394ba10c83831838cc65e3b889fca90dc9238ffb8152522fa4b2111621d55b",
-          "current_digest": "bdef6a7a13e84c0cc4dc12cc7e510979218e8187e78e7370f87f4ea03546074e"
+          "current_digest": "48020100be6e07a5c01d763e3e3131119e2a986cfb8474c1e0036be97858d471"
         },
         {
           "path": "scripts/cranelift_test_levels.json",
@@ -48092,12 +48107,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "faff2d87b2bccdc6394fa3abac22a1dddadf18a526595d3bbfb9261dab982ee3"
+          "current_digest": "912cd93277cb4a3bcfed1b5cb45628f1f1127c881d0b0a343537837ac0257cce"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "1f1c656519c0b21a3ce865f157b948d2f966e0831f101cfef17a31c53f4995f7"
+          "current_digest": "6701b1153bfc4b72363f5b598c2db61b041cec10d7b4e5894492af707b35b06b"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48128,9 +48143,39 @@
           "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
           "previous_digest": "0e5302ebc9d3c2d21d663d05f530459a2de25e99ed37eaa2e0a075ff0dd5d25a",
           "current_digest": "64c8dba378654f1fd05829f3aca8614fb9b4c809419fd467e4685fe80d263f4e"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/full_program.rs",
+          "previous_digest": "5ac727b2dfd09b817ff0bd9596e97a6e4e2635adbe98055f86251464e3cf5710",
+          "current_digest": "86ddc371ed86713802d10fd81027d5f6650a031b1dde7d3214a8ad917d4ad439"
+        },
+        {
+          "path": "scripts/phase26_r3_zlib_adapter_registration.py",
+          "previous_digest": "5206597c2350c041503ff27be36e607a831ff06281a74571fcab65a4eb28be9a",
+          "current_digest": "f8a6db4da83b76c2ef3fb03480d3fd43759d3f682c3fb8cfcd640200f88ff9ff"
         }
       ],
       "added_files": [
+        {
+          "path": "compiler/phase26-2-defer-lexical/predecessor-worker.json.gz",
+          "digest": "ce9b0a78b3782d868ce47ab405382461411809588f45b265b1bc3c6a5267619f"
+        },
+        {
+          "path": "compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz",
+          "digest": "2277e1a4ba4686bc6cb13e0205109b658dd308326ae3c9be24539591803b4109"
+        },
+        {
+          "path": "scripts/phase26_2_defer_lexical.py",
+          "digest": "673639968e84cbd8f03ebfa794bf539d8eaa4475883afac450fd82f2e5d6f0f8"
+        },
+        {
+          "path": "compiler/phase26-2-defer-lexical/cases.json",
+          "digest": "f2865224890c0f5e2c2a3b26d860e654ec8abb3d41abefd40d196927a1b41ec4"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md",
+          "digest": "f35e350e9c9bf0bee1dc28a734bcdbe6254fc3162acaf5b1bdf7d3ba6d707b9b"
+        },
         {
           "path": "compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz",
           "digest": "38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b"
@@ -48169,7 +48214,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "c85683188b4960fe3b4b3e304325ee1f65effe3ed79099a15389692761fd3a67"
+          "digest": "cbcdc1d0eb7954eb3522d2ef4f72dc23e5e6149332ffa17e2d03a87d9c536b28"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48193,7 +48238,7 @@
         },
         {
           "path": ".github/workflows/phase26-2-allocator-identity.yml",
-          "digest": "847b80511b9d635dca094036162168ea923802057a6fdf1197e78c766c809cb7"
+          "digest": "4f6b05c065768e8890073e772edd4fde03c0cea7af6f6db8af5e15792012ee35"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
@@ -48225,20 +48270,20 @@
         }
       ],
       "owned_text": {
-        "text": "66b094c8f1adf43461b1ef2fb12396e7d3b3e34857055918af9a08699481f696",
-        "r4_text": "e2d92ad3c4a997cb83f14558e68858b9100939b1ec78e67ef8c3953b418a64d3"
+        "text": "0fcae814017201bdd8cacbd510711cf169ba1dcd39b8b317fc7751c865748d4f",
+        "r4_text": "cd4fbb341524882abd3d9357e3fc6f2cc9d3145d8ab530c2ee66f3ae2b6fbcbd"
       },
       "projections": {
-        "r4_text": "2567b3822792cadb57f3c809932a0ab3626b9b38f5e4a86bee3801d0195b584d",
-        "spelling": "d9b48b11733469c19268687769bd4d7aa873a0b00fdacbb116f8dc084f81eaea",
+        "r4_text": "4245e93198de9330d5dd7fb01d93911e62b192d6717e90c55b31e9e618d91c2d",
+        "spelling": "91c9c7e028b304542e0577bd02be2a22d576c48aa1997631169d9218856c750c",
         "filename": "8f33c3c68148a40f6215768e282a245bfa7bbeb7424fdbe200132d5f8043edd6",
-        "r3_record": "566cccb876c6bd73ddd8f71609fd7686b05b83c4ff6c951c017aff3d37a56548",
+        "r3_record": "0a499b40f19612fe7c9814e24726f88d6525a2e6cc6ca546b1a9d48c23ac0272",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "56a10d5925c22d0935b076353b60f10f59c097a3dd4cf5f6eaf64799cceb66ed",
-        "text": "495c82ec22f68fc9c3f8668cf9fa09ea38e69f1ec7006bb3eadb405bd22de336"
+        "r4_record": "b708f08dc13c4d12e737136b67fd31735a790b00a00fc46236a7cd6c0e64f1a2",
+        "text": "c29d1bfd567386ae7281873c551cb84552446d869c37a286ee4e86ef458f462a"
       },
-      "spelling_render_current_digest": "9fa2ae29971fe59ed1d3526f58848b4d1eaee111844ced55fb97a100e3a0df61"
+      "spelling_render_current_digest": "cf2434f283f40edaf871e3a9399400d1f4cb2e25929233168afe129768ffb3a8"
     },
     "production_epoch2_renewal_successor_v1": {
       "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",

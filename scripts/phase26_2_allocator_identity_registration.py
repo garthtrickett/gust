@@ -29,6 +29,11 @@ CONTROL_CHANGED = ('scripts/phase26_2_allocator_registration.py',
 TOOLCHAIN_CHANGED = ('scripts/phase26_production_toolchain.py',)
 TOOLCHAIN_BASELINE = 'compiler/phase26-2-allocator-identity/ci-toolchain-predecessor-v1.json.gz'
 TOOLCHAIN_BASELINE_SHA256 = 'c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1'
+DEFER_WORKER = 'compiler/experiments/cranelift/src/full_program.rs'
+DEFER_INVOCATION_ADAPTER = 'scripts/phase26_r3_zlib_adapter_registration.py'
+DEFER_RUNNER = 'scripts/phase26_2_defer_lexical.py'
+DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz'
+DEFER_BASELINE_SHA256 = '2277e1a4ba4686bc6cb13e0205109b658dd308326ae3c9be24539591803b4109'
 R3_GUARD = 'scripts/phase26_r3_zlib_adapter_guard.sh'
 R3_BASELINE = 'compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz'
 R3_BASELINE_SHA256 = '4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b'
@@ -51,8 +56,10 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
-    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED, R3_GUARD)
-ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
+    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED, R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER)
+ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz', DEFER_BASELINE, 'scripts/phase26_2_defer_lexical.py',
+    'compiler/phase26-2-defer-lexical/cases.json',
+    'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md', *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
     LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
@@ -78,7 +85,10 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_allocator_identity_registration.py inversions\n'
     '    python3 scripts/phase26_bootstrap_bounded.py inversions\n'
     '    python3 scripts/phase26_production_toolchain_controls.py\n'
-    '    python3 scripts/phase26_2_allocator_identity_guard.py\n')
+    '    python3 scripts/phase26_2_allocator_identity_guard.py\n'
+    '    python3 scripts/phase26_2_defer_lexical.py validate\n'
+    '    python3 scripts/phase26_2_defer_lexical.py inversions\n'
+    '    python3 scripts/phase26_2_defer_lexical.py native\n')
 
 
 def require(ok, message):
@@ -148,6 +158,16 @@ def base_bytes(path):
     files = baseline()['files']
     if path in files:
         return decoded_payload(files[path])
+    if path in (DEFER_WORKER, DEFER_INVOCATION_ADAPTER):
+        raw = (ROOT/DEFER_BASELINE).read_bytes()
+        require(sha(raw) == DEFER_BASELINE_SHA256, 'deferred lexical predecessor bytes drifted')
+        value = json.loads(gzip.decompress(raw))
+        require(set(value) == {'schema', 'base', 'files'} and
+                value['schema'] == 'gust.defer_lexical.predecessor.v1' and
+                value['base'] == '59ef3f3fccfc6b6d10c7f9967f1e510856cf0aaa' and
+                set(value['files']) == {DEFER_WORKER, DEFER_INVOCATION_ADAPTER},
+                'deferred lexical predecessor identity drifted')
+        return decoded_payload(value['files'][path])
     if path == R3_GUARD:
         raw = (ROOT/R3_BASELINE).read_bytes()
         require(sha(raw) == R3_BASELINE_SHA256, 'R3 source guard predecessor bytes drifted')
@@ -195,6 +215,8 @@ def identity(registry):
         [p['path'] for p in row['changed_files']] == list(CHANGED) and
         [p['path'] for p in row['added_files']] == list(ADDED),
         'allocator proof identity, file population or operational-state retirement drifted')
+    require(row.get('defer_native_invocations') == defer_invocation_rows(),
+            'deferred lexical compiler invocation enrollment drifted')
     require((ROOT / STATE).is_file() and (ROOT / STATE).stat().st_size > 0,
             'operational lane state is absent')
     return row
@@ -430,6 +452,27 @@ def prior_render_digest(registry, live):
         'phase26_activation_audit'][PREDECESSOR_KEY]['spelling_render_current_digest']
 
 
+def defer_invocation_rows():
+    from phase22_opening import python_compiler_lists, classify, selection
+    return [classify(ROOT/DEFER_RUNNER, line, command, '', token, selection(command))
+            for line, command, token in python_compiler_lists(ROOT/DEFER_RUNNER)]
+
+
+def normalize_defer_invocations(registry, rows):
+    row = identity(registry)
+    physical_files(registry, row)
+    actual = [p for p in rows if p['path'] == DEFER_RUNNER]
+    expected = row['defer_native_invocations']
+    without_line = lambda p: {k:v for k,v in p.items() if k != 'line'}
+    require(len(actual) == len(expected) == 1 and
+            [without_line(p) for p in actual] == [without_line(p) for p in expected] and
+            actual == defer_invocation_rows() and
+            actual[0]['selection'] == 'explicit_cranelift' and
+            actual[0]['command'] == "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]",
+            'deferred lexical compiler invocation missing, extra or substituted')
+    return [p for p in rows if p['path'] != DEFER_RUNNER]
+
+
 def current_projections():
     import phase26_2_allocator_registration as previous
     return previous.current_projections()
@@ -441,7 +484,7 @@ def build_record():
     sites = spelling.source_sites()
     return dict(predecessor_main=BASE, owner='cranelift', guard=GUARD,
         phase26_2_status='OPEN', od23='OPEN; no slot ownership or admission selected',
-        operational_state_excluded=STATE,
+        operational_state_excluded=STATE, defer_native_invocations=defer_invocation_rows(),
         changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)),
             current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
         added_files=[dict(path=p, digest=sha((ROOT / p).read_bytes())) for p in ADDED],
@@ -619,6 +662,23 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    calls = defer_invocation_rows()
+    require(normalize_defer_invocations(registry, calls) == [],
+            'deferred lexical invocation projection did not move')
+    changed_call = dict(calls[0], selection='implicit_default')
+    for label, changed_calls in (('missing', []), ('extra', calls + calls),
+                                 ('substituted', [changed_call])):
+        rejected('deferred compiler invocation ' + label,
+                 lambda changed_calls=changed_calls: normalize_defer_invocations(registry, changed_calls),
+                 'deferred lexical compiler invocation missing, extra or substituted')
+    foreign_call = dict(calls[0], path='scripts/unregistered-foreign-call.py')
+    require(normalize_defer_invocations(registry, calls + [foreign_call]) == [foreign_call],
+            'deferred lexical invocation projection hid foreign call')
+    missing = copy.deepcopy(registry)
+    missing['phase26_activation_audit'].pop(KEY)
+    rejected('missing deferred invocation authority',
+             lambda: normalize_defer_invocations(missing, calls),
+             'allocator proof identity, file population or operational-state retirement drifted')
     source_route = (ROOT/R3_GUARD).read_text()
     for label, changed_route in (
             ('network rollback', base_bytes(R3_GUARD).decode()),
