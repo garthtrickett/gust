@@ -1063,3 +1063,12 @@ was produced. Failed logs and source checkpoint remain retained. The owning
 correction uses existing nested checks/guard payloads, the established unsafe
 AST-tag visitor boundary and explicit `ctx.Set`; all source/native oracles,
 resource caps, product4GiB limits and qualification gates remain unchanged.
+
+The corrected bootstrap and source32/internal4 component matrix now passed.
+The matrix executed15 positive native cases and refused17 negatives before
+worker entry, preserving all original eight controls and three unqualified
+fixture attempts. Source compile head8c4ee1 and validation head252d92 are
+explicitly distinguished by exact compiler-input equivalence. Additive own
+recipe/workflow/registry integration is in progress. Final committed-source
+full pins, protected4GiB R5/native fixed point, strict104/180s, CI and merge
+remain pending; no component pass closes a canonical Phase26 row.

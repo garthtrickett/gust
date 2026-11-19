@@ -57,6 +57,15 @@ Negative controls use a refusing driver and must diagnose before its handshake;
 they never compile or execute a suspect native program. The matrix records
 exact inputs, tools, compile diagnostics, positive ELFs, outputs and statuses.
 
+The existing allocator-identity recipe runs validation, inversions and the
+native matrix; its owning workflow retains the matrix output. The additive
+identity registry pins all four new files and both compiler calls. Only the
+complete global invocation census projects these exact source-pinned calls;
+the earlier lexical call and partial R3 normalization remain unchanged.
+Missing, duplicated, substituted or reordered calls refuse; unrelated calls
+remain visible. Existing predecessor adapters retain their original authority,
+and foreign registry rows and product-limit files remain byte-identical.
+
 Static mechanism/oracle inversions are only source checks. Acceptance also
 requires actual current-source controls, rollback failure, full additive
 enrollment and discovered validators, committed independent reviews, bootstrap,

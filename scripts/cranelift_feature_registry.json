@@ -48078,21 +48078,49 @@
           "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]"
         }
       ],
+      "defer_order_native_invocations": [
+        {
+          "path": "scripts/phase26_2_deferred_allocator_order.py",
+          "line": 120,
+          "recipe": "none",
+          "compiler_token": "python_argv",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]"
+        },
+        {
+          "path": "scripts/phase26_2_deferred_allocator_order.py",
+          "line": 151,
+          "recipe": "none",
+          "compiler_token": "python_argv",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(INTERNAL)]"
+        }
+      ],
       "changed_files": [
         {
           "path": "compiler/typechecker.gst",
           "previous_digest": "54f9d3b21d0f28c7819de8bf4254daa643fbd5829340c2c0a69ae3d586441d9f",
-          "current_digest": "2824c01275dc525448c55cb8a638c860e1fba8f630093ab3f601ec06aaa27889"
+          "current_digest": "17bf871bab4beed4dc878ce197f1d554330fc0d445f07b6b044673e07ede17b0"
         },
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "0d4604a62a25fbacedba7a0c34db4bbcd4169a5d4b64895b0741dffc2c42b9f9"
+          "current_digest": "e9f22519fe9110b1a6503ccb5a090838b323dfa25afe11b43cf3465449619582"
         },
         {
           "path": "justfile",
           "previous_digest": "1a394ba10c83831838cc65e3b889fca90dc9238ffb8152522fa4b2111621d55b",
-          "current_digest": "ebddbb5a2b954c90d1a3388048c5033a6b8bf6b268117edbfdf45a8ad2c7466a"
+          "current_digest": "5eaef3c223c28fc777750e201993e2e350a64d93d13a1f1e09e42a9f2d15437d"
         },
         {
           "path": "scripts/cranelift_test_levels.json",
@@ -48107,12 +48135,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "9cd6013ba56a5a16727666acd36d30f425f237e9d7a4c766126de9ef69e63f86"
+          "current_digest": "2330e450dd43e84d19f98b53512d24461d196bd9ccd992d24e1c90b36a64b1ec"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "1a5b5d12b45e452283f386e8d343df2dcdc04db41ff9cde71cefbf8207e3d1ae"
+          "current_digest": "cd3c5f3376bf7442da411da4779394eff53f662e37370c728f5aea088c1b3708"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48152,7 +48180,7 @@
         {
           "path": "scripts/phase22_opening.py",
           "previous_digest": "4cf397725424e8842dd3584859d492bc16f0878d61cceb18ae28e0ebeb0b2e6f",
-          "current_digest": "f62dc175efcbf9a4ea367a53709828dbfebe432b33d57003e31ac689ac094d49"
+          "current_digest": "ae7584baedec4f35f3537decba6b8de2ae4b19b17b55c3f53e4052ae96b6cc19"
         },
         {
           "path": "scripts/phase26_release_paging.py",
@@ -48195,6 +48223,22 @@
           "digest": "94476fa0b3dc62a255fbf3f6bb88018dd407c4530e330e7b38e602c870ff6e37"
         },
         {
+          "path": "scripts/phase26_2_deferred_allocator_order.py",
+          "digest": "01e0f87994dc9dcd2b23ce0cae3145987eb15f536a37a4f753b6edbf70593732"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cases.json",
+          "digest": "aa7773798e5aa237135f0ab47240c9f7ae29cd7d2df2783a81276f1bad6a9b71"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/observation_facts.gst",
+          "digest": "e7e952948758f0d27a904716acd08ec552e272e2c941946be9e6411749bad9b6"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md",
+          "digest": "3e23e04ebae2226fe7e8ca8497aeeb3b3a83d6a0681aaa32f7b74cd47edab38c"
+        },
+        {
           "path": "compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz",
           "digest": "38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b"
         },
@@ -48232,7 +48276,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "2bfed6a0686698750b151ba76e8b84047203be4b0484e001df4e004115a15bae"
+          "digest": "e4bb2dc449d455081a24a682f2371b9eef23f430ccc415a17ca1a4d68cf33589"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48256,7 +48300,7 @@
         },
         {
           "path": ".github/workflows/phase26-2-allocator-identity.yml",
-          "digest": "4f6b05c065768e8890073e772edd4fde03c0cea7af6f6db8af5e15792012ee35"
+          "digest": "4d0be7f41593211fd6fd37671bfd5fb248fa3bbfe81e30afa702a1d4c35b2abc"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
@@ -48288,20 +48332,20 @@
         }
       ],
       "owned_text": {
-        "text": "a57fdb6b7396f8749f0c1cdb321fdfe1d1bfdd47c0ea40a522e3654eccd8bcc0",
-        "r4_text": "6e404d57fbe8e27ec026228ca5b4093c71f811b898a4e55c80f02ee90cff42af"
+        "text": "7737b20228e4a0ab4ca4797c3a6e6c03c8492b7f75a0e6d1372d8e63c51f319c",
+        "r4_text": "4d74664a9ab97df8dc351eb30711bace574f5a862b64014b04578393dd025fd2"
       },
       "projections": {
-        "r4_text": "577c97f4f6cbace5bf244115aee892592f5ff3b5801db774736a5aadadc82565",
-        "spelling": "91c9c7e028b304542e0577bd02be2a22d576c48aa1997631169d9218856c750c",
-        "filename": "8f33c3c68148a40f6215768e282a245bfa7bbeb7424fdbe200132d5f8043edd6",
-        "r3_record": "fce38df94e4a41ad0037a7cb90c5784491f007fb87560144fcfc97603682aedc",
+        "r4_text": "11f44143589be7881327ebeef9174ee13849314a3a1ee54a614729d04e0dfc45",
+        "spelling": "4d6687fe5a9a37b1239bd9d9efe2fdc5a0aea1fd18c1e3272f30039e7912ad20",
+        "filename": "ce0811a348b5efe3695b8424831344062bdc8c02b42d80c1887d48b2854421d7",
+        "r3_record": "a7aa77edd52d5c4d3921e272ebbf64534990cc2d705b5ab1e790dfbaac750cbe",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "2b14244ef3c021a9935b71b0eaed14122f6864ab619b4a24cf60b31c221383e7",
-        "text": "992bd7a0727316c1ee8934ec9585cfc8e6c8ee1ec1e76315dc27719d998c0f99"
+        "r4_record": "5911bc79facaee48e7d524a80e19ac602cb3a296276da8fc9ebc3cf5a4d7197b",
+        "text": "d05d1b6facdcc313e05a65d6ace9865d1d0997d093ce80f0c5e342024fa68c02"
       },
-      "spelling_render_current_digest": "cf2434f283f40edaf871e3a9399400d1f4cb2e25929233168afe129768ffb3a8"
+      "spelling_render_current_digest": "c26ee43756f5b778e8e0a240c675c7722d022d3cf9fc16215d94fc53418d4237"
     },
     "production_epoch2_renewal_successor_v1": {
       "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",

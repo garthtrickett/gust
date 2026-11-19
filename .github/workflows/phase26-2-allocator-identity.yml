@@ -69,6 +69,7 @@ jobs:
           path: |
             build/guards/phase26_2_allocator_identity/
             build/guards/phase26_2_defer_lexical/
+            build/guards/phase26_2_deferred_allocator_order/
       - name: Retain closed existing-package transaction provenance
         if: always()
         uses: actions/upload-artifact@v4

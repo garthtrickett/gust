@@ -24633,3 +24633,6 @@ guard-cranelift-phase26-2-allocator-identities:
     python3 scripts/phase26_2_defer_lexical.py validate
     python3 scripts/phase26_2_defer_lexical.py inversions
     python3 scripts/phase26_2_defer_lexical.py native
+    python3 scripts/phase26_2_deferred_allocator_order.py validate
+    python3 scripts/phase26_2_deferred_allocator_order.py inversions
+    python3 scripts/phase26_2_deferred_allocator_order.py native

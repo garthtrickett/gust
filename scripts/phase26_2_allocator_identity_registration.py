@@ -32,6 +32,7 @@ TOOLCHAIN_BASELINE_SHA256 = 'c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c
 DEFER_WORKER = 'compiler/experiments/cranelift/src/full_program.rs'
 DEFER_INVOCATION_ADAPTER = 'scripts/phase22_opening.py'
 DEFER_RUNNER = 'scripts/phase26_2_defer_lexical.py'
+DEFER_ORDER_RUNNER = 'scripts/phase26_2_deferred_allocator_order.py'
 DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz'
 DEFER_BASELINE_SHA256 = '7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee'
 DISK_SCAN_CHANGED = ('scripts/phase26_release_paging.py',
@@ -66,7 +67,11 @@ ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
     'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz', DEFER_BASELINE,
     DISK_SCAN_BASELINE, 'scripts/phase26_2_defer_lexical.py',
     'compiler/phase26-2-defer-lexical/cases.json',
-    'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md', *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
+    'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md',
+    DEFER_ORDER_RUNNER, 'compiler/phase26-2-deferred-allocator-order/cases.json',
+    'compiler/phase26-2-deferred-allocator-order/observation_facts.gst',
+    'compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md',
+    *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
     LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
@@ -96,7 +101,10 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_allocator_identity_guard.py\n'
     '    python3 scripts/phase26_2_defer_lexical.py validate\n'
     '    python3 scripts/phase26_2_defer_lexical.py inversions\n'
-    '    python3 scripts/phase26_2_defer_lexical.py native\n')
+    '    python3 scripts/phase26_2_defer_lexical.py native\n'
+    '    python3 scripts/phase26_2_deferred_allocator_order.py validate\n'
+    '    python3 scripts/phase26_2_deferred_allocator_order.py inversions\n'
+    '    python3 scripts/phase26_2_deferred_allocator_order.py native\n')
 
 
 def require(ok, message):
@@ -235,6 +243,8 @@ def identity(registry):
         'allocator proof identity, file population or operational-state retirement drifted')
     require(row.get('defer_native_invocations') == defer_invocation_rows(),
             'deferred lexical compiler invocation enrollment drifted')
+    require(row.get('defer_order_native_invocations') == defer_order_invocation_rows(),
+            'deferred allocator order compiler invocation enrollment drifted')
     require((ROOT / STATE).is_file() and (ROOT / STATE).stat().st_size > 0,
             'operational lane state is absent')
     return row
@@ -491,6 +501,31 @@ def normalize_defer_invocations(registry, rows):
     return [p for p in rows if p['path'] != DEFER_RUNNER]
 
 
+def defer_order_invocation_rows():
+    from phase22_opening import python_compiler_lists, classify, selection
+    return sorted((classify(ROOT/DEFER_ORDER_RUNNER, line, command, '', token, selection(command))
+                   for line, command, token in python_compiler_lists(ROOT/DEFER_ORDER_RUNNER)),
+                  key=lambda row: (row['line'], row['command']))
+
+
+def normalize_defer_order_invocations(registry, rows):
+    """Project only the complete, physically pinned order-matrix calls."""
+    row = identity(registry)
+    physical_files(registry, row)
+    actual = [p for p in rows if p['path'] == DEFER_ORDER_RUNNER]
+    expected = row['defer_order_native_invocations']
+    without_line = lambda p: {k:v for k,v in p.items() if k != 'line'}
+    commands = ("[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]",
+                "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(INTERNAL)]")
+    require(len(actual) == len(expected) == 2 and
+            [without_line(p) for p in actual] == [without_line(p) for p in expected] and
+            actual == defer_order_invocation_rows() and
+            all(p['selection'] == 'explicit_cranelift' for p in actual) and
+            tuple(p['command'] for p in actual) == commands,
+            'deferred allocator order compiler invocation missing, extra or substituted')
+    return [p for p in rows if p['path'] != DEFER_ORDER_RUNNER]
+
+
 def current_projections():
     import phase26_2_allocator_registration as previous
     return previous.current_projections()
@@ -503,6 +538,7 @@ def build_record():
     return dict(predecessor_main=BASE, owner='cranelift', guard=GUARD,
         phase26_2_status='OPEN', od23='OPEN; no slot ownership or admission selected',
         operational_state_excluded=STATE, defer_native_invocations=defer_invocation_rows(),
+        defer_order_native_invocations=defer_order_invocation_rows(),
         changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)),
             current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
         added_files=[dict(path=p, digest=sha((ROOT / p).read_bytes())) for p in ADDED],
@@ -682,7 +718,10 @@ def inversions():
             raise SystemExit(label+': ACCEPTED')
     import phase22_opening as opening
     import phase26_r3_zlib_adapter_registration as r3
-    require(not any(p['path'] == DEFER_RUNNER for p in opening.scan_invocations()),
+    require(not opening.python_compiler_lists(Path(__file__)),
+            'registration metadata is represented as an executable compiler call')
+    require(not any(p['path'] in (DEFER_RUNNER, DEFER_ORDER_RUNNER)
+                    for p in opening.scan_invocations()),
             'global deferred invocation projection did not move')
     require(r3.normalize_invocations(registry, r3.invocation_rows()) == [],
             'R3 partial invocation compatibility drifted')
@@ -702,6 +741,24 @@ def inversions():
     missing['phase26_activation_audit'].pop(KEY)
     rejected('missing deferred invocation authority',
              lambda: normalize_defer_invocations(missing, calls),
+             'allocator proof identity, file population or operational-state retirement drifted')
+    order_calls = defer_order_invocation_rows()
+    require(normalize_defer_order_invocations(registry, order_calls) == [],
+            'deferred allocator order invocation projection did not move')
+    substituted = dict(order_calls[0], selection='implicit_default')
+    for label, changed_calls in (
+            ('missing all', []), ('missing source call', order_calls[1:]),
+            ('missing internal call', order_calls[:1]), ('extra', order_calls + order_calls[:1]),
+            ('substituted', [substituted, order_calls[1]]),
+            ('reordered', list(reversed(order_calls)))):
+        rejected('deferred order compiler invocation ' + label,
+                 lambda changed_calls=changed_calls: normalize_defer_order_invocations(registry, changed_calls),
+                 'deferred allocator order compiler invocation missing, extra or substituted')
+    foreign_order_call = dict(order_calls[0], path='scripts/unregistered-foreign-order.py')
+    require(normalize_defer_order_invocations(registry, order_calls + [foreign_order_call]) == [foreign_order_call],
+            'deferred allocator order invocation projection hid foreign call')
+    rejected('missing deferred order invocation authority',
+             lambda: normalize_defer_order_invocations(missing, order_calls),
              'allocator proof identity, file population or operational-state retirement drifted')
     source_route = (ROOT/R3_GUARD).read_text()
     for label, changed_route in (
