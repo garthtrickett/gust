@@ -6190,3 +6190,13 @@ normal fresh-main/actual-file workflow census and own exact-head CI, reviews,
 rules and checked merge. Bootstrap6GiB is separate from product4GiB. Resume the
 held deferred allocator validation after this prerequisite merges, then continue
 activated26.2–26.6/20requirements. OD23 remains OPEN/unselected.
+
+The corrected fixture's first cold qualification stopped at an owned `du`
+traversal error after temporary phase10 request/bundle deletion. Its source55
+checkpoint and failed build remain separate. Within this prerequisite, correct
+only that sampler race with at most three complete scans for exact owned-child
+ENOENT diagnostics; discard partial totals and reject unknown/foreign/root
+errors, symlink escapes and exhaustion. Preserve GNUdu allocation semantics,
+all product quotas/deadlines and exact merged59 predecessor bytes. Run the
+additive real-file/error/budget controls in the owning recipe, re-enroll exact
+bytes and obtain committed reviews before fresh full qualification and CI.

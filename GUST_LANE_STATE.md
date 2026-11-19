@@ -1029,3 +1029,13 @@ exact frozen parity, all current matrices/pins/R5/fixed point and corrective CI
 remain mandatory. Product quotas, frozen first-release history, the startup
 symlink and the old prototype remain preserved. Full Phase26 stays active;
 OD23 is open and unselected.
+
+## 2026-11-19 — native lexical prerequisite: disk sampler correction active
+
+The current2a source55 checkpoint passed, but its protected cold build failed
+on vanished owned phase10 temporary children during GNUdu traversal. The
+controller terminated and confirmed the payload empty; no native9/R5 pass is
+claimed. Exact partial tools and failure evidence are preserved. The same owner
+is implementing and enrolling bounded complete-scan recovery and refusal
+controls, with product4GiB quotas, deadlines, source/native/R5/FP/CI gates and
+OD23 boundaries unchanged. Fresh committed-source qualification remains pending.

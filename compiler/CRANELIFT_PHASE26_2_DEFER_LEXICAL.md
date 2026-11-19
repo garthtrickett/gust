@@ -38,3 +38,16 @@ extra and substituted calls refuse; foreign calls remain visible. Existing forei
 all protected product limits remain intact. Current-source committed reviews,
 bootstrap/native/fixed-point/strict104/public/production qualification, complete
 pin enumeration, owning CI artifacts and checked merge gate acceptance.
+
+The first corrected-fixture cold build exposed an owned-disk sampler race:
+GNUdu returned an error when the compiler removed temporary request and bundle
+children during traversal. The controller stopped that run before native cases;
+the failed evidence remains unqualified. The sampler now allows at most three
+complete scans for exact missing-child diagnostics within checked owned roots.
+It discards failed partial totals and retains diagnostics. Root disappearance,
+symlink escape, foreign or unknown errors, and retry exhaustion still refuse.
+Growth, reserve, memory and deadline assertions are unchanged. The owning recipe
+runs the execution controls, including real deletion recovery and these refusals.
+Exact merged59 sampler/control bytes are retained in
+`owned-disk-scan-predecessor-v1.json.gz`; rollback and source-pin substitutions
+remain rejected before fresh cold-build and downstream qualification.

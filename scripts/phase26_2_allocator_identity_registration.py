@@ -34,6 +34,10 @@ DEFER_INVOCATION_ADAPTER = 'scripts/phase22_opening.py'
 DEFER_RUNNER = 'scripts/phase26_2_defer_lexical.py'
 DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz'
 DEFER_BASELINE_SHA256 = '7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee'
+DISK_SCAN_CHANGED = ('scripts/phase26_release_paging.py',
+    'scripts/phase26_release_execution_controls.py')
+DISK_SCAN_BASELINE = 'compiler/phase26-2-defer-lexical/owned-disk-scan-predecessor-v1.json.gz'
+DISK_SCAN_BASELINE_SHA256 = '38fae8d1b71ffb732f023eec5e8d344ba4785a5d63f9ba07201e44bdf424cb09'
 R3_GUARD = 'scripts/phase26_r3_zlib_adapter_guard.sh'
 R3_BASELINE = 'compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz'
 R3_BASELINE_SHA256 = '4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b'
@@ -56,9 +60,11 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
-    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED, R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER)
+    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED,
+    R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
-    'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz', DEFER_BASELINE, 'scripts/phase26_2_defer_lexical.py',
+    'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz', DEFER_BASELINE,
+    DISK_SCAN_BASELINE, 'scripts/phase26_2_defer_lexical.py',
     'compiler/phase26-2-defer-lexical/cases.json',
     'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md', *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
@@ -85,6 +91,7 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_allocator_identity_registration.py validate\n'
     '    python3 scripts/phase26_2_allocator_identity_registration.py inversions\n'
     '    python3 scripts/phase26_bootstrap_bounded.py inversions\n'
+    '    python3 scripts/phase26_release_execution.py controls\n'
     '    python3 scripts/phase26_production_toolchain_controls.py\n'
     '    python3 scripts/phase26_2_allocator_identity_guard.py\n'
     '    python3 scripts/phase26_2_defer_lexical.py validate\n'
@@ -159,6 +166,16 @@ def base_bytes(path):
     files = baseline()['files']
     if path in files:
         return decoded_payload(files[path])
+    if path in DISK_SCAN_CHANGED:
+        raw = (ROOT/DISK_SCAN_BASELINE).read_bytes()
+        require(sha(raw) == DISK_SCAN_BASELINE_SHA256, 'owned disk scan predecessor bytes drifted')
+        value = json.loads(gzip.decompress(raw))
+        require(set(value) == {'schema', 'base', 'files'} and
+                value['schema'] == 'gust.owned_disk_scan.predecessor.v1' and
+                value['base'] == '59ef3f3fccfc6b6d10c7f9967f1e510856cf0aaa' and
+                set(value['files']) == set(DISK_SCAN_CHANGED),
+                'owned disk scan predecessor identity or population drifted')
+        return decoded_payload(value['files'][path])
     if path in (DEFER_WORKER, DEFER_INVOCATION_ADAPTER):
         raw = (ROOT/DEFER_BASELINE).read_bytes()
         require(sha(raw) == DEFER_BASELINE_SHA256, 'deferred lexical predecessor bytes drifted')
