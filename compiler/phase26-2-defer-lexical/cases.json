@@ -45,7 +45,7 @@
     },
     {
       "name": "late_vector_write",
-      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n mut values: std.Vector[int, ctx] := std.VectorNew(ctx); values.Append(0); defer os.LogInt(values[0]); if 1 == 1 { defer values.Set(0, token); token = 33; mut token := 22; }\n return 0;\n}\n",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n mut token := 11;\n defer os.LogInt(token);\n mut values: std.Vector[int, ctx] := std.VectorNew(ctx); values.Push(0); defer os.LogInt(values[0]); if 1 == 1 { defer values.Set(0, token); token = 33; mut token := 22; }\n return 0;\n}\n",
       "stdout": "33\n33\n",
       "exit": 0
     },

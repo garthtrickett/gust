@@ -48107,12 +48107,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "5cef078181f9da29224bff056ecd7ad9684478255410482a9072601999ee46bc"
+          "current_digest": "ab526f0d02d577b34f1f75cb0ddee0536e8ce2c4b927b455f46e099387b8b467"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "348b1febc79ea94aee699f3581f9f9dd26ca89442576b83d79114098451baa95"
+          "current_digest": "80a443b7cd2d7301cd62d869c6a40b87002f905fa07d22f774aa23f83a3fb357"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48170,11 +48170,11 @@
         },
         {
           "path": "scripts/phase26_2_defer_lexical.py",
-          "digest": "236dc418bc514a3a64bf8ac99c4c60b68b9d69ae78039bc06fa489ec096f6ac3"
+          "digest": "d73f13a58b9e452247fa3283f7ad2d64084a65ba696880b05a6d9af4714ed378"
         },
         {
           "path": "compiler/phase26-2-defer-lexical/cases.json",
-          "digest": "aa5bbea96dc4e09122d2c471cb9c43aa3460aefa2bbb384289ff697bf2e74642"
+          "digest": "78e808fa1260e7ae4f65ba8e3ec6a82a3bdb527a3a183b1e0fdc70685e9e52aa"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md",
@@ -48274,7 +48274,7 @@
         }
       ],
       "owned_text": {
-        "text": "69b8ce550cadef0c50e91a556dc073a2204fd3fb2a8045e6ef61ac35c75c8c0f",
+        "text": "041bce04002d8bd09b575b36513c337d9cfb9acceaa673f0f51cd31275b315d8",
         "r4_text": "9e478c5a04649e476ba6fa4993332bd071fda621bec6e3e9559275ed31122787"
       },
       "projections": {
@@ -48285,7 +48285,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "d69822eb7d56b2ee35f37428634b6b5ff4533ca40dec409248d34743e072a961",
-        "text": "8c6807f29246b352129609b9c1de7532ee79a884640852590cb37941bbcc3b29"
+        "text": "c7a62038a87886f1a85127a21d800eb907c34ff7cbfdaa4cc46c6b34a9c6ea9b"
       },
       "spelling_render_current_digest": "cf2434f283f40edaf871e3a9399400d1f4cb2e25929233168afe129768ffb3a8"
     },

@@ -13,7 +13,7 @@ CASES = ROOT / 'compiler/phase26-2-defer-lexical/cases.json'
 WORKER = ROOT / 'compiler/experiments/cranelift/src/full_program.rs'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_defer_lexical'
-CASE_DIGEST = '2e89f53df7a969d77651cb8f97eea3f3d7a07ffeee2298a39c204af897f6f312'
+CASE_DIGEST = '223cfe1c42eedc3539e3e741603effbd13e3aa39f0cbf82ea343ca42c4c73559'
 
 
 def digest(path):
