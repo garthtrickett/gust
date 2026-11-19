@@ -1055,3 +1055,11 @@ The original unsafe compile-only admissions remain failures; no unsafe witness
 was executed. Current correction reviews, controls, enrollment, qualification,
 CI and merge are pending. Full Phase26.2–26.6/20requirements remains active;
 OD23 remains OPEN/unselected and historical first-release DONE stays frozen.
+
+The first current-source bootstrap on `62bdba70` exited1 on the new helpers'
+checked-result payload, AST variant-access and stored-Scope-write diagnostics.
+Its source/limits stayed stable, no OOM occurred, and no replacement compiler
+was produced. Failed logs and source checkpoint remain retained. The owning
+correction uses existing nested checks/guard payloads, the established unsafe
+AST-tag visitor boundary and explicit `ctx.Set`; all source/native oracles,
+resource caps, product4GiB limits and qualification gates remain unchanged.

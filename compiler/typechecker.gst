@@ -13351,12 +13351,14 @@ func env_validate_resource_loop_backedge(env: *TypeEnvironment[ctx], freed: std.
         mut i := 0;
         while i < len(keys) {
             mut entry := (*env).resource_loop_entry_lifecycle.Get(keys[i]);
-            if entry.Ok && entry.Val.state != arena_lifecycle_state_freed() {
-                // A zero/one-iteration traversal cannot prove the final
-                // iteration. A fresh allocator declared within this iteration
-                // is absent from entry facts and does not acquire this refusal.
-                report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Loop backedge destroys an allocator visible at loop entry; next-iteration lifetime is not proved", span, env, ctx);
-                return 0;
+            if entry.Ok {
+                if entry.Val.state != arena_lifecycle_state_freed() {
+                    // A zero/one-iteration traversal cannot prove the final
+                    // iteration. A fresh allocator declared within this iteration
+                    // is absent from entry facts and does not acquire this refusal.
+                    report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Loop backedge destroys an allocator visible at loop entry; next-iteration lifetime is not proved", span, env, ctx);
+                    return 0;
+                }
             }
             i = i + 1;
         }
@@ -13420,7 +13422,9 @@ func env_deferred_allocator_is_freed(env: *TypeEnvironment[ctx], proof: Allocato
     if freed.Get(proof.identity).Ok { return 1; }
     unsafe {
         mut prior := (*env).arena_lifecycle_states.Get(proof.identity);
-        if prior.Ok && prior.Val.state == arena_lifecycle_state_freed() { return 1; }
+        if prior.Ok {
+            if prior.Val.state == arena_lifecycle_state_freed() { return 1; }
+        }
     }
     return 0;
 }
@@ -13429,16 +13433,19 @@ func env_validate_resource_deferred_action(env: *TypeEnvironment[ctx], action: R
     unsafe {
         if action.kind == 1 {
             mut identity := env_deferred_resource_identity(env, action, ctx);
-            mut owner := (*owners).Get(identity);
             if len(action.storage_key) == 0 {
                 report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Deferred resource consumption requires existing captured owner storage; late producer effects are not represented", action.span, env, ctx);
                 return 0;
             }
-            if len(identity) == 0 || std.str_eq(identity, action.identity) == 0 || owner.Ok == false {
+            if len(identity) == 0 || std.str_eq(identity, action.identity) == 0 {
                 report_error(2, "Semantic Error: [LinearResourceLeak] Deferred consumption no longer identifies its captured live resource storage", action.span, env, ctx);
                 return 0;
             }
-            if owner.Val.state != 4 {
+            guard owner := (*owners).Get(identity) else {
+                report_error(2, "Semantic Error: [LinearResourceLeak] Deferred consumption no longer identifies its captured live resource storage", action.span, env, ctx);
+                return 0;
+            };
+            if owner.state != 4 {
                 report_error(2, "Semantic Error: [ResourceAcquisitionNonLive] Deferred consumption requires its still-scheduled acquisition", action.span, env, ctx);
                 return 0;
             }
@@ -13448,13 +13455,13 @@ func env_validate_resource_deferred_action(env: *TypeEnvironment[ctx], action: R
                 mut unresolved := 0;
                 if len(destroyed[i]) == 0 { unresolved = 1; }
                 mut proof := allocator_identity_proof(destroyed[i], unresolved, ctx);
-                if allocator_dependencies_overlap(owner.Val.allocator_dependencies, proof, ctx) == 1 {
+                if allocator_dependencies_overlap(owner.allocator_dependencies, proof, ctx) == 1 {
                     report_error(2, "Semantic Error: [LinearResourceLeak] Deferred resource consumption follows destruction of its allocator", action.span, env, ctx);
                     return 0;
                 }
                 i = i + 1;
             }
-            mut consumed := resource_acquisition_obligation_clone(owner.Val, ctx);
+            mut consumed := resource_acquisition_obligation_clone(owner, ctx);
             consumed.state = 1;
             (*owners).Insert(std.Clone(ctx, identity), consumed);
             (*discharged).Insert(std.Clone(ctx, identity), 1);
@@ -15610,32 +15617,36 @@ func is_diverging_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *Type
 // This is an exit-proof query only. It does not change the generic guard
 // divergence rule or emit/normalize loop-control instructions.
 func typechecker_resource_statement_terminates(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
-    if is_diverging_statement(stmt_idx, env, ctx) == 1 { return 1; }
-    mut statement := ctx[stmt_idx];
-    if statement.tag == 13 {
-        mut expr := ctx[statement.Expression.expr];
-        if expr.tag == 0 {
-            if std.str_eq(expr.Identifier.name, "break") == 1 || std.str_eq(expr.Identifier.name, "continue") == 1 { return 1; }
+    // Match the existing AST-tag visitor boundary: direct variant access is
+    // confined here, after its tag check, rather than hidden in safe code.
+    unsafe {
+        if is_diverging_statement(stmt_idx, env, ctx) == 1 { return 1; }
+        mut statement := ctx[stmt_idx];
+        if statement.tag == 13 {
+            mut expr := ctx[statement.Expression.expr];
+            if expr.tag == 0 {
+                if std.str_eq(expr.Identifier.name, "break") == 1 || std.str_eq(expr.Identifier.name, "continue") == 1 { return 1; }
+            }
         }
-    }
-    if statement.tag == 10 {
-        return typechecker_resource_block_terminates(statement.UnsafeBlock.body, env, ctx);
-    }
-    if statement.tag == 7 {
-        if typechecker_resource_block_terminates(statement.If.consequence, env, ctx) == 1 &&
-           typechecker_resource_block_terminates(statement.If.alternative, env, ctx) == 1 { return 1; }
-    }
-    if statement.tag == 8 {
-        mut cases := ctx[statement.Match.cases];
-        if len(cases) == 0 { return 0; }
-        mut i := 0;
-        while i < len(cases) {
-            if typechecker_resource_block_terminates(cases[i].body, env, ctx) == 0 { return 0; }
-            i = i + 1;
+        if statement.tag == 10 {
+            return typechecker_resource_block_terminates(statement.UnsafeBlock.body, env, ctx);
         }
-        return 1;
+        if statement.tag == 7 {
+            if typechecker_resource_block_terminates(statement.If.consequence, env, ctx) == 1 &&
+               typechecker_resource_block_terminates(statement.If.alternative, env, ctx) == 1 { return 1; }
+        }
+        if statement.tag == 8 {
+            mut cases := ctx[statement.Match.cases];
+            if len(cases) == 0 { return 0; }
+            mut i := 0;
+            while i < len(cases) {
+                if typechecker_resource_block_terminates(cases[i].body, env, ctx) == 0 { return 0; }
+                i = i + 1;
+            }
+            return 1;
+        }
+        return 0;
     }
-    return 0;
 }
 
 func typechecker_resource_block_terminates(block_idx: Index[ast.BlockStatement[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
@@ -19520,7 +19531,9 @@ func env_snapshot_allocator_observations(env: *TypeEnvironment[ctx], ctx: &Arena
 func env_restore_allocator_observations(snapshots: std.Vector[ResourceAllocatorObservationSnapshot[ctx], ctx], ctx: &Arena) {
     mut i := 0;
     while i < len(snapshots) {
-        ctx[snapshots[i].scope].primitive_arena_observations = typechecker_clone_string_map(snapshots[i].observations, ctx);
+        mut scope := ctx[snapshots[i].scope];
+        scope.primitive_arena_observations = typechecker_clone_string_map(snapshots[i].observations, ctx);
+        ctx.Set(snapshots[i].scope, scope);
         i = i + 1;
     }
 }
@@ -19545,7 +19558,13 @@ func typechecker_join_allocator_observations(left: std.Vector[ResourceAllocatorO
                 while k < len(keys) {
                     mut a := left[i].observations.Get(keys[k]);
                     mut b := right[r].observations.Get(keys[k]);
-                    if b.Ok == false || std.str_eq(a.Val, b.Val) == 0 { result.observations.Insert(std.Clone(ctx, keys[k]), ""); }
+                    mut left_value := "";
+                    mut right_value := "";
+                    if a.Ok { left_value = a.Val; }
+                    if b.Ok { right_value = b.Val; }
+                    if a.Ok == false || b.Ok == false || std.str_eq(left_value, right_value) == 0 {
+                        result.observations.Insert(std.Clone(ctx, keys[k]), "");
+                    }
                     k = k + 1;
                 }
                 mut extra := right[r].observations.Keys(ctx);
