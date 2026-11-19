@@ -2340,7 +2340,7 @@
     "compiler/token.gst": "c9ae01b68effcde501c21a0305f091e2af436b1de2ce70da3506e90d3e431fa8",
     "compiler/type_diff_target.gst": "fef85ca78693ed2a91a3526be51ad893075af37fd2b5799edefbfc4f44c3d16e",
     "compiler/type_dump_entry.gst": "ddf26f754ce6293e75b7deb57dd71614170b124486c67f3fdd12bacd5187cdb9",
-    "compiler/typechecker.gst": "17bf871bab4beed4dc878ce197f1d554330fc0d445f07b6b044673e07ede17b0",
+    "compiler/typechecker.gst": "a43cb79757e7bcdb32906d7a80f0087eae580793683b5213bcfb3f0711d06a1c",
     "compiler/typechecker_address_origin_borrowed_field_test_entry.gst": "85686d36013ba564be72a72531f16ace3212b4deb02ae1cb88bb9cee1cd9510f",
     "compiler/typechecker_address_origin_container_element_test_entry.gst": "774885983d86fd1bb5e1d60f75546086345d6d91c2bba32afd9193a52f9ab4cd",
     "compiler/typechecker_address_origin_local_stack_test_entry.gst": "8562c883c8e64c20194cc2d7ed3ef89732955725e7ae4487c5303eec39a40e4a",
@@ -2694,10 +2694,10 @@
     "compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz": "7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee",
     "scripts/phase22_opening.py": "ae7584baedec4f35f3537decba6b8de2ae4b19b17b55c3f53e4052ae96b6cc19",
     "compiler/phase26-2-defer-lexical/owned-disk-scan-predecessor-v1.json.gz": "38fae8d1b71ffb732f023eec5e8d344ba4785a5d63f9ba07201e44bdf424cb09",
-    "scripts/phase26_2_deferred_allocator_order.py": "01e0f87994dc9dcd2b23ce0cae3145987eb15f536a37a4f753b6edbf70593732",
-    "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md": "3e23e04ebae2226fe7e8ca8497aeeb3b3a83d6a0681aaa32f7b74cd47edab38c",
-    "compiler/phase26-2-deferred-allocator-order/cases.json": "aa7773798e5aa237135f0ab47240c9f7ae29cd7d2df2783a81276f1bad6a9b71",
-    "compiler/phase26-2-deferred-allocator-order/observation_facts.gst": "e7e952948758f0d27a904716acd08ec552e272e2c941946be9e6411749bad9b6"
+    "scripts/phase26_2_deferred_allocator_order.py": "15d5cd1341444eb22a5f26f05aefcfab3aba9a3771c762964e86f93d24a1e9fd",
+    "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md": "b47622c62761421c4c32fd060ec2799facbfb6733c8cc4cd6db1158f3a0be8d8",
+    "compiler/phase26-2-deferred-allocator-order/cases.json": "fb43542ab16a0a7431c155afbcbce860f6ef773b046de15c3bc8c807caa8398b",
+    "compiler/phase26-2-deferred-allocator-order/observation_facts.gst": "7a580b99c3265857dd2539930898b278e47cccf5f70d75df49470edfc7c7e90a"
   },
   "snapshot": {
     "signer": "gust-github-release-1",

@@ -1081,3 +1081,14 @@ later native/R5/fixed-point stages did not run. The same owner is correcting
 physical receiver versus immutable dependency proof, with conservative aggregate
 reference exposure and additive controls. Previous component/static passes are
 historical checkpoints; this successor requires fresh reviews and qualification.
+
+The eda75f proof-separation checkpoint passed its actual source-bound bootstrap,
+the unchanged clone-destination guard, all54 controls (20 native executions and
+34 expected frontend refusals), and internal observation assertions. Actual
+source/output/tool bytes were independently checked. Additive generation wrote
+the exact three intended metadata outputs, then its outer recorder failed on a
+missing output-allowlist field. That original failure remains unchanged. A new
+read-only reconciliation passed the real registration validator and complete
+source/pin/foreign-byte checks without rerunning generation. Final committed
+source58, protected4GiB production/public R5, native fixed point, strict104,
+current regressions, CI and merge remain mandatory and pending.
