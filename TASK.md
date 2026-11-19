@@ -6200,3 +6200,28 @@ errors, symlink escapes and exhaustion. Preserve GNUdu allocation semantics,
 all product quotas/deadlines and exact merged59 predecessor bytes. Run the
 additive real-file/error/budget controls in the owning recipe, re-enroll exact
 bytes and obtain committed reviews before fresh full qualification and CI.
+
+### Deferred allocator-order validation resumed — 2026-11-19
+
+PR622 merged as `1717c32f` with qualified-tree equality, all 155 eligible PR
+workflows plus Trusted and seven owning artifact checks passed. The same owner
+now resumes the held canonical26.2D frontend correction. Preserve the original
+eight compile-only allocator-order reproductions and the qualified native
+lexical-binding controls; do not execute unsafe admitted resource witnesses.
+
+Validate against the existing lowering order: reverse explicit defers in each
+exited frame before that frame's automatic cleanup; on return, evaluate and
+transfer the result, run all active explicit defers, then run transported
+automatic cleanup. Retain lexical storage identity and late allocator values,
+actual acquisition dependencies, and isolated sibling/return facts. Cover
+shadowing, nested exits, aliases/fields, LIFO, return transport and loop exits.
+This enforces existing resource/allocator contracts without changing cleanup
+emission, canonical MIR, ABI, runtime symbols, source brand meaning or OD23.
+
+The selected patch requires committed Spec/Standards reviews, positive source
+and native controls plus compile-only unsafe rejections, actual rollback
+refusals, complete additive source/pattern enrollment, fresh current-source
+strict104/180s, protected4GiB production/public R5 and native fixed point,
+byte/provenance checks, and its own eligible exact-head CI/reviews/rules/merge.
+Then continue the remaining activated26.2–26.6/20requirements; this prerequisite
+merge does not close a canonical row or select slot-observation semantics.

@@ -1372,7 +1372,8 @@ type Scope[ctx] struct {
     allocator_brands: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
     allocator_expressions: std.HashMap[str, AllocatorIdentityProof[ctx], ctx],
     allocator_resources: std.HashMap[str, AllocatorDependencies[ctx], ctx],
-    primitive_arena_observations: std.HashMap[str, str, ctx]
+    primitive_arena_observations: std.HashMap[str, str, ctx],
+    resource_storage_keys: std.HashMap[str, str, ctx]
 }
 
 type StructTemplate[ctx] struct {
@@ -1432,6 +1433,19 @@ type RetainedLeaseEvidence[ctx] struct {
     destructor_name: str,
     raw_field: str,
     selected_position: int
+}
+
+// Proof effects follow expression evaluation order inside one registration.
+// Only registrations are reversed at cleanup; these records emit no cleanup.
+type ResourceDeferredAction[ctx] struct {
+    scope_depth: int,
+    registration: int,
+    kind: int, // 0: Free, 1: owned consumption, 2: other Arena lifecycle use
+    expression: Index[ast.Expression[ctx], ctx],
+    binding_scope: Index[Scope[ctx], ctx],
+    storage_key: str,
+    identity: str,
+    span: token.Span
 }
 
 type ResourceCleanupAction[ctx] struct {
@@ -1518,6 +1532,9 @@ type TypeEnvironment[ctx] struct {
     resource_storage_declaration_orders: std.HashMap[str, int, ctx],
     struct_field_declaration_orders: std.HashMap[str, int, ctx],
     current_resource_scope_depth: int,
+    resource_deferred_actions: std.Vector[ResourceDeferredAction[ctx], ctx],
+    resource_deferred_registration: int,
+    resource_loop_scope_depth: int,
     current_resource_declaration_order: int,
     codegen_active_defers: std.Vector[str, ctx],
     errors: std.Vector[errors.CompilerError[ctx], ctx],
@@ -7775,6 +7792,7 @@ func scope_new(parent: Index[Scope[ctx], ctx], ctx: &Arena) Index[Scope[ctx], ct
         scope_ref_new.allocator_brands = std.HashMapNew(ctx);
         scope_ref_new.allocator_expressions = std.HashMapNew(ctx);
         scope_ref_new.allocator_resources = std.HashMapNew(ctx);
+        scope_ref_new.resource_storage_keys = std.HashMapNew(ctx);
     }
     if parent == empty[Index[Scope[ctx], ctx]] {
         typechecker_log_trace("🗄️", "scope_new: spawned root scope", ctx);
@@ -10225,6 +10243,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.resource_storage_declaration_orders = std.HashMapNew(ctx);
         env_ref_new.struct_field_declaration_orders = std.HashMapNew(ctx);
         env_ref_new.current_resource_scope_depth = 0 - 1;
+        env_ref_new.resource_deferred_actions = std.VectorNew(ctx);
+        env_ref_new.resource_deferred_registration = 0;
+        env_ref_new.resource_loop_scope_depth = 0 - 1;
         env_ref_new.current_resource_declaration_order = 0;
         env_ref_new.codegen_active_defers = std.VectorNew(ctx);
         env_ref_new.errors = std.VectorNew(ctx);
@@ -11663,7 +11684,22 @@ func env_register_resource_storage(env: *TypeEnvironment[ctx], storage_name: str
         (*env).resource_storage_declaration_orders.Insert(
             std.Clone(ctx, storage_name), (*env).current_resource_declaration_order
         );
+        mut declaration := env_allocator_binding_scope(env, storage_name, ctx);
+        if declaration != empty[Index[Scope[ctx], ctx]] {
+            mut key := std.Concat("@resource-storage:", std.FormatInt((*env).current_resource_declaration_order));
+            ctx[declaration].resource_storage_keys.Insert(std.Clone(ctx, storage_name), std.Clone(ctx, key));
+        }
     }
+}
+
+func env_resource_lexical_storage_key(scope: Index[Scope[ctx], ctx], storage_name: str, ctx: &Arena) str {
+    if scope == empty[Index[Scope[ctx], ctx]] { return ""; }
+    mut root := env_resource_storage_root(storage_name, ctx);
+    mut key := ctx[scope].resource_storage_keys.Get(root);
+    if key.Ok {
+        return std.Clone(ctx, std.Concat(std.Concat(key.Val, ":"), storage_name));
+    }
+    return "";
 }
 
 func env_resource_storage_field_order(env: *TypeEnvironment[ctx], storage_name: str, ctx: &Arena) int {
@@ -12026,6 +12062,15 @@ func env_bind_resource_identity(env: *TypeEnvironment[ctx], storage_name: str, i
         (*env).resource_value_identities.Insert(
             std.Clone(ctx, storage_name), std.Clone(ctx, identity)
         );
+        // This reserved, non-source key observes the same mutable storage.
+        // Keeping it in the existing value-fact map gives it exactly the same
+        // deep snapshots and conservative branch/loop joins as ordinary facts.
+        // It never becomes an emitted storage name or an ownership authority.
+        mut declaration := env_allocator_binding_scope(env, storage_name, ctx);
+        mut lexical_key := env_resource_lexical_storage_key(declaration, storage_name, ctx);
+        if len(lexical_key) > 0 {
+            (*env).resource_value_identities.Insert(lexical_key, std.Clone(ctx, identity));
+        }
         mut root := env_resource_storage_root(storage_name, ctx);
         mut scope_lookup := (*env).resource_storage_scope_depths.Get(root);
         if scope_lookup.Ok {
@@ -12268,6 +12313,7 @@ func env_consume_resource_destructor_call(env: *TypeEnvironment[ctx], resolved_f
     }
     unsafe {
         if (*env).in_defer_expression == 1 {
+            env_record_resource_deferred_action(env, 1, identity, argument_idx, get_expression_span(argument_idx, ctx), ctx);
             return env_resource_obligation_set_state(env, identity, 4, ctx);
         }
     }
@@ -12289,6 +12335,7 @@ func env_transfer_owned_resource_argument(env: *TypeEnvironment[ctx], argument_i
     }
     unsafe {
         if (*env).in_defer_expression == 1 {
+            env_record_resource_deferred_action(env, 1, identity, argument_idx, get_expression_span(argument_idx, ctx), ctx);
             return env_resource_obligation_set_state(env, identity, 4, ctx);
         }
     }
@@ -13269,6 +13316,206 @@ func env_validate_resource_allocator_invalidation(env: *TypeEnvironment[ctx], al
     }
 }
 
+func env_record_resource_deferred_action(env: *TypeEnvironment[ctx], kind: int, identity: str, expression: Index[ast.Expression[ctx], ctx], span: token.Span, ctx: &Arena) {
+    unsafe {
+        mut path := env_allocator_storage_path(expression, ctx);
+        mut action: ResourceDeferredAction[ctx];
+        action.scope_depth = (*env).current_resource_scope_depth;
+        action.registration = (*env).resource_deferred_registration;
+        action.kind = kind;
+        action.expression = expression;
+        action.binding_scope = env_allocator_binding_scope(env, path, ctx);
+        action.storage_key = env_resource_lexical_storage_key(action.binding_scope, path, ctx);
+        action.identity = std.Clone(ctx, identity);
+        action.span = span;
+        (*env).resource_deferred_actions.Push(action);
+    }
+}
+
+func env_deferred_resource_identity(env: *TypeEnvironment[ctx], action: ResourceDeferredAction[ctx], ctx: &Arena) str {
+    unsafe {
+        if len(action.storage_key) > 0 {
+            mut actual := (*env).resource_value_identities.Get(action.storage_key);
+            if actual.Ok { return std.Clone(ctx, actual.Val); }
+            return ""; // A missing/joined-away fact cannot discharge an owner.
+        }
+        // A direct deferred producer has late arguments, not captured owner
+        // storage. Registration-time acquisition facts cannot prove its later
+        // dependencies. Keep this route explicitly unsupported, never reuse
+        // the scheduling-time acquisition identity as a lifetime proof.
+        return "";
+    }
+}
+
+func env_deferred_allocator_proof(env: *TypeEnvironment[ctx], action: ResourceDeferredAction[ctx], ctx: &Arena) AllocatorIdentityProof[ctx] {
+    unsafe {
+        if action.binding_scope == empty[Index[Scope[ctx], ctx]] {
+            return allocator_identity_proof("", 1, ctx);
+        }
+        mut parent_scope := (*env).current_allocator_scope;
+        (*env).current_allocator_scope = action.binding_scope;
+        mut proof := env_allocator_expression_proof(action.expression, env, ctx);
+        // A captured declaration is stable, but its late field/alias contents
+        // are not a scheduling-time value snapshot. Explicit unknowns survive.
+        mut actual := env_arena_lifecycle_resolve_expression_identity(action.expression, env, ctx);
+        proof.identity = std.Clone(ctx, actual);
+        if len(actual) == 0 { proof.unresolved = 1; }
+        (*env).current_allocator_scope = parent_scope;
+        return proof;
+    }
+}
+
+func env_deferred_allocator_is_freed(env: *TypeEnvironment[ctx], proof: AllocatorIdentityProof[ctx], freed: std.HashMap[str, int, ctx], ctx: &Arena) int {
+    if freed.Get("").Ok { return 1; }
+    if proof.unresolved == 1 && len(freed.Keys(ctx)) > 0 { return 1; }
+    if freed.Get(proof.identity).Ok { return 1; }
+    unsafe {
+        mut prior := (*env).arena_lifecycle_states.Get(proof.identity);
+        if prior.Ok && prior.Val.state == arena_lifecycle_state_freed() { return 1; }
+    }
+    return 0;
+}
+
+func env_validate_resource_deferred_action(env: *TypeEnvironment[ctx], action: ResourceDeferredAction[ctx], owners: *std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx], freed: *std.HashMap[str, int, ctx], discharged: *std.HashMap[str, int, ctx], escaping: AllocatorDependencies[ctx], ctx: &Arena) int {
+    unsafe {
+        if action.kind == 1 {
+            mut identity := env_deferred_resource_identity(env, action, ctx);
+            mut owner := (*owners).Get(identity);
+            if len(action.storage_key) == 0 {
+                report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Deferred resource consumption requires existing captured owner storage; late producer effects are not represented", action.span, env, ctx);
+                return 0;
+            }
+            if len(identity) == 0 || std.str_eq(identity, action.identity) == 0 || owner.Ok == false {
+                report_error(2, "Semantic Error: [LinearResourceLeak] Deferred consumption no longer identifies its captured live resource storage", action.span, env, ctx);
+                return 0;
+            }
+            if owner.Val.state != 4 {
+                report_error(2, "Semantic Error: [ResourceAcquisitionNonLive] Deferred consumption requires its still-scheduled acquisition", action.span, env, ctx);
+                return 0;
+            }
+            mut destroyed := (*freed).Keys(ctx);
+            mut i := 0;
+            while i < len(destroyed) {
+                mut unresolved := 0;
+                if len(destroyed[i]) == 0 { unresolved = 1; }
+                mut proof := allocator_identity_proof(destroyed[i], unresolved, ctx);
+                if allocator_dependencies_overlap(owner.Val.allocator_dependencies, proof, ctx) == 1 {
+                    report_error(2, "Semantic Error: [LinearResourceLeak] Deferred resource consumption follows destruction of its allocator", action.span, env, ctx);
+                    return 0;
+                }
+                i = i + 1;
+            }
+            mut consumed := resource_acquisition_obligation_clone(owner.Val, ctx);
+            consumed.state = 1;
+            (*owners).Insert(std.Clone(ctx, identity), consumed);
+            (*discharged).Insert(std.Clone(ctx, identity), 1);
+            return 1;
+        }
+
+        mut allocator := env_deferred_allocator_proof(env, action, ctx);
+        if env_deferred_allocator_is_freed(env, allocator, *freed, ctx) == 1 {
+            report_error(2, "Semantic Error: [ArenaUseAfterFree] Deferred lifecycle operation follows allocator destruction", action.span, env, ctx);
+            return 0;
+        }
+        if action.kind != 0 { return 1; }
+        if allocator.unresolved == 1 || len(allocator.identity) == 0 {
+            report_error(2, "Semantic Error: [ResourceDeferredUnresolved] Deferred allocator Free has no proved late receiver identity", action.span, env, ctx);
+            return 0;
+        }
+        mut dependent := allocator_dependencies_overlap(escaping, allocator, ctx);
+        mut keys := (*owners).Keys(ctx);
+        typechecker_sort_vector_str(&keys, ctx);
+        mut k := 0;
+        while k < len(keys) && dependent == 0 {
+            guard owner := (*owners).Get(keys[k]) else { return 0; };
+            if owner.state == 0 || owner.state == 4 || owner.state == 5 {
+                dependent = allocator_dependencies_overlap(owner.allocator_dependencies, allocator, ctx);
+            }
+            k = k + 1;
+        }
+        if dependent == 1 {
+            report_error(2, "Semantic Error: [LinearResourceLeak] Deferred allocator Free executes before dependent cleanup or invalidates a returned owner", action.span, env, ctx);
+            return 0;
+        }
+        (*freed).Insert(std.Clone(ctx, allocator.identity), 1);
+        return 1;
+    }
+}
+
+// mode0: normal frame exit; mode1: all explicit defers before return cleanup;
+// mode2: break/continue unwind, each frame's defers then its automatic cleanup.
+// The simulation owns cloned facts. Only an actual normal exit publishes its
+// explicit-consumption/lifecycle effects; it never deletes automatic cleanup.
+func env_validate_resource_deferred_exit(env: *TypeEnvironment[ctx], mode: int, minimum_depth: int, escaping: AllocatorDependencies[ctx], ctx: &Arena) int {
+    unsafe {
+        mut actions := (*env).resource_deferred_actions;
+        if len(actions) == 0 { return 1; }
+        mut owners := typechecker_clone_resource_acquisition_obligation_map((*env).resource_acquisition_obligations, ctx);
+        mut freed: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        mut discharged: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
+        mut valid := 1;
+        mut depth := (*env).current_resource_scope_depth;
+        while depth >= minimum_depth {
+            mut end := len(actions);
+            while end > 0 {
+                mut start := end - 1;
+                while start > 0 && actions[start - 1].registration == actions[end - 1].registration {
+                    start = start - 1;
+                }
+                mut i := start;
+                while i < end {
+                    if actions[i].scope_depth == depth {
+                        if env_validate_resource_deferred_action(env, actions[i], &owners, &freed, &discharged, escaping, ctx) == 0 { valid = 0; }
+                    }
+                    i = i + 1;
+                }
+                end = start;
+            }
+            if mode != 1 {
+                mut keys := owners.Keys(ctx);
+                mut k := 0;
+                while k < len(keys) {
+                    guard owner := owners.Get(keys[k]) else { return 0; };
+                    if owner.scope_depth == depth && owner.state == 0 {
+                        mut cleaned := resource_acquisition_obligation_clone(owner, ctx);
+                        cleaned.state = 1;
+                        owners.Insert(std.Clone(ctx, keys[k]), cleaned);
+                    }
+                    k = k + 1;
+                }
+            }
+            depth = depth - 1;
+        }
+        if mode == 0 && valid == 1 {
+            mut consumed := discharged.Keys(ctx);
+            mut c := 0;
+            while c < len(consumed) {
+                env_resource_obligation_set_state(env, consumed[c], 1, ctx);
+                c = c + 1;
+            }
+            mut destroyed := freed.Keys(ctx);
+            mut f := 0;
+            while f < len(destroyed) {
+                if len(destroyed[f]) > 0 {
+                    env_arena_lifecycle_ensure(env, destroyed[f], ctx);
+                    guard state := (*env).arena_lifecycle_states.Get(destroyed[f]) else { return 0; };
+                    state.state = arena_lifecycle_state_freed();
+                    (*env).arena_lifecycle_states.Insert(std.Clone(ctx, destroyed[f]), state);
+                }
+                f = f + 1;
+            }
+            mut a := 0;
+            while a < len(actions) {
+                if actions[a].kind == 0 && actions[a].scope_depth >= minimum_depth {
+                    (*env).arena_lifecycle_deferred_frees.Remove(actions[a].identity);
+                }
+                a = a + 1;
+            }
+        }
+        return valid;
+    }
+}
+
 func arena_lifecycle_state_live() int {
     return 0;
 }
@@ -14026,6 +14273,11 @@ func env_arena_lifecycle_apply_expression(env: *TypeEnvironment[ctx], expr_idx: 
             }
         }
         mut identity := env_arena_lifecycle_resolve_expression_identity(expr_idx, env, ctx);
+        if (*env).in_defer_expression == 1 {
+            mut kind := 2;
+            if std.str_eq(operation, "free") == 1 { kind = 0; }
+            env_record_resource_deferred_action(env, kind, identity, expr_idx, span, ctx);
+        }
         if std.str_eq(identity, "") == 1 {
             return 1;
         }
@@ -15290,6 +15542,50 @@ func is_diverging_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: *Type
     }
 }
 
+// This is an exit-proof query only. It does not change the generic guard
+// divergence rule or emit/normalize loop-control instructions.
+func typechecker_resource_statement_terminates(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    if is_diverging_statement(stmt_idx, env, ctx) == 1 { return 1; }
+    mut statement := ctx[stmt_idx];
+    if statement.tag == 13 {
+        mut expr := ctx[statement.Expression.expr];
+        if expr.tag == 0 {
+            if std.str_eq(expr.Identifier.name, "break") == 1 || std.str_eq(expr.Identifier.name, "continue") == 1 { return 1; }
+        }
+    }
+    if statement.tag == 10 {
+        return typechecker_resource_block_terminates(statement.UnsafeBlock.body, env, ctx);
+    }
+    if statement.tag == 7 {
+        if typechecker_resource_block_terminates(statement.If.consequence, env, ctx) == 1 &&
+           typechecker_resource_block_terminates(statement.If.alternative, env, ctx) == 1 { return 1; }
+    }
+    if statement.tag == 8 {
+        mut cases := ctx[statement.Match.cases];
+        if len(cases) == 0 { return 0; }
+        mut i := 0;
+        while i < len(cases) {
+            if typechecker_resource_block_terminates(cases[i].body, env, ctx) == 0 { return 0; }
+            i = i + 1;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+func typechecker_resource_block_terminates(block_idx: Index[ast.BlockStatement[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    if block_idx == empty[Index[ast.BlockStatement[ctx], ctx]] { return 0; }
+    mut statements := ctx[ctx[block_idx].statements];
+    mut i := 0;
+    while i < len(statements) {
+        mut statement: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(statement, statements[i]);
+        if typechecker_resource_statement_terminates(statement, env, ctx) == 1 { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
 func is_diverging_block(block_idx: Index[ast.BlockStatement[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if block_idx == empty[Index[ast.BlockStatement[ctx], ctx]] {
@@ -16270,6 +16566,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             return;
         }
         mut parent_depth := (*env).current_resource_scope_depth;
+        mut parent_deferred_actions := (*env).resource_deferred_actions;
         mut parent_allocator_scope := (*env).current_allocator_scope;
         (*env).current_allocator_scope = scope;
         mut parent_zero_local_name := (*env).zero_local_call_name;
@@ -16443,6 +16740,9 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 identity_index = identity_index + 1;
             }
         }
+        if typechecker_resource_block_terminates(block_idx, env, ctx) == 0 {
+            env_validate_resource_deferred_exit(env, 0, (*env).current_resource_scope_depth, allocator_dependencies_empty(ctx), ctx);
+        }
         env_record_resource_cleanup_plan(
             env,
             "block",
@@ -16467,6 +16767,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             local_zero_index = local_zero_index + 1;
         }
         (*env).current_resource_scope_depth = parent_depth;
+        (*env).resource_deferred_actions = parent_deferred_actions;
         (*env).current_allocator_scope = parent_allocator_scope;
         (*env).zero_local_call_name = parent_zero_local_name;
         (*env).zero_local_call_callee = parent_zero_local_callee;
@@ -16521,12 +16822,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_resource_storage_scope_depths := typechecker_clone_int_map((*env).resource_storage_scope_depths, ctx);
             mut parent_resource_storage_declaration_orders := typechecker_clone_int_map((*env).resource_storage_declaration_orders, ctx);
             mut parent_resource_scope_depth := (*env).current_resource_scope_depth;
+            mut parent_resource_deferred_actions := (*env).resource_deferred_actions;
+            mut parent_resource_deferred_registration := (*env).resource_deferred_registration;
+            mut parent_resource_loop_scope_depth := (*env).resource_loop_scope_depth;
             mut parent_function_allocator_scope := (*env).function_allocator_scope;
             mut parent_resource_declaration_order := (*env).current_resource_declaration_order;
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut parent_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
             mut parent_arena_lifecycle_bindings := typechecker_clone_string_map((*env).arena_lifecycle_bindings, ctx);
+            mut parent_arena_lifecycle_states := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
             mut parent_arena_lifecycle_deferred_frees := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
             mut parent_function_identity_scope := std.Clone(ctx, (*env).current_function_identity_scope);
 
@@ -16540,11 +16845,15 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).resource_storage_scope_depths = std.HashMapNew(ctx);
             (*env).resource_storage_declaration_orders = std.HashMapNew(ctx);
             (*env).current_resource_scope_depth = 0;
+            (*env).resource_deferred_actions = std.VectorNew(ctx);
+            (*env).resource_deferred_registration = 0;
+            (*env).resource_loop_scope_depth = 0 - 1;
             (*env).current_resource_declaration_order = 0;
             (*env).variable_origins = std.HashMapNew(ctx);
             (*env).variable_zero_states = std.HashMapNew(ctx);
             (*env).field_zero_states = std.HashMapNew(ctx);
             (*env).arena_lifecycle_bindings = std.HashMapNew(ctx);
+            (*env).arena_lifecycle_states = std.HashMapNew(ctx);
             (*env).arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
             (*env).current_function_identity_scope = std.Clone(ctx, function_name_return_prov);
 
@@ -16792,12 +17101,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).resource_storage_scope_depths = parent_resource_storage_scope_depths;
             (*env).resource_storage_declaration_orders = parent_resource_storage_declaration_orders;
             (*env).current_resource_scope_depth = parent_resource_scope_depth;
+            (*env).resource_deferred_actions = parent_resource_deferred_actions;
+            (*env).resource_deferred_registration = parent_resource_deferred_registration;
+            (*env).resource_loop_scope_depth = parent_resource_loop_scope_depth;
             (*env).function_allocator_scope = parent_function_allocator_scope;
             (*env).current_resource_declaration_order = parent_resource_declaration_order;
             (*env).variable_origins = parent_origins;
             (*env).variable_zero_states = parent_zero_states;
             (*env).field_zero_states = parent_field_zero_states;
             (*env).arena_lifecycle_bindings = parent_arena_lifecycle_bindings;
+            (*env).arena_lifecycle_states = parent_arena_lifecycle_states;
             (*env).arena_lifecycle_deferred_frees = parent_arena_lifecycle_deferred_frees;
             (*env).current_function_identity_scope = parent_function_identity_scope;
             (*env).expected_return_type = old_expected;
@@ -17710,6 +18023,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states_while := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut parent_field_zero_states_while := typechecker_clone_int_map((*env).field_zero_states, ctx);
+            mut parent_lifecycle_while := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+            mut parent_deferred_frees_while := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
             mut parent_resource_obligations_while := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
             );
@@ -17718,9 +18033,19 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             );
 
             mut while_scope := scope_new(scope, ctx);
+            mut parent_loop_scope_depth := (*env).resource_loop_scope_depth;
+            (*env).resource_loop_scope_depth = (*env).current_resource_scope_depth + 1;
             typechecker_check_resource_scoped_block(
                 body_idx, env, while_scope, 1, ctx
             );
+            (*env).resource_loop_scope_depth = parent_loop_scope_depth;
+            if is_diverging_block(body_idx, env, ctx) == 1 {
+                (*env).arena_lifecycle_states = parent_lifecycle_while;
+                (*env).arena_lifecycle_deferred_frees = parent_deferred_frees_while;
+            } else {
+                (*env).arena_lifecycle_states = typechecker_join_arena_lifecycle_maps(parent_lifecycle_while, (*env).arena_lifecycle_states, ctx);
+                (*env).arena_lifecycle_deferred_frees = typechecker_union_int_maps(parent_deferred_frees_while, (*env).arena_lifecycle_deferred_frees, ctx);
+            }
             mut body_zero_states_while := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut body_field_zero_states_while := typechecker_clone_int_map((*env).field_zero_states, ctx);
 
@@ -17765,6 +18090,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut pre_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut pre_zero_states_if := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut pre_field_zero_states_if := typechecker_clone_int_map((*env).field_zero_states, ctx);
+            mut pre_lifecycle_if := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+            mut pre_deferred_frees_if := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
             mut pre_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut pre_checked := typechecker_clone_int_map((*env).checked_results, ctx);
             mut pre_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
@@ -17789,6 +18116,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut consequence_origins := (*env).variable_origins;
             mut consequence_zero_states_if := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut consequence_field_zero_states_if := typechecker_clone_int_map((*env).field_zero_states, ctx);
+            mut consequence_lifecycle_if := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+            mut consequence_deferred_frees_if := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
+            mut alternative_lifecycle_if := typechecker_clone_arena_lifecycle_map(pre_lifecycle_if, ctx);
+            mut alternative_deferred_frees_if := typechecker_clone_int_map(pre_deferred_frees_if, ctx);
             mut consequence_moved := (*env).moved_vars;
             mut consequence_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
@@ -17816,6 +18147,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 (*env).variable_origins = pre_origins;
                 (*env).variable_zero_states = typechecker_clone_int_map(pre_zero_states_if, ctx);
                 (*env).field_zero_states = typechecker_clone_int_map(pre_field_zero_states_if, ctx);
+                (*env).arena_lifecycle_states = typechecker_clone_arena_lifecycle_map(pre_lifecycle_if, ctx);
+                (*env).arena_lifecycle_deferred_frees = typechecker_clone_int_map(pre_deferred_frees_if, ctx);
                 (*env).moved_vars = pre_moved;
                 (*env).checked_results = pre_checked;
                 (*env).resource_acquisition_obligations =
@@ -17842,6 +18175,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 alternative_resource_values_if = typechecker_clone_string_map(
                     (*env).resource_value_identities, ctx
                 );
+                alternative_lifecycle_if = typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+                alternative_deferred_frees_if = typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
 
                 // Join consequence and alternative
                 mut merged_origins := pre_origins;
@@ -17956,18 +18291,32 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             // Restore checked results
             (*env).checked_results = pre_checked;
-            (*env).resource_acquisition_obligations =
-                typechecker_join_resource_acquisition_obligation_maps(
-                    consequence_resource_obligations_if,
-                    alternative_resource_obligations_if,
-                    ctx
-                );
-            (*env).resource_value_identities =
-                typechecker_join_resource_value_identity_maps(
-                    consequence_resource_values_if,
-                    alternative_resource_values_if,
-                    ctx
-                );
+            if typechecker_resource_block_terminates(cons_idx, env, ctx) == 1 {
+                (*env).arena_lifecycle_states = alternative_lifecycle_if;
+                (*env).arena_lifecycle_deferred_frees = alternative_deferred_frees_if;
+            } else if typechecker_resource_block_terminates(alt_idx, env, ctx) == 1 {
+                (*env).arena_lifecycle_states = consequence_lifecycle_if;
+                (*env).arena_lifecycle_deferred_frees = consequence_deferred_frees_if;
+            } else {
+                (*env).arena_lifecycle_states = typechecker_join_arena_lifecycle_maps(consequence_lifecycle_if, alternative_lifecycle_if, ctx);
+                (*env).arena_lifecycle_deferred_frees = typechecker_union_int_maps(consequence_deferred_frees_if, alternative_deferred_frees_if, ctx);
+            }
+            if typechecker_resource_block_terminates(cons_idx, env, ctx) == 1 {
+                (*env).resource_acquisition_obligations = alternative_resource_obligations_if;
+                (*env).resource_value_identities = alternative_resource_values_if;
+            } else if typechecker_resource_block_terminates(alt_idx, env, ctx) == 1 {
+                (*env).resource_acquisition_obligations = consequence_resource_obligations_if;
+                (*env).resource_value_identities = consequence_resource_values_if;
+            } else {
+                (*env).resource_acquisition_obligations =
+                    typechecker_join_resource_acquisition_obligation_maps(
+                        consequence_resource_obligations_if, alternative_resource_obligations_if, ctx
+                    );
+                (*env).resource_value_identities =
+                    typechecker_join_resource_value_identity_maps(
+                        consequence_resource_values_if, alternative_resource_values_if, ctx
+                    );
+            }
 
             return res;
         }
@@ -17980,6 +18329,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut pre_variable_zero_states_match := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut merged_variable_zero_states_match := typechecker_clone_int_map(pre_variable_zero_states_match, ctx);
             mut pre_field_zero_states_match := typechecker_clone_int_map((*env).field_zero_states, ctx);
+            mut pre_lifecycle_match := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+            mut pre_deferred_frees_match := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
+            mut merged_lifecycle_match := typechecker_clone_arena_lifecycle_map(pre_lifecycle_match, ctx);
+            mut merged_deferred_frees_match := typechecker_clone_int_map(pre_deferred_frees_match, ctx);
+            mut has_continuing_lifecycle_match := 0;
             mut merged_field_zero_states_match := typechecker_clone_int_map(pre_field_zero_states_match, ctx);
             mut pre_resource_obligations_match := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
@@ -18009,6 +18363,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 while i < len(cases_vec_match_stmt) {
                     (*env).variable_zero_states = typechecker_clone_int_map(pre_variable_zero_states_match, ctx);
                     (*env).field_zero_states = typechecker_clone_int_map(pre_field_zero_states_match, ctx);
+                    (*env).arena_lifecycle_states = typechecker_clone_arena_lifecycle_map(pre_lifecycle_match, ctx);
+                    (*env).arena_lifecycle_deferred_frees = typechecker_clone_int_map(pre_deferred_frees_match, ctx);
                     (*env).resource_acquisition_obligations =
                         typechecker_clone_resource_acquisition_obligation_map(
                             pre_resource_obligations_match, ctx
@@ -18085,6 +18441,16 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     typechecker_check_resource_scoped_block(
                         body_idx, env, child_scope, 1, ctx
                     );
+                    if typechecker_resource_block_terminates(body_idx, env, ctx) == 0 {
+                        if has_continuing_lifecycle_match == 0 {
+                            merged_lifecycle_match = typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+                            merged_deferred_frees_match = typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
+                            has_continuing_lifecycle_match = 1;
+                        } else {
+                            merged_lifecycle_match = typechecker_join_arena_lifecycle_maps(merged_lifecycle_match, (*env).arena_lifecycle_states, ctx);
+                            merged_deferred_frees_match = typechecker_union_int_maps(merged_deferred_frees_match, (*env).arena_lifecycle_deferred_frees, ctx);
+                        }
+                    }
                     merged_variable_zero_states_match = phase26_zero_join_maps(
                         merged_variable_zero_states_match, (*env).variable_zero_states, ctx
                     );
@@ -18106,7 +18472,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut case_resource_values_match := typechecker_clone_string_map(
                         (*env).resource_value_identities, ctx
                     );
-                    if has_resource_obligation_case_match == 0 {
+                    if typechecker_resource_block_terminates(body_idx, env, ctx) == 1 {
+                        // A returning/breaking arm has no sibling continuation.
+                        // Its own exit was checked against its isolated facts.
+                    } else if has_resource_obligation_case_match == 0 {
                         merged_resource_obligations_match =
                             case_resource_obligations_match;
                         merged_resource_values_match = case_resource_values_match;
@@ -18157,6 +18526,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).resource_value_identities = merged_resource_values_match;
             (*env).variable_zero_states = merged_variable_zero_states_match;
             (*env).field_zero_states = merged_field_zero_states_match;
+            (*env).arena_lifecycle_states = merged_lifecycle_match;
+            (*env).arena_lifecycle_deferred_frees = merged_deferred_frees_match;
 
             return res;
         }
@@ -18177,6 +18548,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         }
 
         if stmt.tag == 11 { // Defer
+            (*env).resource_deferred_registration = (*env).resource_deferred_registration + 1;
             mut defer_resource_name_step52ai := env_defer_statement_resource_destructor_candidate_name(env, stmt_idx, ctx);
             if len(defer_resource_name_step52ai) > 0 {
                 mut defer_expr_span_step52aj := get_expression_span(stmt.Defer.expr, ctx);
@@ -18187,6 +18559,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         defer_resource_name_step52ai
                     );
                     if defer_identity_lookup.Ok {
+                        mut deferred_call := ctx[stmt.Defer.expr];
+                        mut deferred_arguments := ctx[deferred_call.Call.arguments];
+                        mut deferred_argument: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                        ctx.Set(deferred_argument, deferred_arguments[0]);
+                        env_record_resource_deferred_action(env, 1, defer_identity_lookup.Val, deferred_argument, defer_expr_span_step52aj, ctx);
                         env_resource_obligation_set_state(
                             env, defer_identity_lookup.Val, 4, ctx
                         );
@@ -18213,6 +18590,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut return_resource_entry_values := typechecker_clone_string_map(
                 (*env).resource_value_identities, ctx
             );
+            mut return_entry_lifecycle := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+            mut return_entry_deferred_frees := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
 
             // Check inout parameters are not moved before returning
             if (*env).current_function_inout_params != empty[Index[std.Vector[str, ctx], ctx]] {
@@ -18354,18 +18733,26 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             // A return evaluates and transfers its result before cleaning all
             // remaining live owners. Preserve the continuation state while
             // checking so a diverging branch does not discharge its sibling.
+            mut escaping_allocator_dependencies := allocator_dependencies_empty(ctx);
+            if expr_idx != empty[Index[ast.Expression[ctx], ctx]] &&
+               len(env_tracking_resource_type_name(env, actual_return, ctx)) > 0 {
+                escaping_allocator_dependencies = env_resource_expression_allocator_dependencies(env, expr_idx, ctx);
+            }
             if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 if (*env).expected_return_type != empty[Index[ast.Type[ctx], ctx]] {
                     env_validate_resource_return_allocator(env, expr_idx, ctx[(*env).expected_return_type], stmt.Return.span, ctx);
                 }
                 env_transfer_resource_return_expression(env, expr_idx, ctx);
             }
+            env_validate_resource_deferred_exit(env, 1, 0, escaping_allocator_dependencies, ctx);
             env_record_resource_cleanup_plan(
                 env, "return", stmt.Return.span, 0 - 1, 0, ctx
             );
             (*env).resource_acquisition_obligations =
                 return_resource_entry_obligations;
             (*env).resource_value_identities = return_resource_entry_values;
+            (*env).arena_lifecycle_states = return_entry_lifecycle;
+            (*env).arena_lifecycle_deferred_frees = return_entry_deferred_frees;
 
             // Step 5.2R: narrow compiler-backed Resource cleanup validation on explicit return paths.
             env_validate_linear_resource_scope_exit_cleanup(env, stmt.Return.span, ctx);
@@ -18376,6 +18763,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
         if stmt.tag == 13 { // Expression
             mut expr_idx := stmt.Expression.expr;
             check_expression(expr_idx, env, scope, ctx);
+            mut loop_control := ctx[expr_idx];
+            if loop_control.tag == 0 && (*env).resource_loop_scope_depth >= 0 {
+                if std.str_eq(loop_control.Identifier.name, "break") == 1 ||
+                   std.str_eq(loop_control.Identifier.name, "continue") == 1 {
+                    env_validate_resource_deferred_exit(env, 2, (*env).resource_loop_scope_depth, allocator_dependencies_empty(ctx), ctx);
+                }
+            }
             env_report_discarded_resource_acquisition(
                 env, expr_idx, stmt.Expression.span, ctx
             );
@@ -18426,6 +18820,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_open_linear_resources_guard_else := typechecker_clone_linear_resource_map((*env).open_linear_resources, ctx);
             mut parent_resource_acquisition_obligations_guard_else := typechecker_clone_resource_acquisition_obligation_map((*env).resource_acquisition_obligations, ctx);
             mut parent_resource_value_identities_guard_else := typechecker_clone_string_map((*env).resource_value_identities, ctx);
+            mut parent_lifecycle_guard_else := typechecker_clone_arena_lifecycle_map((*env).arena_lifecycle_states, ctx);
+            mut parent_deferred_frees_guard_else := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states_guard := typechecker_clone_int_map((*env).variable_zero_states, ctx);
             mut parent_field_zero_states_guard := typechecker_clone_int_map((*env).field_zero_states, ctx);
@@ -18484,6 +18880,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).open_linear_resources = parent_open_linear_resources_guard_else;
             (*env).resource_acquisition_obligations = parent_resource_acquisition_obligations_guard_else;
             (*env).resource_value_identities = parent_resource_value_identities_guard_else;
+            (*env).arena_lifecycle_states = parent_lifecycle_guard_else;
+            (*env).arena_lifecycle_deferred_frees = parent_deferred_frees_guard_else;
 
             scope_insert(scope, std.Clone(ctx, name), payload_type, ctx);
             (*env).variable_types.Insert(std.Clone(ctx, name), payload_type);
@@ -18964,6 +19362,51 @@ func typechecker_clone_resource_acquisition_obligation_map(src: std.HashMap[str,
         i = i + 1;
     }
     return dest;
+}
+
+func typechecker_clone_arena_lifecycle_map(source: std.HashMap[str, ArenaLifecycleState[ctx], ctx], ctx: &Arena) std.HashMap[str, ArenaLifecycleState[ctx], ctx] {
+    mut cloned: std.HashMap[str, ArenaLifecycleState[ctx], ctx] := std.HashMapNew(ctx);
+    mut keys := source.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        guard state := source.Get(keys[i]) else { return cloned; };
+        // State fields are value scalars and immutable strings, with no nested
+        // mutable map. Copying the record isolates subsequent state updates.
+        cloned.Insert(std.Clone(ctx, keys[i]), state);
+        i = i + 1;
+    }
+    return cloned;
+}
+
+func typechecker_join_arena_lifecycle_maps(left: std.HashMap[str, ArenaLifecycleState[ctx], ctx], right: std.HashMap[str, ArenaLifecycleState[ctx], ctx], ctx: &Arena) std.HashMap[str, ArenaLifecycleState[ctx], ctx] {
+    mut joined := typechecker_clone_arena_lifecycle_map(left, ctx);
+    mut keys := right.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        guard state := right.Get(keys[i]) else { return joined; };
+        mut prior := joined.Get(keys[i]);
+        if prior.Ok {
+            if prior.Val.state == arena_lifecycle_state_freed() {
+                state.state = arena_lifecycle_state_freed();
+            }
+        }
+        // A possibly freed allocator is never promoted back to proven live.
+        joined.Insert(std.Clone(ctx, keys[i]), state);
+        i = i + 1;
+    }
+    return joined;
+}
+
+func typechecker_union_int_maps(left: std.HashMap[str, int, ctx], right: std.HashMap[str, int, ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
+    mut joined := typechecker_clone_int_map(left, ctx);
+    mut keys := right.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        guard value := right.Get(keys[i]) else { return joined; };
+        joined.Insert(std.Clone(ctx, keys[i]), value);
+        i = i + 1;
+    }
+    return joined;
 }
 
 func typechecker_resource_success_condition_identity(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {

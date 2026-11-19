@@ -1039,3 +1039,19 @@ claimed. Exact partial tools and failure evidence are preserved. The same owner
 is implementing and enrolling bounded complete-scan recovery and refusal
 controls, with product4GiB quotas, deadlines, source/native/R5/FP/CI gates and
 OD23 boundaries unchanged. Fresh committed-source qualification remains pending.
+
+## 2026-11-19 — deferred allocator-order validation resumed
+
+The native lexical-storage prerequisite merged in PR622 as `1717c32f`;
+qualified/main trees match, all155 eligible PR workflows plus Trusted and seven
+owning artifacts passed. Its tools and mutable qualification records are
+preserved and checked before replacement. The same physical worktree and
+startup symlink now host `codex/phase26-2-deferred-allocator-validation` from
+that actual main. Any earlier written wait is prospectively invalidated.
+
+The selected current work is frontend validation of existing defer/automatic
+cleanup allocator order, with lexical storage and late-value observations.
+The original unsafe compile-only admissions remain failures; no unsafe witness
+was executed. Current correction reviews, controls, enrollment, qualification,
+CI and merge are pending. Full Phase26.2–26.6/20requirements remains active;
+OD23 remains OPEN/unselected and historical first-release DONE stays frozen.
