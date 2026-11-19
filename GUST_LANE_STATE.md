@@ -1120,3 +1120,19 @@ The same owner is isolating those exact18 source checks per process, retaining
 the default snapshot groups and adding explicit argument refusals. Compiler
 logic, runtime scratch and all resource/test budgets remain unchanged. The failed
 unit, source and outputs stay retained; fresh validation and review remain due.
+
+The final6ecbe source59 and genuine protected4GiB production/public/R5/native
+fixed-point job passed, with independent physical verification. The subsequent
+component job passed allocator18, then failed exact frozen CR15 nominal parity:
+an unchanged TypeMismatch was followed by a new secondary LinearResourceLeak.
+Resource, owning4 and strict104 were not run by that failed job. Its actual
+exit1 and raw evidence remain preserved. No publication or CI observer exists.
+
+The same owner is correcting diagnostic precedence only: a pre-existing compiler
+error skips the new deferred-order simulation without changing diagnostics or
+publishing cleanup facts. Clean entries still check all orders. Direct internal
+controls cover prior-error and clean invalid/valid paths in all four exit modes.
+All original54/source18/primitive18 and frozen CR15 expectations remain unchanged.
+Committed reviews, additive enrollment, fresh current-source/native/product/FP
+qualification and normal CI/merge remain required. Full Phase26 stays active;
+OD23 remains OPEN/unselected, and earlier passes do not qualify this correction.

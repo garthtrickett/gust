@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = 'ef6b5f1ff96a7ab738a480767bbf71cfdc3d1f534c8f19970fb558b29001f334'
+CASE_DIGEST = '29eec781ba9cb6310eee3084c519e5bf7f8121be74f23ce836c5e125116f08c8'
 
 
 def digest(path):
@@ -43,7 +43,15 @@ def validate(value=None, checker=None):
     assert 'if len(args) != 1 { return 2; }' in unit and 'if len(args) == 4 {' in unit
     assert 'if literal_observation_source_index(args[2], args[3]) < 0 { return 2; }' in unit
     assert 'if check_literal_observation_source(args[2], args[3], &ctx) == 0 { return 1; }' in unit
+    for prior, storage, code in ((1, 0, 32), (1, 1, 33), (0, 0, 34), (0, 1, 35)):
+        assert ('if check_deferred_error_precedence(exit_mode, ' + str(prior) + ', ' + str(storage) +
+                ', &ctx) == 0 { return ' + str(code) + '; }') in unit, 'deferred diagnostic precedence control missing'
+    assert 'while exit_mode < 4 {' in unit, 'deferred diagnostic exit-mode coverage missing'
     source = CHECKER.read_text() if checker is None else checker
+    deferred_exit = source.split('func env_validate_resource_deferred_exit(', 1)[1].split('\nfunc ', 1)[0]
+    precedence = 'if len((*env).errors) != 0 { return 1; }'
+    assert precedence in deferred_exit, 'deferred diagnostic precedence missing'
+    assert deferred_exit.index(precedence) < deferred_exit.index('mut actions := '), 'deferred diagnostic precedence follows simulation'
     for obligation in (
         'type ResourceDeferredAction[ctx] struct {',
         'action.binding_scope = env_allocator_binding_scope(env, path, ctx);',
@@ -106,6 +114,10 @@ def inversions():
     changed = copy.deepcopy(value)
     changed['unqualified_fixture_attempts'][0]['original_case']['source'] += '\n'
     changes.append(('original failed fixture overwritten', changed, source, 'deferred allocator case contract drifted'))
+    marker = 'func env_validate_resource_deferred_exit('
+    before_exit, after_exit = source.split(marker, 1)
+    changed_exit = after_exit.replace('if len((*env).errors) != 0 { return 1; }', '/* omitted by control */', 1)
+    changes.append(('earlier diagnostic precedence omitted', value, before_exit + marker + changed_exit, 'deferred diagnostic precedence missing'))
     for label, obligation in (
         ('missing return simulation', 'env_validate_resource_deferred_exit(env, 1, 0, escaping_allocator_dependencies, stmt.Return.span, ctx);'),
         ('missing loop unwind', 'env_validate_resource_deferred_exit(env, 2, (*env).resource_loop_scope_depth, allocator_dependencies_empty(ctx), stmt.Expression.span, ctx);'),

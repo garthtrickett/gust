@@ -4,6 +4,85 @@ import "../typechecker.gst" as checker;
 import "../ast.gst" as ast;
 import "../lexer.gst" as lexer;
 import "../parser.gst" as parser;
+func check_deferred_error_precedence(mode: int, prior_error: int, valid_storage: int, ctx: &Arena) int {
+    unsafe {
+        mut env := checker.env_new(ctx);
+        mut scope := checker.scope_new(empty[Index[checker.Scope[ctx], ctx]], ctx);
+        env.current_allocator_scope = scope;
+        env.current_resource_scope_depth = 0;
+        mut owner: checker.ResourceAcquisitionObligation[ctx];
+        owner.identity = "owner";
+        owner.type_name = "SyntheticOwner";
+        owner.owned_type = checker.make_type_int();
+        owner.allocator_dependencies = checker.allocator_dependencies_empty(ctx);
+        owner.destructor_name = "consume";
+        owner.storage_name = "stored";
+        owner.cleanup_condition = "always";
+        owner.scope_depth = 0;
+        owner.declaration_order = 0;
+        owner.field_order = 0;
+        owner.state = 4;
+        owner.retained_lease_state = 0;
+        owner.fallible_owned_out = 0;
+        env.resource_acquisition_obligations.Insert("owner", owner);
+        env.resource_value_identities.Insert("storage", "owner");
+        checker.env_arena_lifecycle_ensure(&env, "A", ctx);
+        env.arena_lifecycle_deferred_frees.Insert("A", 1);
+        ctx[scope].primitive_arena_observations.Insert("holder.arena", checker.allocator_identity_proof("A", 0, ctx));
+        mut action: checker.ResourceDeferredAction[ctx];
+        action.scope_depth = 0;
+        action.registration = 0;
+        action.kind = 1;
+        action.expression = empty[Index[ast.Expression[ctx], ctx]];
+        action.binding_scope = scope;
+        action.storage_key = "";
+        if valid_storage == 1 { action.storage_key = "storage"; }
+        action.identity = "owner";
+        action.span.start.line = 1;
+        action.span.start.column = 1;
+        action.span.start.offset = 0;
+        action.span.end = action.span.start;
+        env.resource_deferred_actions.Push(action);
+        if prior_error == 1 {
+            checker.report_error(2, "[TypeMismatch] original diagnostic", action.span, &env, ctx);
+        }
+        mut result := checker.env_validate_resource_deferred_exit(&env, mode, 0, checker.allocator_dependencies_empty(ctx), action.span, ctx);
+        guard retained := env.resource_acquisition_obligations.Get("owner") else { return 0; }
+        guard identity := env.resource_value_identities.Get("storage") else { return 0; }
+        guard lifecycle := env.arena_lifecycle_states.Get("A") else { return 0; }
+        guard observation := ctx[scope].primitive_arena_observations.Get("holder.arena") else { return 0; }
+        if env.resource_acquisition_obligations.len != 1 || env.resource_value_identities.len != 1 ||
+           env.arena_lifecycle_states.len != 1 || env.arena_lifecycle_deferred_frees.len != 1 ||
+           len(env.resource_deferred_actions) != 1 || ctx[scope].primitive_arena_observations.len != 1 { return 0; }
+        if std.str_eq(identity, "owner") == 0 || lifecycle.state != checker.arena_lifecycle_state_live() ||
+           std.str_eq(observation.identity, "A") == 0 || observation.unresolved != 0 { return 0; }
+        if prior_error == 1 {
+            if result != 1 || len(env.errors) != 1 || retained.state != 4 || env.resource_loop_has_exit != 0 { return 0; }
+            if std.str_eq(env.errors[0].message, "[TypeMismatch] original diagnostic") == 0 ||
+               env.errors[0].span.start.line != 1 || env.current_allocator_scope != scope { return 0; }
+            if env.resource_loop_exit_frees.len != 0 || env.resource_loop_exit_obligations.len != 0 ||
+               len(env.resource_loop_exit_observations) != 0 { return 0; }
+            return 1;
+        }
+        if valid_storage == 0 {
+            if result != 0 || len(env.errors) != 1 || retained.state != 4 || env.resource_loop_has_exit != 0 { return 0; }
+            if std.str_find(env.errors[0].message, "[ResourceDeferredUnresolved]") < 0 { return 0; }
+            return 1;
+        }
+        if result != 1 || len(env.errors) != 0 { return 0; }
+        if mode == 0 {
+            if retained.state != 1 { return 0; }
+        } else {
+            if retained.state != 4 { return 0; }
+        }
+        if mode >= 2 {
+            if env.resource_loop_has_exit != 1 { return 0; }
+            guard exited := env.resource_loop_exit_obligations.Get("owner") else { return 0; }
+            if exited.state != 1 { return 0; }
+        }
+        return 1;
+    }
+}
 func check_literal_observation_source(source: str, expected: str, ctx: &Arena) int {
     unsafe {
         mut lex: lexer.Lexer[ctx];
@@ -68,6 +147,16 @@ func main() int {
             return 0;
         }
         if len(args) != 1 { return 2; }
+        // Each exit mode preserves earlier diagnostics/facts, but still checks
+        // clean unsafe orders and performs clean valid consumption transitions.
+        mut exit_mode := 0;
+        while exit_mode < 4 {
+            if check_deferred_error_precedence(exit_mode, 1, 0, &ctx) == 0 { return 32; }
+            if check_deferred_error_precedence(exit_mode, 1, 1, &ctx) == 0 { return 33; }
+            if check_deferred_error_precedence(exit_mode, 0, 0, &ctx) == 0 { return 34; }
+            if check_deferred_error_precedence(exit_mode, 0, 1, &ctx) == 0 { return 35; }
+            exit_mode = exit_mode + 1;
+        }
         mut env := checker.env_new(&ctx);
         mut scope := checker.scope_new(empty[Index[checker.Scope[ctx], ctx]], &ctx);
         env.current_allocator_scope = scope;

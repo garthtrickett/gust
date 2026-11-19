@@ -6257,3 +6257,15 @@ default snapshot assertions/four groups and reject malformed argument modes.
 Do not change runtime scratch, environment, quotas, timeouts or any expectation.
 This fixture correction grants no compiler/resource semantic change; fresh
 committed review, actual controls and all remaining qualification gates apply.
+
+The exact frozen CR15 nominal-mismatch control then exposed a secondary
+deferred-order diagnostic derived from an already-invalid owner annotation.
+Preserve its failed component receipt and the original frozen output. At entry
+to the new deferred-order simulation, retain earlier errors unchanged and skip
+the secondary analysis without publishing facts; compilation remains rejected.
+Clean entries still perform the complete simulation. Direct internal controls
+cover all four exit modes with prior errors, clean invalid storage and clean
+valid consumption. Keep exact nominal TypeMismatch parity, same-type shadow
+BrandIdentityMismatch, every original54 case and all existing error-free cleanup
+checks. Re-enroll, obtain committed reviews and qualify the corrected source;
+the preceding head's successful components do not qualify this successor.

@@ -26,6 +26,15 @@ original live owners. Lifecycle maps are isolated across function, branch,
 match, loop, guard and return checks, with possibly freed continuing paths
 retained conservatively.
 
+Earlier compiler errors retain diagnostic precedence. The deferred-order
+simulation skips an already-rejected program before cloning or publishing any
+facts, so an invalid annotation does not create secondary cleanup diagnostics.
+It does not clear errors or prove cleanup for that invalid program. Clean entries
+still run the complete simulation. Internal controls exercise all four exit
+modes with earlier errors, clean invalid storage and clean valid consumption;
+the exact frozen CR15 nominal mismatch and same-type lexical rejection remain
+required compatibility checks.
+
 Three proof cohorts remain explicitly unsupported: a deferred consumer that
 creates its owner from a late producer instead of captured existing storage,
 an unresolved late Free receiver, and a loop backedge that destroys an allocator

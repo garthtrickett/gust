@@ -13532,6 +13532,10 @@ func env_validate_resource_deferred_action(env: *TypeEnvironment[ctx], action: R
 // explicit-consumption/lifecycle effects; it never deletes automatic cleanup.
 func env_validate_resource_deferred_exit(env: *TypeEnvironment[ctx], mode: int, minimum_depth: int, escaping: AllocatorDependencies[ctx], span: token.Span, ctx: &Arena) int {
     unsafe {
+        // Earlier type errors already reject the program. Do not derive
+        // secondary cleanup diagnostics or publish facts from invalid owners.
+        // A clean entry still runs the complete deferred-order simulation.
+        if len((*env).errors) != 0 { return 1; }
         mut actions := (*env).resource_deferred_actions;
         if len(actions) == 0 && mode < 2 { return 1; }
         mut owners := typechecker_clone_resource_acquisition_obligation_map((*env).resource_acquisition_obligations, ctx);
