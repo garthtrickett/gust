@@ -12,6 +12,8 @@ import os
 from pathlib import Path
 import subprocess
 
+import phase26_toolchain_compatibility
+
 ROOT = Path(__file__).resolve().parents[1]
 PIN = ROOT / "compiler/experiments/cranelift/production/build-toolchain.json"
 
@@ -63,8 +65,8 @@ if __name__ == "__main__":
                 if state != "installed": raise SystemExit("required existing build dependency absent: " + package["package"])
         packages = fetch(pins, args.directory)
         if args.mode == "install-ci":
-            subprocess.run(["sudo", "apt-get", "install", "-y", "--allow-downgrades",
-                            "--no-install-recommends", "--no-remove", *packages], check=True)
+            phase26_toolchain_compatibility.install(
+                pins, packages, args.directory, fetch, digest(PIN))
             subprocess.run(["rustup", "toolchain", "install", pins["rust_toolchain"], "--profile", "minimal"], check=True)
             subprocess.run(["rustup", "default", pins["rust_toolchain"]], check=True)
             verify(pins)

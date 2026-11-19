@@ -56,6 +56,10 @@ def validate() -> dict:
                 f"Patch 20.4 fixture is missing: {authority[key]}")
 
     source = TYPECHECKER.read_text(encoding="utf-8")
+    retired = ()
+    if registry.get("phase26_activation_audit", {}).get("allocator_identity_successor_v1"):
+        import phase26_2_allocator_identity_registration as successor
+        retired = successor.lifecycle_evidence(registry, source)
     for evidence in (
         "type ArenaLifecycleState[ctx] struct {",
         "arena_lifecycle_states: std.HashMap[str, ArenaLifecycleState[ctx], ctx]",
@@ -69,8 +73,9 @@ def validate() -> dict:
         "func env_arena_lifecycle_observe_expression(",
         "The Patch 20.4 primitive remains an inert observation helper.",
     ):
-        require(evidence in source,
-                f"arena lifecycle compiler evidence missing: {evidence}")
+        if evidence not in retired:
+            require(evidence in source,
+                    f"arena lifecycle compiler evidence missing: {evidence}")
     inert_observer = source[
         source.index("func env_arena_lifecycle_observe_identity("):
         source.index("func env_arena_lifecycle_observe_expression(")

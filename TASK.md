@@ -6087,3 +6087,79 @@ layout, with all independent ancestry/API/checkout/provisioning checks and
 explicit deceptive-layout/provenance refusals. Repeat all current-source mandatory
 qualification before corrective publication. CI, merge and the activated Phase26
 remainder remain open; no new identity or resource-slot decision is selected.
+## Phase26.2 lexical allocator proof prerequisite — 2026-10-24
+
+The corrected `35f19bf3` publication passed its local source/native/4GiB product
+gates, then owning CI refused the unchanged pinned APT transaction before
+compilation: installed i386/debug libc companions require their matching newer
+libc, and `--no-remove` prevents removal of those and dependent runner packages.
+Preserve that failure. The bounded correction retains the canonical sixteen
+pins and adds only authenticated, digest-locked matching revisions of explicitly
+allowlisted compatibility identities already installed on the ephemeral runner.
+Require closed no-removal/no-new-package solver and exact installed-population
+postchecks, actual archive/refusal controls, additive predecessor enforcement,
+committed reviews and fresh current-source qualification before republishing.
+No shared-host installation, package/trust pin relaxation, product quota change
+or resource-slot decision is selected.
+
+Under the existing remainder activation, the same compiler owner continues from merged PR618 `9df2eb10`. Compile-only deferred-order controls established a false rejection of an unrelated inner arena shadow: lifecycle metadata conflates fresh lexical declarations as `main::ctx`. Preserve the unqualified deferred-order branch and its failed evidence; publish no incomplete proof. The next coherent compiler prerequisite distinguishes allocator declarations in proof metadata, transports actual-origin owner dependencies through aliases/moves/aggregates/snapshots/joins, and restores lexical mappings without erasing effects on surviving outer allocators. Keep source type-brand meaning, MIR order, layout/runtime ABI and OD23 unchanged. Qualify shadowed-unrelated acceptance, outer dependencies acquired inside shadows, sibling/alias restoration, joins and exits, then complete local pins/fixedpoint/reviews/own exact-head CI/merge before resuming deferred order. No C-seed revival or intermediate bridge promotion.
+
+The current-checker self-source control exposed an overbroad draft check on
+unannotated compiler values. Under canonical26.2A, origin observation is not
+linear ownership authority: scalar projections carry no containing-storage
+identity, ordinary alias mutations conservatively taint observations, and
+unknown bookkeeping IDs cannot establish inequality. Arena/resource constraints
+and already-captured acquisition dependencies remain enforced. Preserve the
+failed draft evidence and qualify both self-source admission and actual resource
+use through a mutated alias before publication.
+
+The lexical-proof prerequisite also carries the operator's prospective 6 GiB
+bootstrap execution override, with Swap0 and existing CPU/disk/reserve policy.
+Use an independent bootstrap-only profile for canonical Make commands; preserve
+the release launcher's 4 GiB product/qualification assertions byte-for-byte.
+Qualify actual profile limits and both scoped/CI execution paths, command and
+environment restrictions, and current-workflow profile-mixup refusals. An
+up-to-date local Make command is not a clean bootstrap-memory qualification.
+
+CR-15's frozen wrong-brand rejection exposed duplicate diagnostic refinement:
+the lexical-origin annotation check ran even when ordinary type matching already
+rejected the initializer. Refine only ordinarily admitted annotations, preserving
+the exact original TypeMismatch diagnostic for nominal mismatches and the lexical
+identity rejection for same-type shadowed allocators. Keep the frozen oracle and
+all existing source expectations unchanged; qualify both paths on the rebuilt
+current compiler before corrective publication.
+
+### Checked production renewal and allocator-proof continuation — 2026-11-18
+
+PR621 merged as `39e37696`; its qualified tree, all 154 eligible PR workflows,
+Trusted and three owning artifact checks passed. The same compiler owner now
+rebases the complete held480 lexical allocator patch onto that checked main.
+Keep the merged authenticated cold product build at 4 GiB; the independent
+bootstrap profile remains 6 GiB/Swap0 for its own canonical Make routes.
+Preserve epoch1 history and all original implicit/explicit case payloads.
+Additive enrollment and every current-source/native/R5/FP/CI gate are fresh;
+no old 480 proof qualifies this combined source. OD23 remains unselected.
+
+### Owning CI lifecycle diagnostic correction — 2026-11-18
+
+The same PR619 owner reproduced the exact native/frozen Arena.Free diagnostic
+comparison failure on 09c97906. Preserve declaration-specific proof identities
+while restoring the original human-facing allocator name through separate
+presentation metadata. Keep all eight frozen diagnostic comparisons unchanged,
+retain the original twelve internal proof assertions, and add four presentation
+invariants. This is a correction to the selected lexical prerequisite, not the
+held deferred-order patch. Fresh committed review, additive enrollment and all
+current-source/native/product/fixed-point/CI gates precede corrective publication.
+OD23 and the full Phase26 remainder remain open.
+
+### Owning CI canonical R3 source correction — 2026-11-19
+
+PR619's FFI job refused the network-downloaded zlib archive at the unchanged
+digest gate. A bounded local download returned the pinned bytes; the hosted
+download's contents and mismatch cause remain unknown. Route this older R3
+guard through the already enrolled tracked archive, matching the merged
+production and Stdlib source route. Preserve every digest, builder and native
+assertion. Keep the predecessor guard bytes and prove rollback, substitution
+and assertion-removal refusals. Current-source enrollment, reviews, focused
+actual guard execution and all mandatory qualification/publication gates remain
+required; no CI success or Phase26 closure is inferred.

@@ -105,6 +105,25 @@ def inherited_digests(raw, path):
                      lambda: _derive_coordinates(raw, path, cohort))
 
 
+def inherited_digests_indexed(raw, path, cohort):
+    """Preserve callers whose original loop requires every row's path key.
+
+    The tolerant default above deliberately keeps its existing get() semantics.
+    Only immutable extraction is reused; callers still read and validate their
+    physical dependency and current file on each invocation.
+    """
+    cohort = tuple(cohort)
+    def derive():
+        predecessor = json.loads(raw)
+        result = set()
+        for key in cohort:
+            for item in predecessor["phase26_activation_audit"][key]["changed_files"]:
+                if item["path"] == path:
+                    result.update(item[field] for field in ("current_digest", "previous_digest"))
+        return frozenset(result)
+    return _memoized(("indexed_coordinates", raw, path, *cohort), derive)
+
+
 def clear_cache():
     global _retained, _hits, _misses
     _CACHE.clear()

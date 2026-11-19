@@ -1,0 +1,34 @@
+{
+  "schema": "gust.production.ci_compatibility.v1",
+  "canonical_toolchain_sha256": "abcf7a69825dc7ca0b63cdd65bf438e7bc561968446a87445f87e2a12dbe6286",
+  "scope": "Revisions of these already-installed amd64 runner packages only. Absent identities remain absent; canonical sixteen pins and no-remove remain unchanged.",
+  "authenticated_source": {
+    "inrelease_url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/dists/noble-updates/InRelease",
+    "inrelease_sha256": "600c42e6d50b8bd7200f6a5c9e0d2eaee24728bddeb6c1529da9fc38c753a088",
+    "signing_key_fingerprint": "F6ECB3762474EDA9D21B7022871920D1991BC93C",
+    "index_url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/dists/noble-updates/main/binary-amd64/Packages.xz",
+    "index_sha256": "47f0f69a85a4e3a250fb4fc6fdca9beb3fc23de76440a7c20e7a0ddd102bdaf9"
+  },
+  "packages": [
+    {
+      "package": "libc6-dbg",
+      "version": "2.39-0ubuntu8.9",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/glibc/libc6-dbg_2.39-0ubuntu8.9_amd64.deb",
+      "filename": "pool/main/g/glibc/libc6-dbg_2.39-0ubuntu8.9_amd64.deb",
+      "sha256": "c4b086cef3a6bbb6a90299969b3c0bf3867f40cb8e9bbbb0edfe5ae23f2c04f0",
+      "size": 7474170,
+      "depends": "libc6 (= 2.39-0ubuntu8.9)"
+    },
+    {
+      "package": "libc6-i386",
+      "version": "2.39-0ubuntu8.9",
+      "architecture": "amd64",
+      "url": "https://snapshot.ubuntu.com/ubuntu/20261023T000000Z/pool/main/g/glibc/libc6-i386_2.39-0ubuntu8.9_amd64.deb",
+      "filename": "pool/main/g/glibc/libc6-i386_2.39-0ubuntu8.9_amd64.deb",
+      "sha256": "a7120e4653c257e87385d0be55afcaca6d28e27ff4879afe576ccf3832ef80e4",
+      "size": 2786562,
+      "depends": "libc6 (= 2.39-0ubuntu8.9)"
+    }
+  ]
+}
