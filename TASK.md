@@ -6151,3 +6151,15 @@ invariants. This is a correction to the selected lexical prerequisite, not the
 held deferred-order patch. Fresh committed review, additive enrollment and all
 current-source/native/product/fixed-point/CI gates precede corrective publication.
 OD23 and the full Phase26 remainder remain open.
+
+### Owning CI canonical R3 source correction — 2026-11-19
+
+PR619's FFI job refused the network-downloaded zlib archive at the unchanged
+digest gate. A bounded local download returned the pinned bytes; the hosted
+download's contents and mismatch cause remain unknown. Route this older R3
+guard through the already enrolled tracked archive, matching the merged
+production and Stdlib source route. Preserve every digest, builder and native
+assertion. Keep the predecessor guard bytes and prove rollback, substitution
+and assertion-removal refusals. Current-source enrollment, reviews, focused
+actual guard execution and all mandatory qualification/publication gates remain
+required; no CI success or Phase26 closure is inferred.

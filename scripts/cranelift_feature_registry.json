@@ -48072,7 +48072,7 @@
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "c611f0f491d88109d022dc637e797fe0e856ae3dd9d34955d9015656d2ff24a5"
+          "current_digest": "20d54fd57ee4d093bfacaac2d37735f9a6631bccb5436c7fcef60d7c3ae1235a"
         },
         {
           "path": "justfile",
@@ -48092,12 +48092,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "ce437dddd973b2b0a2d2e730911faf29566580346fa35e5e712432494a137fb5"
+          "current_digest": "faff2d87b2bccdc6394fa3abac22a1dddadf18a526595d3bbfb9261dab982ee3"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "dd09da0f0c6a2c68fe89ce3ddeeebb3b0571d166486b0f8ddbae07a8d9420b23"
+          "current_digest": "1f1c656519c0b21a3ce865f157b948d2f966e0831f101cfef17a31c53f4995f7"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48123,6 +48123,11 @@
           "path": "scripts/phase26_production_toolchain.py",
           "previous_digest": "9078c812536450808d1ab85fd84fcd2728e5fa62b44678c1320e5571480f9dd6",
           "current_digest": "272148c432ba23e5e2ba536b58ac8a6936db59346b64ff8d20104632d8dc3473"
+        },
+        {
+          "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
+          "previous_digest": "0e5302ebc9d3c2d21d663d05f530459a2de25e99ed37eaa2e0a075ff0dd5d25a",
+          "current_digest": "64c8dba378654f1fd05829f3aca8614fb9b4c809419fd467e4685fe80d263f4e"
         }
       ],
       "added_files": [
@@ -48164,7 +48169,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "9b312f61fcf223cef5dfe08daac8d5325735f720cd6ad3c4a6beda0d977f2ebf"
+          "digest": "c85683188b4960fe3b4b3e304325ee1f65effe3ed79099a15389692761fd3a67"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48203,6 +48208,10 @@
           "digest": "c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1"
         },
         {
+          "path": "compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz",
+          "digest": "4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b"
+        },
+        {
           "path": "scripts/phase26_toolchain_compatibility.py",
           "digest": "722f2721eb7fac790a183874a5260aa0e1c0839ab13877731b915ae9e7a26cb6"
         },
@@ -48216,18 +48225,18 @@
         }
       ],
       "owned_text": {
-        "text": "cf0f09340577e7087e9f5f505517b0764dab275970f6519b1029a6466499ac7c",
+        "text": "66b094c8f1adf43461b1ef2fb12396e7d3b3e34857055918af9a08699481f696",
         "r4_text": "e2d92ad3c4a997cb83f14558e68858b9100939b1ec78e67ef8c3953b418a64d3"
       },
       "projections": {
         "r4_text": "2567b3822792cadb57f3c809932a0ab3626b9b38f5e4a86bee3801d0195b584d",
         "spelling": "d9b48b11733469c19268687769bd4d7aa873a0b00fdacbb116f8dc084f81eaea",
         "filename": "8f33c3c68148a40f6215768e282a245bfa7bbeb7424fdbe200132d5f8043edd6",
-        "r3_record": "fa4d4037e40f03d57c0a40b34705aa7cd06bc6811fc5260672cf717a0180c60a",
+        "r3_record": "566cccb876c6bd73ddd8f71609fd7686b05b83c4ff6c951c017aff3d37a56548",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "c1828408c2ac8f5fcd4b60157a463cb6c1550efe6cafe72857daefa6877b3ff7",
-        "text": "f963421fda52de1ae86ddc475a6beb25d37ab03b6e49df4eabea82176c4f95c2"
+        "r4_record": "56a10d5925c22d0935b076353b60f10f59c097a3dd4cf5f6eaf64799cceb66ed",
+        "text": "495c82ec22f68fc9c3f8668cf9fa09ea38e69f1ec7006bb3eadb405bd22de336"
       },
       "spelling_render_current_digest": "9fa2ae29971fe59ed1d3526f58848b4d1eaee111844ced55fb97a100e3a0df61"
     },

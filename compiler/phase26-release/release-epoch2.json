@@ -2580,7 +2580,7 @@
     "scripts/phase26_r2_tool_binding.py": "10117fa071001ecd1289cb9b3a2ce92846e8687ffdcf3e881d0c63d9f61378e0",
     "scripts/phase26_r3_source_projection.py": "70a2c088b3feb094f0d7de21596f0afe46993a9611a18b29627581a744c5301b",
     "scripts/phase26_r3_zlib_adapter.sh": "781b90f7b5da2206dd9ee15f9b13a30016b8bf2fd1be2e7e0b1f3349bb921d8b",
-    "scripts/phase26_r3_zlib_adapter_guard.sh": "0e5302ebc9d3c2d21d663d05f530459a2de25e99ed37eaa2e0a075ff0dd5d25a",
+    "scripts/phase26_r3_zlib_adapter_guard.sh": "64c8dba378654f1fd05829f3aca8614fb9b4c809419fd467e4685fe80d263f4e",
     "scripts/phase26_r3_zlib_adapter_registration.py": "5206597c2350c041503ff27be36e607a831ff06281a74571fcab65a4eb28be9a",
     "scripts/phase26_r4_collection_guard.py": "910d9e17648a4f64796278d8503dff69072f15aa08daa116c4586249e7006250",
     "scripts/phase26_r4_collection_registration.py": "5e538b65aba4cca76da11eb0b32d67b102b7e3c1bbd944106803705e52721e44",
@@ -2666,7 +2666,7 @@
     "compiler/phase26-2-allocator-identity/cases.json": "c412e8d5a60174915ce1f3f1e741415c7329d2e79f8c80184b8c685ecd0eb26f",
     "compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor.json.gz": "954b34d58a9bef15bdd4e0783e6ec5e878b6ae4e4a8482a266a49a78194a0c91",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor-v2.json.gz": "1f82b0f3b52dedacabd39a111b18b68fee3ebddc541f17bfe5ad6ce5287fe91c",
-    "scripts/phase26_2_allocator_identity_registration.py": "9b312f61fcf223cef5dfe08daac8d5325735f720cd6ad3c4a6beda0d977f2ebf",
+    "scripts/phase26_2_allocator_identity_registration.py": "c85683188b4960fe3b4b3e304325ee1f65effe3ed79099a15389692761fd3a67",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz": "49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502",
     "scripts/phase26_2_allocator_lifecycle_evidence.py": "dc9088e5620faa41f1d5645022aa0d647516c6b2239b719c0b8ddb3167cbad9e",
     "compiler/phase26-2-allocator-identity/primitive_fields.gst": "4d37c9d24dc8626dbb221079771396a510ed869bcdfc139647e526c15739a5cb",
@@ -2684,7 +2684,8 @@
     "scripts/phase26_production_toolchain_controls.py": "e1c6be561f0af0f3ea7b4e407d81044c7b4d43e50b4af968619e089fe261ddfa",
     "scripts/phase26_toolchain_compatibility.py": "722f2721eb7fac790a183874a5260aa0e1c0839ab13877731b915ae9e7a26cb6",
     "compiler/experiments/cranelift/production/ci-toolchain-compatibility.json": "3de0527b393589571f9b40ed6aaef04ed2a990a585f374965d93e3d9ce27e473",
-    "compiler/phase26-2-allocator-identity/ci-toolchain-predecessor-v1.json.gz": "c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1"
+    "compiler/phase26-2-allocator-identity/ci-toolchain-predecessor-v1.json.gz": "c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1",
+    "compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz": "4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b"
   },
   "snapshot": {
     "signer": "gust-github-release-1",

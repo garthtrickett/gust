@@ -29,6 +29,9 @@ CONTROL_CHANGED = ('scripts/phase26_2_allocator_registration.py',
 TOOLCHAIN_CHANGED = ('scripts/phase26_production_toolchain.py',)
 TOOLCHAIN_BASELINE = 'compiler/phase26-2-allocator-identity/ci-toolchain-predecessor-v1.json.gz'
 TOOLCHAIN_BASELINE_SHA256 = 'c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c7ca3bd438fda1'
+R3_GUARD = 'scripts/phase26_r3_zlib_adapter_guard.sh'
+R3_BASELINE = 'compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz'
+R3_BASELINE_SHA256 = '4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b'
 HISTORICAL_BASELINES = {
     'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz':
         '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b',
@@ -48,7 +51,7 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
-    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED)
+    *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED, R3_GUARD)
 ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
     LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
@@ -59,7 +62,7 @@ ADDED = (*HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, 
     'compiler/phase26-2-allocator-identity/primitive_cases.json',
     '.github/workflows/phase26-2-allocator-identity.yml',
     'compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md',
-    'scripts/phase26_bootstrap_bounded.py', TOOLCHAIN_BASELINE,
+    'scripts/phase26_bootstrap_bounded.py', TOOLCHAIN_BASELINE, R3_BASELINE,
     'scripts/phase26_toolchain_compatibility.py',
     'scripts/phase26_production_toolchain_controls.py',
     'compiler/experiments/cranelift/production/ci-toolchain-compatibility.json')
@@ -145,6 +148,15 @@ def base_bytes(path):
     files = baseline()['files']
     if path in files:
         return decoded_payload(files[path])
+    if path == R3_GUARD:
+        raw = (ROOT/R3_BASELINE).read_bytes()
+        require(sha(raw) == R3_BASELINE_SHA256, 'R3 source guard predecessor bytes drifted')
+        value = json.loads(gzip.decompress(raw))
+        require(set(value) == {'schema', 'base', 'files'} and
+                value['schema'] == 'gust.r3_source_guard.predecessor.v1' and
+                value['base'] == BASE and set(value['files']) == {R3_GUARD},
+                'R3 source guard predecessor identity or population drifted')
+        return decoded_payload(value['files'][path])
     if path in TOOLCHAIN_CHANGED:
         raw = (ROOT/TOOLCHAIN_BASELINE).read_bytes()
         require(sha(raw) == TOOLCHAIN_BASELINE_SHA256, 'toolchain predecessor archive bytes drifted')
@@ -550,12 +562,25 @@ def lifecycle_legacy_inversions(registry, rejected):
              'arena lifecycle compiler evidence missing: '+evidence.RETIRED[0])
 
 
+def check_r3_source_route(text):
+    previous = base_bytes(R3_GUARD).decode()
+    fetch = ('archive="$scratch/zlib-1.3.2.tar.gz"\n'
+             "curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \\\n"
+             '    --retry 3 --max-time 90 https://zlib.net/fossils/zlib-1.3.2.tar.gz \\\n'
+             '    --output "$archive"\n')
+    require(previous.count(fetch) == 1, 'R3 source guard predecessor fetch anchor drifted')
+    expected = previous.replace(fetch,
+        'archive=compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz\n', 1)
+    require(text == expected, 'R3 canonical source route or unchanged guard assertions drifted')
+
+
 def validate():
     registry = json.loads(REGISTRY.read_text())
     row = identity(registry)
     require(project_registry(registry) == json.loads(base_bytes('scripts/cranelift_feature_registry.json')),
             'allocator identity changed frozen predecessor or foreign registry rows')
     physical_files(registry, row)
+    check_r3_source_route((ROOT/R3_GUARD).read_text())
     import phase20_arena_lifecycle as lifecycle
     try:
         lifecycle.validate()
@@ -594,6 +619,18 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    source_route = (ROOT/R3_GUARD).read_text()
+    for label, changed_route in (
+            ('network rollback', base_bytes(R3_GUARD).decode()),
+            ('substituted archive', source_route.replace(
+                'archive=compiler/experiments/cranelift/production/source/zlib-1.3.2.tar.gz',
+                'archive=unverified.tar.gz', 1)),
+            ('removed digest check', source_route.replace('| sha256sum -c -', '| cat', 1)),
+            ('omitted native assertion', source_route.replace(
+                "rg -F 'test result: ok. 1 passed; 0 failed'", "rg -F 'test result:'", 1))):
+        require(changed_route != source_route, 'R3 source route inversion did not move: '+label)
+        rejected('R3 '+label, lambda text=changed_route:check_r3_source_route(text),
+                 'R3 canonical source route or unchanged guard assertions drifted')
     profile = profile_baseline()
     profile_mutations = []
     for field, value in (('schema', 'other'), ('base', '0' * 40),
