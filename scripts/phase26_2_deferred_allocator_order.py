@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = '546137729864a0fefd54044a8d244a8b6b18edf0f73a1ed6927362ce9eb62c92'
+CASE_DIGEST = 'ef6b5f1ff96a7ab738a480767bbf71cfdc3d1f534c8f19970fb558b29001f334'
 
 
 def digest(path):
@@ -37,9 +37,12 @@ def validate(value=None, checker=None):
     assert len(literal) == len({row['name'] for row in literal}) == 18
     unit = INTERNAL.read_text()
     for index, row in enumerate(literal):
-        call = ('if check_literal_observation_source(' + json.dumps(row['source']) + ', ' +
-                json.dumps(row['expected_diagnostic']) + ', &ctx) == 0 { return ' + str(60 + index) + '; }')
+        call = ('if std.str_eq(source, ' + json.dumps(row['source']) + ') == 1 && std.str_eq(expected, ' +
+                json.dumps(row['expected_diagnostic']) + ') == 1 { return ' + str(index) + '; }')
         assert call in unit, 'literal observation source control missing: ' + row['name']
+    assert 'if len(args) != 1 { return 2; }' in unit and 'if len(args) == 4 {' in unit
+    assert 'if literal_observation_source_index(args[2], args[3]) < 0 { return 2; }' in unit
+    assert 'if check_literal_observation_source(args[2], args[3], &ctx) == 0 { return 1; }' in unit
     source = CHECKER.read_text() if checker is None else checker
     for obligation in (
         'type ResourceDeferredAction[ctx] struct {',
@@ -139,6 +142,63 @@ def inversions():
             raise AssertionError('ACCEPTED mutation: ' + name)
 
 
+def qualify_literal_sources(binary, output):
+    """One current-checker process per source; represented programs never run."""
+    controls = json.loads(CASES.read_text())['literal_source_controls']
+    directory = output / 'literal_source_controls'
+    directory.mkdir()
+    rows, argument_rows = [], []
+    unit_hash = digest(binary)
+    for case in controls:
+        folder = directory / case['name']
+        folder.mkdir()
+        (folder / 'source.gst').write_text(case['source'])
+        (folder / 'expected.txt').write_text(case['expected_diagnostic'])
+        command = [str(binary), 'literal-source', case['source'], case['expected_diagnostic']]
+        run = subprocess.run(command, cwd=folder, capture_output=True, timeout=15)
+        (folder / 'run.stdout').write_bytes(run.stdout)
+        (folder / 'run.stderr').write_bytes(run.stderr)
+        (folder / 'run.status').write_text(str(run.returncode) + '\n')
+        passed = run.returncode == 0 and run.stdout == b'1\n' and not run.stderr
+        rows.append(dict(name=case['name'], command=command, run_exit=run.returncode,
+                         passed=passed, unit_sha256=unit_hash, user_program_executed=False,
+                         files={p.name: digest(p) for p in folder.iterdir() if p.is_file()}))
+        (output / 'literal-controls.json').write_text(json.dumps(dict(cases=rows), indent=2) + '\n')
+        if not passed:
+            break
+    cases_passed = len(rows) == len(controls) == 18 and all(row['passed'] for row in rows)
+    if cases_passed:
+        first = controls[0]
+        for label, arguments in (
+            ('wrong_count', ['literal-source']),
+            ('unknown_mode', ['unknown-mode', first['source'], first['expected_diagnostic']]),
+            ('unknown_source', ['literal-source', 'func main() {}', '']),
+            ('wrong_expectation', ['literal-source', first['source'], '[UnregisteredDiagnostic]']),
+        ):
+            folder = directory / label
+            folder.mkdir()
+            command = [str(binary), *arguments]
+            run = subprocess.run(command, cwd=folder, capture_output=True, timeout=15)
+            (folder / 'run.stdout').write_bytes(run.stdout)
+            (folder / 'run.stderr').write_bytes(run.stderr)
+            (folder / 'run.status').write_text(str(run.returncode) + '\n')
+            passed = run.returncode == 2 and not run.stdout and not run.stderr
+            argument_rows.append(dict(name=label, command=command, run_exit=run.returncode,
+                                      passed=passed, unit_sha256=unit_hash, user_program_executed=False,
+                                      files={p.name: digest(p) for p in folder.iterdir() if p.is_file()}))
+            if not passed:
+                break
+    passed = cases_passed and len(argument_rows) == 4 and all(row['passed'] for row in argument_rows)
+    report = dict(status='PASS' if passed else 'FAIL', cases=rows, argument_refusals=argument_rows,
+                  unit_sha256=unit_hash, represented_user_programs_executed=0,
+                  source_checker_executions=len(rows),
+                  accepted_source_executions=sum(row['passed'] for row in rows),
+                  argument_check_executions=len(argument_rows),
+                  expected_argument_refusals=sum(row['passed'] for row in argument_rows))
+    (output / 'literal-controls.json').write_text(json.dumps(report, indent=2) + '\n')
+    return report
+
+
 def native(output):
     cases = validate()
     budget = 128 * 1024 ** 2
@@ -209,15 +269,18 @@ def native(output):
         (internal / 'run.status').write_text(str(run.returncode) + '\n')
         internal_record.update(executed=True, run_exit=run.returncode, elf_sha256=digest(binary))
         internal_pass = run.returncode == 0 and run.stdout == b'1\n1\n1\n1\n' and not run.stderr
-    internal_record.update(passed=internal_pass, literal_source_controls=18,
-                           literal_user_programs_executed=False,
+    internal_record.update(passed=internal_pass,
                            files={p.name: digest(p) for p in internal.iterdir() if p.is_file()})
     (output / 'internal.json').write_text(json.dumps(internal_record, indent=2) + '\n')
+    literal = qualify_literal_sources(binary, output) if internal_pass else None
     after = {path: digest(ROOT / path) for path in inputs}
     allocated = sum(p.stat().st_blocks * 512 for p in output.rglob('*') if p.is_file())
-    passed = inputs == after and tools == {name: digest(ROOT / name) for name in tools} and allocated <= budget and internal_pass and all(r['passed'] for r in rows)
+    passed = (inputs == after and tools == {name: digest(ROOT / name) for name in tools} and
+              allocated <= budget and internal_pass and literal is not None and
+              literal['status'] == 'PASS' and all(r['passed'] for r in rows))
     result = dict(status='PASS' if passed else 'FAIL', scope='Captured bound-owner cleanup order only; unsupported late producers/unknown Free explicitly refused; no OD23 slot decision or full Phase26 closure',
-                  source_before=inputs, source_after=after, tools=tools, cases=rows, internal=internal_record,
+                  source_before=inputs, source_after=after, tools=tools, cases=rows,
+                  internal=internal_record, literal_controls=literal,
                   owned_allocated_bytes=allocated, owned_output_budget_bytes=budget)
     (output / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
     assert passed, 'deferred allocator order matrix failed; read first differing case'

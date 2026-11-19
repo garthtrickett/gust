@@ -77,10 +77,18 @@ a declared origin through fallback.
 All 54 existing case objects and the original primitive18 remain unchanged.
 Additional internal parser/typechecker controls cover 18 literal/nonliteral,
 one-sided, shadow, termination, exposure and indirect-write source cases. The
-native metadata unit executes the checker on these sources; it never compiles
-or executes the represented user programs. Direct snapshot assertions retain
-the conservative taint and missing-field properties. The four output groups
-remain unchanged; a failed assertion exits before the last group is printed.
+native metadata unit executes the checker on these sources in one process per
+registered source/expectation pair; it never compiles or executes the represented
+user programs. The original batched fixture exhausted fixed thread-local scratch
+after printing three groups; that failure remains preserved without claiming
+which source exhausted it. Runtime scratch, environment and budgets are unchanged.
+Direct snapshot assertions retain the conservative taint and missing-field
+properties. Default invocation retains the four output groups. All 18 source-mode
+invocations require exit0, exactly one `1` line and empty stderr. Four separate
+argument controls require exit2 and no output for bad arity, unknown mode,
+unregistered source and mismatched expectation. Missing or failed rows fail
+qualification; 19 successful checker-unit invocations and four argument refusals
+are distinct from zero represented user-program executions.
 
 Three initial fixture attempts stay verbatim under visibly unqualified
 metadata. Direct Arena reassignment conflicts with the existing immutable

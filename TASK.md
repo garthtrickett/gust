@@ -6248,3 +6248,12 @@ Preserve the failed owning matrix and current tools before replacement, then
 obtain committed reviews, additive enrollment and fresh current-source/native/
 protected-product/fixed-point/publication gates. No old2a pass qualifies the
 corrected source or closes a Phase26 row.
+
+The literal correction restored all original primitive18 and54 case rows, but
+its new batched internal source fixture exhausted unchanged fixed TLS scratch.
+Preserve that failure. Isolate the same18 registered source/expectation checks
+into separate invocations of the same current compiled checker unit; retain all
+default snapshot assertions/four groups and reject malformed argument modes.
+Do not change runtime scratch, environment, quotas, timeouts or any expectation.
+This fixture correction grants no compiler/resource semantic change; fresh
+committed review, actual controls and all remaining qualification gates apply.

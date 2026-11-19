@@ -1110,3 +1110,13 @@ case expectation. The successor is unqualified and all earlier2a gates remain
 historical. Committed reviews, enrollment, current bootstrap/native/strict104,
 protected4GiB R5/public/fixed point, authoritative CI and merge remain required.
 Full Phase26.2–26.6/20requirements stays active; OD23 stays OPEN/unselected.
+
+The bd48 literal correction passed its current-source bootstrap and physical
+tool/source check. Actual focused execution restored all18 unchanged primitive
+controls, the unchanged clone guard and all54 order rows. The new batched
+internal source fixture then exited1 with fixed thread-local scratch exhaustion
+after three snapshot groups. No full component or production pass is claimed.
+The same owner is isolating those exact18 source checks per process, retaining
+the default snapshot groups and adding explicit argument refusals. Compiler
+logic, runtime scratch and all resource/test budgets remain unchanged. The failed
+unit, source and outputs stay retained; fresh validation and review remain due.
