@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = 'b33b16f594d395df1ef80ab1600da19ce135d207bd64d40ee3f8aef6fb69ca21'
+CASE_DIGEST = 'f38104f0592f6c5e5bf8fd8d7ac84831816527f8ee03abcc6530af774c01a145'
 
 
 def digest(path):
@@ -25,7 +25,9 @@ def validate(value=None, checker=None):
     value = json.loads(CASES.read_text()) if value is None else value
     canonical = json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
     assert hashlib.sha256(canonical).hexdigest() == CASE_DIGEST, 'deferred allocator case contract drifted'
-    assert len(value['cases']) == 32 and sum(c['original_baseline'] for c in value['cases']) == 8
+    assert len(value['cases']) == 54 and sum(c['original_baseline'] for c in value['cases']) == 8
+    original32 = json.dumps(value['cases'][:32], sort_keys=True, separators=(',', ':')).encode()
+    assert hashlib.sha256(original32).hexdigest() == '6d11471af2986e33c2c5b00ea9269885fa161508ade37ad24ec1a5637f111685', 'original32 controls changed'
     assert len(value['unqualified_fixture_attempts']) == 3
     assert value['support_sha256'] == digest(SUPPORT), 'deferred allocator support drifted'
     assert value['internal_control_sha256'] == digest(INTERNAL), 'deferred allocator observation controls drifted'
@@ -41,6 +43,22 @@ def validate(value=None, checker=None):
         'if mode == 0 && valid == 1 {',
         'allocator_dependencies_overlap(owner.allocator_dependencies, allocator, ctx)',
         'allocator_dependencies_overlap(escaping, allocator, ctx)',
+        'mut receiver := env_deferred_allocator_receiver(env, action, ctx);',
+        'if receiver.present == 0 || receiver.unresolved == 1 || len(receiver.identity) == 0 {',
+        'mut allocator := env_deferred_allocator_proof(env, action, ctx);',
+        '(*freed).Insert(std.Clone(ctx, receiver.identity), 1);',
+        'primitive_arena_observations: std.HashMap[str, AllocatorIdentityProof[ctx], ctx]',
+        'if observed.Ok { return env_arena_lifecycle_storage_observation(declaration, path, observed.Val, ctx); }',
+        'return env_arena_lifecycle_storage_observation(declaration, path, env_allocator_expression_proof(expr_idx, env, ctx), ctx);',
+        'observed.unresolved = 1;',
+        'env_arena_lifecycle_expose_aggregate(env, expr.AddressOf.expr, inner, ctx);',
+        'env_arena_lifecycle_expose_aggregate(env, arg_idx_check_call_nlaunder, resolved_arg, ctx);',
+        'env_arena_lifecycle_observe_indirect_write(env, left_idx, ctx);',
+        'result.exposed_storage = typechecker_union_int_maps(result.exposed_storage, right[r].exposed_storage, ctx);',
+        'if right[r].indirect_write == 1 { result.indirect_write = 1; }',
+        'changed.primitive_arena_indirect_write = 1;',
+        'env_arena_lifecycle_storage_observation(declaration, keys[i], identity, ctx)',
+        'left_value.unresolved != right_value.unresolved || left_value.present != right_value.present',
         'Semantic Error: [ResourceDeferredUnresolved] Deferred allocator Free has no proved late receiver identity',
         'Semantic Error: [ResourceDeferredUnresolved] Deferred resource consumption requires existing captured owner storage; late producer effects are not represented',
         'env_validate_resource_deferred_exit(env, 1, 0, escaping_allocator_dependencies, stmt.Return.span, ctx);',
@@ -82,6 +100,17 @@ def inversions():
         ('lost loop destruction', '(*env).resource_loop_exit_frees.Insert(std.Clone(ctx, destroyed[f]), 1);'),
         ('last branch field treated as exact', 'typechecker_join_allocator_observations(consequence_observations_if, alternative_observations_if, ctx)'),
         ('unchecked normal backedge', 'env_validate_resource_loop_backedge(env, env_resource_freed_allocator_set(env, ctx), ctx[body_idx].span, ctx);'),
+        ('unknown receiver treated as known', 'if receiver.present == 0 || receiver.unresolved == 1 || len(receiver.identity) == 0 {'),
+        ('physical observation substituted for resource proof', 'mut allocator := env_deferred_allocator_proof(env, action, ctx);'),
+        ('missing explicit aggregate exposure', 'env_arena_lifecycle_expose_aggregate(env, expr.AddressOf.expr, inner, ctx);'),
+        ('missing implicit reference exposure', 'env_arena_lifecycle_expose_aggregate(env, arg_idx_check_call_nlaunder, resolved_arg, ctx);'),
+        ('missing indirect write invalidation', 'env_arena_lifecycle_observe_indirect_write(env, left_idx, ctx);'),
+        ('branch exposure forgotten', 'result.exposed_storage = typechecker_union_int_maps(result.exposed_storage, right[r].exposed_storage, ctx);'),
+        ('unknown identity refined at join', 'left_value.unresolved != right_value.unresolved || left_value.present != right_value.present'),
+        ('exposed fallback regains precision', 'return env_arena_lifecycle_storage_observation(declaration, path, env_allocator_expression_proof(expr_idx, env, ctx), ctx);'),
+        ('indirect reference mutation forgotten', 'changed.primitive_arena_indirect_write = 1;'),
+        ('indirect mutation lost on join', 'if right[r].indirect_write == 1 { result.indirect_write = 1; }'),
+        ('copy launders indirect mutation', 'env_arena_lifecycle_storage_observation(declaration, keys[i], identity, ctx)'),
     ):
         assert obligation in source
         changes.append((label, value, source.replace(obligation, '/* omitted by control */', 1), 'deferred allocator proof missing: ' + obligation))

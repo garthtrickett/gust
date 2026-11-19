@@ -35,7 +35,7 @@ claim that every such program is unsafe. Registration-time producer arguments
 are never substituted for their unknown later values. Promoting these cohorts
 requires its own generic execution-time dependency proof and controls.
 
-The 32-case matrix preserves all eight original source payloads and expectations.
+The first 32 cases preserve all eight original source payloads and expectations.
 Four original unsafe orders remain compile-only negatives. Four original safe
 orders and eleven additional positive controls may execute only after compilation
 with the current-source compiler. Thirteen further negatives include aliases,
@@ -43,6 +43,26 @@ loop cleanup order and continuation, conditional field origins, return
 transport, and the explicit unsupported cohorts. Four internal native metadata
 assertions prove observation snapshot isolation, restoration, agreement and
 one-sided-field uncertainty; synthetic identities never address real allocators.
+
+The complete 54-case matrix adds five positive controls and seventeen refusals
+for late physical field receivers. Physical lifecycle observations retain the
+existing allocator proof's presence and uncertainty bits through copies and
+joins. They are distinct from immutable acquisition dependencies: a fresh
+unbranded Arena field may be freed when no owner depends on it, but its observed
+value cannot prove that a live or returned resource has an unrelated allocator.
+Unknown factories remain unknown despite carrying nonempty diagnostic identities.
+
+References to aggregate storage conservatively expose its child observations.
+Exposure belongs to the declaring Scope and storage path, survives later field
+writes, and joins by union. An indirect Arena or aggregate write whose target is
+not represented records a sticky, scope-local uncertainty bit covering current
+and future fields of aggregate values, checked references and raw pointers.
+Copies retain that uncertainty and continuing-path joins preserve it. This is a local
+proof limitation, not an alias relationship or new reference-immutability rule.
+Existing primitive lifecycle identity observations remain available; deferred
+Free additionally requires a known, unexposed late receiver. Direct Arena
+references retain the existing binding constraints and lifecycle checks. The
+unchanged clone-destination guard remains a required compatibility check.
 
 Three initial fixture attempts stay verbatim under visibly unqualified
 metadata. Direct Arena reassignment conflicts with the existing immutable

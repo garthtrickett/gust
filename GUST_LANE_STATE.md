@@ -1072,3 +1072,12 @@ explicitly distinguished by exact compiler-input equivalence. Additive own
 recipe/workflow/registry integration is in progress. Final committed-source
 full pins, protected4GiB R5/native fixed point, strict104/180s, CI and merge
 remain pending; no component pass closes a canonical Phase26 row.
+
+The integrated0be source58 checkpoint passed, but its cold full qualification
+stopped at the unchanged Stdlib clone-destination guard with an early
+ResourceDeferredUnresolved diagnostic for a fresh Arena field. The actual
+partial tools, redirected guard outputs and failure are preserved separately;
+later native/R5/fixed-point stages did not run. The same owner is correcting
+physical receiver versus immutable dependency proof, with conservative aggregate
+reference exposure and additive controls. Previous component/static passes are
+historical checkpoints; this successor requires fresh reviews and qualification.

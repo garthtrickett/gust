@@ -6225,3 +6225,13 @@ strict104/180s, protected4GiB production/public R5 and native fixed point,
 byte/provenance checks, and its own eligible exact-head CI/reviews/rules/merge.
 Then continue the remaining activated26.2–26.6/20requirements; this prerequisite
 merge does not close a canonical row or select slot-observation semantics.
+
+The current-source cold qualification exposed a frontend false refusal in the
+unchanged Stdlib clone-destination guard: a fresh Arena assigned to an unbranded
+field has a physical receiver but no immutable resource-origin constraint.
+Within this same correction, retain those proofs separately, preserve observed
+uncertainty, and conservatively invalidate deferred field precision on aggregate
+reference exposure or unrepresented indirect writes. Preserve the original32
+case payloads and expectations and add fresh-field, alias, unknown-factory,
+branch/exposure and owner-overlap controls. No library compensation, changed
+native capability expectation or new alias/lifetime semantics is authorized.
