@@ -214,7 +214,9 @@ def evidence() -> None:
         for route in ([], ["--backend", "cranelift"]):
             result = run([str(compiler), *route, str(positive_witnesses[key])])
             require(result.returncode == 0 and not result.stdout and not result.stderr,
-                    f"no-fallback native compilation failed for {key}: {route}")
+                    f"no-fallback native compilation failed for {key}: {route}; "
+                    f"exit={result.returncode} stdout={result.stdout[:2000]!r} "
+                    f"stderr={result.stderr[:2000]!r}")
             require(artifact.is_file() and not artifact.is_symlink() and artifact.stat().st_size > 0,
                     f"native artifact is missing for {key}: {route}")
             artifact.unlink()
