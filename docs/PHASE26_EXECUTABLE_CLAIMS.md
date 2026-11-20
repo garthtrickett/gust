@@ -149,3 +149,30 @@ ordering mistake using structured output alone.
   acquisition, what it may observe and who owes cleanup. Docs/vision records
   the cases for the operator's ownership decision. OD-23 remains open and
   no representation has been selected. [Slot decision cases](RESOURCE_COLLECTION_SLOT_OWNERSHIP_DECISION.md#current-proposal-and-decision-boundary)
+
+## Access while an arena is live
+
+**Planned design work.** Keep explicit arena brands and lexical cleanup. They
+tell a generator where an allocation belongs and when cleanup runs. Even while
+the arena is live, a write through another argument can change the value a
+caller sees, and collection growth can replace the storage a view designates.
+
+| Roadmap item | Cases to compare | What to establish |
+| --- | --- | --- |
+| Overlapping writable arguments | Pass the same field to two parameters that write through their references. Repeat with two distinct scalar fields of the same record. | Record Gust’s current behavior for both calls. Evaluate a rule that rejects the overlapping call and accepts the disjoint one. |
+| View across collection growth | Take a view, force growth that replaces its backing, then read through the old view. Compare with a view acquired after the same growth. Keep the arena live throughout. | Identify a safe public API that can express the sequence. Establish whether the old view stays valid, is rejected, or is unreachable through that API. Use the fresh view as the positive control. |
+
+**Ownership and sequencing.** Cranelift owns the writable-argument design
+study before any change to the borrow contract. Gust currently allows two
+references to write to the same value. The existing aliasing fixture records
+that behavior. For the collection case, use the Phase 26.5 Stdlib safety
+audit to identify the operation and its backing-storage contract. If the
+surface can expose a stale view, route the evidence to the compiler owner
+before proposing a language rule. Keep unsafe candidate reads compile-only.
+Implementation requires an owning-roadmap decision. OD-23 separately asks who
+owns a linear value in a collection slot.
+
+[Gust borrow contract](VISION.md#26-borrows) ·
+[Current aliasing fixture](../tests/test_shared_mutable_aliasing_observed.gst) ·
+[Frost call-site rules](https://github.com/matthewjberger/frost/blob/35e5868b08d192e45e8db606538b4b7357ffc1b4/docs/book/src/reference/ownership.md) ·
+[Frost stale-view fixture](https://github.com/matthewjberger/frost/blob/35e5868b08d192e45e8db606538b4b7357ffc1b4/tests/memory/a-view-inside-an-element-after-a-growth.frost)

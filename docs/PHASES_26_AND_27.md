@@ -1825,6 +1825,11 @@ The repository already forbids *adding* a raw-pointer workaround inside a safe
 stdlib surface; nothing asserts the property for the code already there, and this
 audit is the only thing that does.
 
+For a collection that exposes views, record what happens to an existing view
+when growth replaces its backing. Pair it with a view acquired after growth.
+The [live-arena access study](PHASE26_EXECUTABLE_CLAIMS.md#access-while-an-arena-is-live)
+records the cases and the route for any compiler prerequisite.
+
 **Exit gate:** every raw-pointer use reachable from `std.Vector`, `std.HashMap`
 and `std.String` is either behind `unsafe`, behind an explicitly unsafe API, or
 removed; the audit records what it examined, not merely that it passed.

@@ -21,6 +21,8 @@ open phase.
   resource-cleanup documentation pilot, ownership evidence and diagnostics,
   scalar defer differential tests, context-lowering checks, and OD-23 decision
   cases. Each entry names its destination and what would verify it.
+  The [live-arena access study](PHASE26_EXECUTABLE_CLAIMS.md#access-while-an-arena-is-live)
+  covers overlapping writable arguments and views across backing replacement.
 - `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md` — the Phase 25 bootstrap seed
   decision: options, ranking, and the runtime-before-seed ordering, with the
   three C strands measured. Records what the decision does *not* settle,
