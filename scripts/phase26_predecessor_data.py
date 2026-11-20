@@ -14,6 +14,10 @@ _CACHE = OrderedDict()
 _retained = 0
 _hits = 0
 _misses = 0
+_document_hits = 0
+_document_misses = 0
+_JSON_LOADS = json.loads
+_JSON_DUMPS = json.dumps
 
 PREDECESSORS = (
     "allocator_resource_liveness_successor_v1", "first_release_closure_successor_v1",
@@ -60,17 +64,23 @@ def _result_size(value):
     return total
 
 
-def _memoized(key, produce):
-    global _retained, _hits, _misses
+def _memoized(key, produce, *, document=False):
+    global _retained, _hits, _misses, _document_hits, _document_misses
     key_size = _key_size(key)
     if key_size is None:
         return produce()  # Mutable, unsupported or oversized input: original algorithm.
     found = _CACHE.get(key)
     if found is not None:
         _CACHE.move_to_end(key)
-        _hits += 1
+        if document:
+            _document_hits += 1
+        else:
+            _hits += 1
         return found[0]
-    _misses += 1
+    if document:
+        _document_misses += 1
+    else:
+        _misses += 1
     value = produce()  # Exceptions retain their original type; never cached.
     result_size = _result_size(value)
     if result_size is None or key_size + result_size > BYTE_LIMIT:
@@ -105,31 +115,89 @@ def inherited_digests(raw, path):
                      lambda: _derive_coordinates(raw, path, cohort))
 
 
-def inherited_digests_indexed(raw, path, cohort):
-    """Preserve callers whose original loop requires every row's path key.
+def _derive_indexed(raw, path, cohort):
+    """The original strict, requested-path operation, including its errors."""
+    predecessor = json.loads(raw)
+    result = set()
+    for key in cohort:
+        for item in predecessor["phase26_activation_audit"][key]["changed_files"]:
+            if item["path"] == path:
+                result.update(item[field] for field in ("current_digest", "previous_digest"))
+    return frozenset(result)
 
-    The tolerant default above deliberately keeps its existing get() semantics.
-    Only immutable extraction is reused; callers still read and validate their
-    physical dependency and current file on each invocation.
+
+def _document_index(raw, cohort):
+    """Return immutable canonical string rows, or decline to optimize."""
+    key_cost = _key_size(("indexed_document", raw, *cohort))
+    if key_cost is None:
+        return None
+    predecessor = json.loads(raw)
+    if type(predecessor) is not dict:
+        return None
+    audit = predecessor.get("phase26_activation_audit")
+    if type(audit) is not dict:
+        return None
+    result = set()
+    retained_strings = 0
+    for key in cohort:
+        owner = audit.get(key)
+        if type(owner) is not dict or type(owner.get("changed_files")) is not list:
+            return None
+        for item in owner["changed_files"]:
+            fields = ("path", "current_digest", "previous_digest")
+            if type(item) is not dict or not all(type(item.get(field)) is str for field in fields):
+                # Do not introduce errors from an unrelated row: the original
+                # operation only accesses digest fields on the requested path.
+                return None
+            encoded = json.dumps([item[field] for field in fields], separators=(",", ":"))
+            if encoded not in result:
+                retained_strings += _scalar_size(encoded)
+                result.add(encoded)
+                if key_cost + sys.getsizeof(result) + retained_strings > BYTE_LIMIT:
+                    return None
+    return frozenset(result)
+
+
+def _indexed_lookup(raw, path, cohort):
+    key = ("indexed_document", raw, *cohort)
+    if ENTRY_LIMIT < 2 or _key_size(key) is None:
+        return _derive_indexed(raw, path, cohort)
+    index = _memoized(key, lambda: _document_index(raw, cohort), document=True)
+    if index is None:
+        return _derive_indexed(raw, path, cohort)
+    prefix = "[" + json.dumps(path) + ","
+    result = set()
+    for encoded in index:
+        if encoded.startswith(prefix):
+            _path, current, previous = json.loads(encoded)
+            result.update((current, previous))
+    return frozenset(result)
+
+
+def inherited_digests_indexed(raw, path, cohort):
+    """Strict coordinates with a shared-budget immutable document index.
+
+    Public results retain their original per-path keys and counter semantics.
+    Nothing here caches a physical dependency, live pin or admission verdict.
     """
     cohort = tuple(cohort)
-    def derive():
-        predecessor = json.loads(raw)
-        result = set()
-        for key in cohort:
-            for item in predecessor["phase26_activation_audit"][key]["changed_files"]:
-                if item["path"] == path:
-                    result.update(item[field] for field in ("current_digest", "previous_digest"))
-        return frozenset(result)
-    return _memoized(("indexed_coordinates", raw, path, *cohort), derive)
+    if (type(raw) not in (str, bytes) or type(path) is not str or
+            not all(type(key) is str for key in cohort) or
+            json.loads is not _JSON_LOADS or json.dumps is not _JSON_DUMPS):
+        return _derive_indexed(raw, path, cohort)
+    return _memoized(("indexed_coordinates", raw, path, *cohort),
+                     lambda: _indexed_lookup(raw, path, cohort))
 
 
 def clear_cache():
-    global _retained, _hits, _misses
+    global _retained, _hits, _misses, _document_hits, _document_misses
     _CACHE.clear()
     _retained = _hits = _misses = 0
+    _document_hits = _document_misses = 0
 
 
 def cache_state():
     return dict(entries=len(_CACHE), accounted_bytes=_retained,
-                hits=_hits, misses=_misses, max_entries=ENTRY_LIMIT, max_bytes=BYTE_LIMIT)
+                hits=_hits, misses=_misses, max_entries=ENTRY_LIMIT, max_bytes=BYTE_LIMIT,
+                document_hits=_document_hits, document_misses=_document_misses,
+                document_entries=sum(key[0] == "indexed_document" for key in _CACHE))

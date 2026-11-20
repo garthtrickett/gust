@@ -1208,3 +1208,14 @@ permits only the selected scoped successor. Source/profile correction is under
 committed review and fresh qualification; no current native/product/R5/FP/CI
 acceptance is claimed. OD23 remains OPEN/unselected; full Phase26 activation
 continues. No live job or observer at this correction checkpoint.
+
+
+## Cranelift continuation — 2026-11-20 immutable predecessor index
+
+ACTIVE same owner/worktree. A4 focused owning4 passed; source63 then hit its
+original3600-second deadline after60 successes, with three commands unfinished.
+Raw failure and current tool/source evidence remain unchanged. Bounded profiling
+measured repeated predecessor JSON/coordinate work; the selected immutable-data
+index keeps shared64-entry/128MiB limits, strict fallback and live pin checks.
+Implementation is under committed review and fresh controls/enrollment; no full
+qualification/CI/phase closure is claimed. OD23 remains OPEN/unselected.

@@ -6356,3 +6356,15 @@ the hash-validated successor after its historical original while keeping the
 original authority, departure filtering and live scan unchanged. Preserve the
 four-file predecessor and add a closed six-file supplement; invert the actual
 inventory comparison, re-enroll, review and obtain all fresh gates.
+
+The corrected A4 census hit the unchanged3600-second outer deadline after60
+successful commands, interrupting zlib-registration inversions; three commands
+were unfinished. Preserve that failure and the separate four-owning-guard pass.
+A bounded R4 profile measured repeated JSON decoding and strict predecessor
+coordinate extraction, while the new fixture helper consumed under0.1 seconds.
+Optimize only immutable extraction: a uniform-string document/cohort index may
+share the existing64-entry/128MiB cache, keeping the original strict fallback,
+per-path results, public counter behavior and every live physical/pin check.
+Malformed or substituted-parser inputs must retain original results/errors.
+Prove shared eviction/accounting, more-than64-path reuse and lazy unrelated-row
+errors, then re-enroll/review and run all63 under the same original limits.
