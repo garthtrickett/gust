@@ -14,22 +14,48 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = 'c16b925fe887e2d5978a9ceaee07aaa39d86737949f74cb5351704e33d05caf6'
+CASE_DIGEST = 'e853d17f935625b2666126a23d1417e01832045a210a859d9689e7f868b04477'
+ORIGINAL54_DIGEST = 'ef229dbe96fd8c7bfb3f63785c9c4b41df9e392bb4e75a8824ef1f766624c066'
+MALFORMED_REFERENCE_CASE = 'unsupported_implicit_reference_call'
+REFERENCE_ARGUMENT_DIAGNOSTIC = "Argument type mismatch for function 'expose'"
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def validate_reference_fixture_amendment(value):
+    original = value.get('original54_cases')
+    assert isinstance(original, list) and len(original) == 54, 'preserved original54 population drifted'
+    assert len({row['name'] for row in original}) == 54, 'preserved original54 population drifted'
+    canonical = json.dumps(original, sort_keys=True, separators=(',', ':')).encode()
+    assert value['original54_cases_sha256'] == hashlib.sha256(canonical).hexdigest() == ORIGINAL54_DIGEST, 'preserved original54 controls changed'
+    attempted = next(row for row in original if row['name'] == MALFORMED_REFERENCE_CASE)
+    assert value['unqualified_reference_fixture_attempt'] == dict(
+        status='UNQUALIFIED historical attempted implicit-reference control',
+        original_case=attempted,
+        actual_primary_diagnostic=REFERENCE_ARGUMENT_DIAGNOSTIC,
+        limitation='Ordinary calls require an explicit reference argument; the previous cleanup diagnostic was secondary.'
+    ), 'failed reference fixture preservation drifted'
+    malformed = copy.deepcopy(attempted)
+    malformed.update(name='reject_malformed_reference_argument', diagnostic=REFERENCE_ARGUMENT_DIAGNOSTIC)
+    reference = copy.deepcopy(attempted)
+    assert reference['source'].count('expose(holder);') == 1, 'original reference-call source drifted'
+    reference.update(name='unsupported_explicit_reference_parameter_call',
+                     source=reference['source'].replace('expose(holder);', 'expose(&holder);'))
+    expected = [row for row in original if row['name'] != MALFORMED_REFERENCE_CASE] + [malformed, reference]
+    assert value['cases'] == expected, 'reviewed reference fixture population mapping drifted'
+    assert len(value['cases']) == len({row['name'] for row in value['cases']}) == 55
+
+
 def validate(value=None, checker=None):
     value = json.loads(CASES.read_text()) if value is None else value
     canonical = json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
     assert hashlib.sha256(canonical).hexdigest() == CASE_DIGEST, 'deferred allocator case contract drifted'
-    assert len(value['cases']) == 54 and sum(c['original_baseline'] for c in value['cases']) == 8
+    validate_reference_fixture_amendment(value)
+    assert len(value['cases']) == 55 and sum(c['original_baseline'] for c in value['cases']) == 8
     original32 = json.dumps(value['cases'][:32], sort_keys=True, separators=(',', ':')).encode()
     assert hashlib.sha256(original32).hexdigest() == '6d11471af2986e33c2c5b00ea9269885fa161508ade37ad24ec1a5637f111685', 'original32 controls changed'
-    original54 = json.dumps(value['cases'], sort_keys=True, separators=(',', ':')).encode()
-    assert value['original54_cases_sha256'] == hashlib.sha256(original54).hexdigest() == 'ef229dbe96fd8c7bfb3f63785c9c4b41df9e392bb4e75a8824ef1f766624c066', 'original54 controls changed'
     assert len(value['unqualified_fixture_attempts']) == 3
     assert value['support_sha256'] == digest(SUPPORT), 'deferred allocator support drifted'
     assert value['internal_control_sha256'] == digest(INTERNAL), 'deferred allocator observation controls drifted'
@@ -117,6 +143,7 @@ def inversions():
     value = json.loads(CASES.read_text())
     source = CHECKER.read_text()
     validate(value, source)
+    reference_fixture_inversions(value)
     changes = []
     changed = copy.deepcopy(value)
     changed['cases'][1]['mode'] = 'native'
@@ -151,7 +178,7 @@ def inversions():
         ('unknown receiver treated as known', 'if receiver.present == 0 || receiver.unresolved == 1 || len(receiver.identity) == 0 {'),
         ('physical observation substituted for resource proof', 'mut allocator := env_deferred_allocator_proof(env, action, ctx);'),
         ('missing explicit aggregate exposure', 'env_arena_lifecycle_expose_aggregate(env, expr.AddressOf.expr, inner, ctx);'),
-        ('missing implicit reference exposure', 'env_arena_lifecycle_expose_aggregate(env, arg_idx_check_call_nlaunder, resolved_arg, ctx);'),
+        ('missing reference parameter exposure', 'env_arena_lifecycle_expose_aggregate(env, arg_idx_check_call_nlaunder, resolved_arg, ctx);'),
         ('missing indirect write invalidation', 'env_arena_lifecycle_observe_indirect_write(env, left_idx, ctx);'),
         ('branch exposure forgotten', 'result.exposed_storage = typechecker_union_int_maps(result.exposed_storage, right[r].exposed_storage, ctx);'),
         ('unknown identity refined at join', 'left_value.unresolved != right_value.unresolved || left_value.present != right_value.present'),
@@ -170,6 +197,66 @@ def inversions():
             print('REJECTED (expected assertion): ' + name)
         else:
             raise AssertionError('ACCEPTED mutation: ' + name)
+
+
+def reference_fixture_inversions(value):
+    # Exercise the real preservation/mapping predicate independently of the
+    # overall document digest, so its failure cannot be a hash short circuit.
+    validate_reference_fixture_amendment(value)
+    changes = []
+    def changed(label, mutate, expected):
+        candidate = copy.deepcopy(value)
+        mutate(candidate)
+        changes.append((label, candidate, expected))
+    changed('old active54 expectation re-admitted',
+            lambda v: v.update(cases=copy.deepcopy(v['original54_cases'])),
+            'reviewed reference fixture population mapping drifted')
+    changed('old document without preserved54 snapshot', lambda v: v.pop('original54_cases'),
+            'preserved original54 population drifted')
+    changed('preserved original source changed',
+            lambda v: v['original54_cases'][0].update(source='changed'),
+            'preserved original54 controls changed')
+    changed('preserved original expectation changed',
+            lambda v: v['original54_cases'][0].update(diagnostic='changed'),
+            'preserved original54 controls changed')
+    changed('preserved original missing', lambda v: v['original54_cases'].pop(),
+            'preserved original54 population drifted')
+    changed('preserved original duplicate',
+            lambda v: v['original54_cases'].__setitem__(1, copy.deepcopy(v['original54_cases'][0])),
+            'preserved original54 population drifted')
+    changed('preserved original digest changed', lambda v: v.update(original54_cases_sha256='0' * 64),
+            'preserved original54 controls changed')
+    changed('historical failure relabelled qualified',
+            lambda v: v['unqualified_reference_fixture_attempt'].update(status='PASS'),
+            'failed reference fixture preservation drifted')
+    changed('historical failed object changed',
+            lambda v: v['unqualified_reference_fixture_attempt']['original_case'].update(source='changed'),
+            'failed reference fixture preservation drifted')
+    changed('malformed primary diagnostic weakened',
+            lambda v: v['cases'][-2].update(diagnostic='[ResourceDeferredUnresolved]'),
+            'reviewed reference fixture population mapping drifted')
+    changed('valid reference changed back to malformed value',
+            lambda v: v['cases'][-1].update(source=v['cases'][-2]['source']),
+            'reviewed reference fixture population mapping drifted')
+    changed('valid reference refusal weakened', lambda v: v['cases'][-1].update(mode='native'),
+            'reviewed reference fixture population mapping drifted')
+    changed('valid reference control removed', lambda v: v['cases'].pop(),
+            'reviewed reference fixture population mapping drifted')
+    changed('malformed primary control removed', lambda v: v['cases'].pop(-2),
+            'reviewed reference fixture population mapping drifted')
+    changed('unchanged active original altered', lambda v: v['cases'][0].update(source='changed'),
+            'reviewed reference fixture population mapping drifted')
+    changed('historical attempted control silently active',
+            lambda v: v['cases'].append(copy.deepcopy(v['unqualified_reference_fixture_attempt']['original_case'])),
+            'reviewed reference fixture population mapping drifted')
+    for label, candidate, expected in changes:
+        try:
+            validate_reference_fixture_amendment(candidate)
+        except AssertionError as error:
+            assert str(error) == expected, 'REJECTED (different assertion): ' + label + ': ' + str(error)
+            print('REJECTED (expected assertion): ' + label)
+        else:
+            raise AssertionError('ACCEPTED mutation: ' + label)
 
 
 def qualify_literal_sources(binary, output):
@@ -360,6 +447,8 @@ def native(output):
               diagnostic['status'] == 'PASS' and all(r['passed'] for r in rows))
     result = dict(status='PASS' if passed else 'FAIL', scope='Captured bound-owner cleanup order only; unsupported late producers/unknown Free explicitly refused; no OD23 slot decision or full Phase26 closure',
                   source_before=inputs, source_after=after, tools=tools, cases=rows,
+                  active_case_count=55, original54_cases_sha256=ORIGINAL54_DIGEST,
+                  unqualified_reference_attempt=MALFORMED_REFERENCE_CASE,
                   internal=internal_record, literal_controls=literal, diagnostic_controls=diagnostic,
                   owned_allocated_bytes=allocated, owned_output_budget_bytes=budget)
     (output / 'result.json').write_text(json.dumps(result, indent=2) + '\n')

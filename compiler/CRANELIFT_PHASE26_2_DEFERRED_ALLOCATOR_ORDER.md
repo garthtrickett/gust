@@ -62,7 +62,7 @@ transport, and the explicit unsupported cohorts. Four internal native output
 groups cover observation snapshot isolation, restoration, agreement and
 one-sided-field uncertainty; synthetic identities never address real allocators.
 
-The complete 54-case matrix adds five positive controls and seventeen refusals
+The original 54-case matrix added five positive controls and seventeen refusals
 for late physical field receivers. Physical lifecycle observations retain the
 existing allocator proof's presence and uncertainty bits through copies and
 joins. They are distinct from immutable acquisition dependencies: a fresh
@@ -92,7 +92,9 @@ still union across both arms, even when a literal selects a physical value.
 Fields absent on the selected arm remain explicit unknowns; they cannot regain
 a declared origin through fallback.
 
-All 54 existing case objects and the original primitive18 remain unchanged.
+At the literal-observation checkpoint, all 54 case objects and the original
+primitive18 remained unchanged. The scoped fixture amendment below preserves
+those54 objects as historical data and corrects one active attempted control.
 Additional internal parser/typechecker controls cover 18 literal/nonliteral,
 one-sided, shadow, termination, exposure and indirect-write source cases. The
 native metadata unit executes the checker on these sources in one process per
@@ -136,3 +138,21 @@ enrollment and discovered validators, committed independent reviews, bootstrap,
 strict104/180s, protected4GiB production/public R5 and native fixed point,
 local/CI byte/provenance checks, exact-head eligible CI and a checked merge.
 No earlier compiler or historical case pass qualifies this source.
+
+The subsequent genuine cold workflow rejected `expose(holder)` with its primary
+argument mismatch: an ordinary call requiring `&Holder` does not establish an
+implicit address-of coercion. The old attempted control had expected a secondary
+`ResourceDeferredUnresolved` diagnostic, which correct diagnostic precedence
+suppresses. Its source, expectation and failed receipt remain unqualified.
+
+The operator selected a fixture-only amendment on 2026-11-20. The complete54
+original objects and their canonical digest are retained and checked separately.
+The active55 cohort consists of the unchanged53 plus a distinct check of the
+malformed call's primary type error and a valid `expose(&holder)` cleanup-refusal
+control. The latter exercises explicit-reference exposure and a valid reference
+parameter call; it does not independently prove implicit coercion. Exact mapping
+checks and refusal inversions prevent altered originals, re-admission of the
+stale active expectation, omission of either new check or weakening the valid
+refusal. Compiler code, earlier-error precedence, original primitive18, first8
+payloads and every product/qualification bound remain unchanged. Fresh full
+qualification and owning CI must pass before any acceptance claim.

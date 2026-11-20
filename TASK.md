@@ -6278,3 +6278,19 @@ original18 source/four argument controls. Add four malformed diagnostic-mode
 refusals and require all physical outputs/unit hashes. Runtime, scratch, caps,
 deadlines and the compiler correction stay unchanged. Current-source reviews,
 enrollment and all native/product/fixed-point/publication gates still apply.
+
+The operator selected the reviewed fixture-only amendment on 2026-11-20 after
+the genuine current-source cold workflow found one stale original54 expectation.
+`expose(holder)` is ill-typed for an ordinary `&Holder` parameter; the former
+cleanup diagnostic was secondary to its primary argument mismatch. Preserve
+the exact54 original objects and digest as explicitly unqualified historical
+data. This scoped selection supersedes only the earlier requirement to keep
+that malformed row's active expectation unchanged. Keep the other53 active
+objects unchanged, require the same malformed source's primary type error in
+a distinct control, and add a valid `expose(&holder)` cleanup-refusal control.
+The resulting active cohort is55. Explicit reference formation already exposes
+the aggregate; this is not proof of implicit reference coercion. Add inversions
+for original preservation, active mapping and refusal strength. Do not change
+compiler code, diagnostic precedence, original primitive18, first8 payloads,
+runtime or product limits. Committed reviews, additive enrollment and all
+genuinely current native/product/public/R5FP/publication gates remain mandatory.

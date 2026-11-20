@@ -1145,3 +1145,13 @@ unit invocations, preserving all assertions/default groups/original18 controls
 and adding malformed-argument refusals. No compiler logic, runtime or resource
 budget changes accompany this fixture correction. Fresh committed review and
 current-source qualification remain pending; no CI observer or publication.
+# Selected fixture-only amendment resumed — 2026-11-20
+
+The operator selected the reviewed original54 fixture amendment. The external
+bounded authority wait is prospectively invalidated. Exact54 original objects
+and the failed F2 matrix remain preserved; the successor has53 unchanged active
+cases, a malformed-call primary diagnostic check and a valid explicit-reference
+cleanup refusal. Compiler code and diagnostic precedence remain unchanged.
+Fresh focused controls, committed review, additive enrollment and all mandatory
+current-source/native/product/public/R5FP/exact-head CI/merge gates are pending.
+Full26.2–26.6/20requirements remains active; OD23 stays OPEN/unselected.
