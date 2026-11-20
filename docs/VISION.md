@@ -1429,6 +1429,21 @@ that is sequencing, not an unresolved brand prerequisite.
 
 **One rule to fix now while it is free.** `using` binds exactly one context per scope and nested `using` shadows rather than merges. Two implicit contexts in scope would reintroduce by ambiguity precisely the question the explicit parameter answered by construction, and an ambiguity rule written after the feature ships is written under pressure to accept existing code.
 
+### 24.2 Independent collection reclamation
+
+When one collection needs a shorter lifetime than nearby data, allocate it in
+its own branded arena and free that arena when the collection is done. Revisit
+this design if a real workload shows that separate arenas are too costly or
+that a shared arena retains too much memory after collections are finished.
+Compare retained memory and allocation overhead against a heap-owned
+collection on that workload.
+
+Frost's heap-owned vector grows its own backing block and gives it back through
+`vec_free`. The vector is linear, so the caller must consume it. When the
+elements themselves are linear resources, the caller drains them before
+releasing the backing block. This is a candidate to evaluate if the workload
+shows a need for finer-grained reclamation. [Frost vector implementation](https://github.com/matthewjberger/frost/blob/35e5868b08d192e45e8db606538b4b7357ffc1b4/std/vec.frost)
+
 ## 25. Lifetime movement
 
 A value from a shorter-lived context may enter a longer-lived context only through cloning into the destination context, serialization, or explicit ownership transfer.
