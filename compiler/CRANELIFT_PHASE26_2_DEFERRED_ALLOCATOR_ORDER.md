@@ -156,3 +156,17 @@ stale active expectation, omission of either new check or weakening the valid
 refusal. Compiler code, earlier-error precedence, original primitive18, first8
 payloads and every product/qualification bound remain unchanged. Fresh full
 qualification and owning CI must pass before any acceptance claim.
+
+
+## Selected three-witness CR15 qualification amendment
+
+The three original CR15 native-positive fixtures defer allocator Free in the
+same frame as automatic MutexGuard destruction. Current validation correctly
+rejects that order. The operator selected only those three fixture corrections:
+retain original bytes and historical expectations, add separate scoped positive
+successors, and require compile-only original refusals through both retained
+routes. The shared Stdlib module, compiler and cleanup order remain unchanged.
+The source contract includes 17 mutation controls; actual native, enrollment,
+production and publication results must bind the corrected committed source.
+The directory-wrapper counterpart remains unselected and blocks its owning
+Resource acquisition parity and dependent issue-health gates.

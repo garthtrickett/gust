@@ -10,6 +10,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import phase26_2_cr15_cleanup_fixtures as cleanup_fixtures
+
 
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
@@ -123,6 +125,7 @@ def validate() -> dict:
         "tools/normalize_generated_arena_offsets.py", GUARD_L1, GUARD_L2,
     ):
         require(required in workflow, f"workflow is missing {required}")
+    cleanup_fixtures.validate()
     return value
 
 
@@ -147,6 +150,7 @@ def render(value: dict) -> str:
         "## Evidence boundary",
         "",
         "Equivalent inferred and explicit guards agree; distinct payload/brand identities remain distinct; two protected payload types compile through retained explicit compatibility and explicit no-fallback Cranelift paths.",
+        "Current positive successors end the guard's inner scope before the outer deferred allocator Free. The three original sources and historical expectations remain unchanged; current compile-only controls require their cleanup-order rejection before worker entry.",
         "Arbitrary user generic functions and unprotected inputs remain rejected before backend selection. No backend recognizes MutexGuard, sync.lock, or sync.get.",
         "",
         "Patch 24.0c adds no MIR operation or meaning, ABI/layout/runtime symbol, target/linker policy, route/default/fallback, Stdlib source, bootstrap route, or seed change. Patch 24.0d remains separate.",
@@ -173,6 +177,10 @@ def evidence() -> None:
     witnesses = {key: ROOT / path for key, path in value["witnesses"].items()}
     compiler = ROOT / "build/phase10-package/bin/gust"
     require(compiler.is_file(), "native package prerequisite is missing")
+    cleanup_controls = cleanup_fixtures.inversions()
+    require(len(cleanup_controls) == 17, "cleanup fixture refusal controls missing")
+    cleanup_fixtures.reject_originals(compiler)
+    positive_witnesses = cleanup_fixtures.successors(witnesses)
 
     # Patch 24.12b: retired, and INVERTED rather than deleted.
     #
@@ -197,14 +205,16 @@ def evidence() -> None:
             "phase24_cr15_derivation")
 
     for key in ("native_inferred", "native_explicit", "native_second_type"):
-        artifact = native_artifact(witnesses[key])
+        artifact = native_artifact(positive_witnesses[key])
+        require(not artifact.is_symlink(), f"unexpected positive artifact symlink: {key}")
         if artifact.exists():
+            require(artifact.is_file(), f"unexpected nonregular positive artifact: {key}")
             artifact.unlink()
         for route in ([], ["--backend", "cranelift"]):
-            result = run([str(compiler), *route, str(witnesses[key])])
+            result = run([str(compiler), *route, str(positive_witnesses[key])])
             require(result.returncode == 0 and not result.stdout and not result.stderr,
                     f"no-fallback native compilation failed for {key}: {route}")
-            require(artifact.is_file() and artifact.stat().st_size > 0,
+            require(artifact.is_file() and not artifact.is_symlink() and artifact.stat().st_size > 0,
                     f"native artifact is missing for {key}: {route}")
             artifact.unlink()
 

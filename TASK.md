@@ -6294,3 +6294,22 @@ for original preservation, active mapping and refusal strength. Do not change
 compiler code, diagnostic precedence, original primitive18, first8 payloads,
 runtime or product limits. Committed reviews, additive enrollment and all
 genuinely current native/product/public/R5FP/publication gates remain mandatory.
+
+
+The operator separately selected the reviewed **three CR15 fixture** amendment
+on 2026-11-20 after the owning derivation guard exposed correct cleanup-order
+refusals. This exception covers only inferred, explicit and second-payload
+native derivation witnesses. Preserve all three original tracked source bytes,
+their historical native-positive expectation as unqualified history, the shared
+Stdlib helper, and all frozen negative-diagnostic comparisons. Route both
+existing positive compilation paths to separate successors whose mutex/guard
+and protected use finish in an inner frame before the unchanged outer deferred
+Arena.Free. Require each original to reject with LinearResourceLeak before
+worker entry; never execute it. Invert original preservation, live successor
+routing and scope removal. No compiler, cleanup emission, runtime, resource,
+brand, ABI or OD23 semantics change is selected. Re-enroll and obtain committed
+reviews plus actual current native/product/public/R5FP/publication evidence.
+The additional unbound-directory fixture is **not selected** by this reply;
+its observed Resource acquisition parity failure and dependent issue-health
+gate remain blocked pending their own authority. Do not compensate locally or
+waive either gate. The original54/active55 and primitive18 contracts stand.

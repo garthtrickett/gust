@@ -1,3 +1,14 @@
+# Cranelift ACTIVE selected three-fixture CR15 amendment — 2026-11-20
+
+The operator selected only the three reviewed CR15 cleanup fixtures. Resume the
+same owner/worktree; prospectively invalidate the retained idle terminal for
+this bounded source/qualification work. Preserve all original sources and old
+proofs; no earlier pass qualifies this successor. The directory counterpart
+remains unselected and its owning/dependent gates blocked. No compiler/runtime/
+Stdlib/resource/OD23 semantic change or new CI wave is inferred.
+
+---
+
 # Cranelift ACTIVE native deferred lexical bindings — 2026-11-19
 
 PR619 is checked merged at59ef3f3f; its completion evidence remains historical.
