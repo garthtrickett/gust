@@ -2694,9 +2694,9 @@
     "compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz": "7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee",
     "scripts/phase22_opening.py": "ae7584baedec4f35f3537decba6b8de2ae4b19b17b55c3f53e4052ae96b6cc19",
     "compiler/phase26-2-defer-lexical/owned-disk-scan-predecessor-v1.json.gz": "38fae8d1b71ffb732f023eec5e8d344ba4785a5d63f9ba07201e44bdf424cb09",
-    "scripts/phase26_2_deferred_allocator_order.py": "42f0e1b9a187d0598e443bd21a4baeea8f5380050bf6b3731038c6eb134dc707",
-    "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md": "6ce8b30e71216d40319dcd923d2efdd9a6e558c60113ff4659107c989dc9b529",
-    "compiler/phase26-2-deferred-allocator-order/cases.json": "ad0a17f01b755c8b73f98d9fe9d50ebe09fe488f63e24ea6852f3c49879fe010",
+    "scripts/phase26_2_deferred_allocator_order.py": "a2efad8daf28525e4188f2998b280c3780bf4cdc8604dc8c75c12a4bb120b01e",
+    "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md": "94eb06069f169e44a6367622303d0a44cbb1001e3b33d075137f9f4c9d3b5f1e",
+    "compiler/phase26-2-deferred-allocator-order/cases.json": "97fcf264f895ffa8eda5b0fbfa3a568b10eedcb56a1451f6a32a3464fbda3ca7",
     "compiler/phase26-2-deferred-allocator-order/observation_facts.gst": "0226adb1dd4b547982690b0ef343862b4ad12eacae0042ac7b96273e0037aadb"
   },
   "snapshot": {
