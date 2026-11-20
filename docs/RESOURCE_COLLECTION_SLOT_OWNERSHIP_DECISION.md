@@ -103,6 +103,20 @@ ownership moves.
 | Destroy a copied handle or schedule cleanup | Assign exactly-once destructor authority and decide which observations remain valid until cleanup |
 | Free or move the branded allocator | Include admitted resource-valued slots in the live-owner proof; direct owned-resource enforcement requires no OD-23 choice |
 
+**Release and reuse witness for OD-23.** Give resource A an owning slot and
+retain an observation through a permitted copy. Extract or release A, put a
+distinct resource B in the same numeric slot, then consider both the old
+observation and a fresh observation of B. Include the interval when the slot
+is vacant. For each step record which acquisition the observation identifies,
+what it permits the caller to read or move, and who must destroy A and B.
+Compare with a still-live slot that has never been reused.
+
+Frost's generation check distinguishes a stale handle from one that names the
+new occupant. It supplies a test for identity across reuse. Exactly-once
+destruction and permitted observations under each Gust alternative still need
+their own answers. Record these as decision cases while OD-23 is open.
+[Frost handle and pool semantics](https://github.com/matthewjberger/frost/blob/35e5868b08d192e45e8db606538b4b7357ffc1b4/docs/book/src/reference/handles-and-pools.md)
+
 Three observation alternatives remain **UNSELECTED**:
 
 1. **Owner-rooted:** observation validity ends when the original owner

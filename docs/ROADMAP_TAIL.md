@@ -237,8 +237,12 @@ inseparable row. Phase 26.5 audits raw-pointer use behind the safe stdlib
 collection surface. Phase 26.6 promotes the final native compiler through the
 published bridge and digest-pinned release policy; it does not regenerate the
 deleted C seed. The full plan, ordering, historical status snapshot, and stable
-legacy identifier policy live in `docs/PHASES_26_AND_27.md`. Phase 26
-implementation awaits explicit activation.
+legacy identifier policy live in `docs/PHASES_26_AND_27.md`.
+
+The [executable-claims plan](PHASE26_EXECUTABLE_CLAIMS.md) maps the first
+documentation test to existing resource fixtures, the ownership evidence and
+diagnostic pilots to 26.2, and the implicit/explicit comparison to 26.3.
+The slot-reuse cases are inputs to the open OD-23 decision.
 
 **Exit gate:** every Phase 26 increment has focused positive and negative
 evidence, stable diagnostics, the full compiler suite, and a converged

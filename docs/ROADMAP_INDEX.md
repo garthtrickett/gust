@@ -17,6 +17,10 @@ open phase.
   checkpoint. It is recorded future work, not an active phase.
 - `docs/PHASES_26_AND_27.md` — detailed systems-safety, resource,
   implicit-context, and consolidation plan after the C-retirement tail.
+- [Phase 26 executable language claims](PHASE26_EXECUTABLE_CLAIMS.md) — the
+  resource-cleanup documentation pilot, ownership evidence and diagnostics,
+  scalar defer differential tests, context-lowering checks, and OD-23 decision
+  cases. Each entry names its destination and what would verify it.
 - `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md` — the Phase 25 bootstrap seed
   decision: options, ranking, and the runtime-before-seed ordering, with the
   three C strands measured. Records what the decision does *not* settle,

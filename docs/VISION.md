@@ -474,6 +474,7 @@ Almost every component exists somewhere. The composition does not. Stating the d
 
 | System | Overlap | Delta |
 |---|---|---|
+| **Frost** | Tests examples extracted from its book, classifies the scope of safety claims, and checks generated programs against predicted observations. | Gust can use these techniques to show generators which ownership examples work, why others fail, and where a rule ends. [Phase 26 pilots](PHASE26_EXECUTABLE_CLAIMS.md) |
 | **Austral** | Linear types, capability security, regions, no GC, no macros, universe system. Closest existing language. | Capabilities are **linear values threaded through call chains**, not effects declared in types. No full-stack surface, no platform. |
 | **Unison** | Abilities in types, content-addressed code, cloud platform. | No application model, no tenancy, no capability governance. |
 | **WASM Component Model / WASI P2** | Capability-based, deny-by-default, composable, language-agnostic, industry-backed. | Syscall-level, not domain-level. **Strongest competing path.** |
