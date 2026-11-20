@@ -24,21 +24,21 @@
       "original": "tests/phase24_cr15_protected_resource_native_inferred.gst",
       "original_sha256": "0f2781b567bb7540ab138b50af5a0fd7225ff6f4bc467c4450742f9107096cd4",
       "successor": "tests/phase24_cr15_protected_resource_native_inferred_scoped.gst",
-      "successor_sha256": "7042192cf7096227e5553629c15d64edc6cd0206b95668e4e4d4e74da73adc3f"
+      "successor_sha256": "0351b7e536895110bcabf74060b89251929a82f900e6b7abfcc6d72577ee2a81"
     },
     {
       "role": "native_explicit",
       "original": "tests/phase24_cr15_protected_resource_native_explicit.gst",
       "original_sha256": "b366f8d92c84dd295905f1fbeb7acf90ca18e9347a0f5e1d968889687cf34182",
       "successor": "tests/phase24_cr15_protected_resource_native_explicit_scoped.gst",
-      "successor_sha256": "73eadc1e39a0887e795adfb33c027034a9e0aa02c048860d93d77f70f3ded8bd"
+      "successor_sha256": "221863e61a792ea8e85abffbce77a99d185684e3a1160a5bb268170339a61779"
     },
     {
       "role": "native_second_type",
       "original": "tests/phase24_cr15_protected_resource_native_second_type.gst",
       "original_sha256": "4e9f3c19f8dd60a180045837d7b690945f17760e7c8f10680387fe0a443500bc",
       "successor": "tests/phase24_cr15_protected_resource_native_second_type_scoped.gst",
-      "successor_sha256": "bea9b7b8f17d3326c931e7d4c1074701194ce8343abd8ff2cdcda9a6ac8ce728"
+      "successor_sha256": "26ff6c4c323b17be1627055fd0180cb52f0cc4f0bd2d39b64dd15728e5385aaf"
     }
   ]
 }

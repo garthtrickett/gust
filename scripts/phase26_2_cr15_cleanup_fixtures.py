@@ -11,7 +11,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'compiler/phase26-2-deferred-allocator-order/cr15-cleanup-fixtures.json'
-MANIFEST_SHA256 = '075bab82ecea298f66b9d7337233f61c44c1ae9ccc9e9b358912f53481e7684a'
+MANIFEST_SHA256 = '2a59f7a88fff841d6d6c6afbf0e31df2d4e2d7b8996024e19f6c3227f287ea17'
 ORIGINALS = {
     'native_inferred': '0f2781b567bb7540ab138b50af5a0fd7225ff6f4bc467c4450742f9107096cd4',
     'native_explicit': 'b366f8d92c84dd295905f1fbeb7acf90ca18e9347a0f5e1d968889687cf34182',
@@ -33,7 +33,7 @@ def scoped_source(original):
     start = original.index(b'    mut mutex:')
     end = original.index(b'    return 0;', start)
     inner = b''.join(b'    ' + line + b'\n' for line in original[start:end].splitlines())
-    return original[:start] + b'    {\n' + inner + b'    }\n' + original[end:]
+    return original[:start] + b'    if 1 {\n' + inner + b'    }\n' + original[end:]
 
 
 def check_mapping(value, sources):
@@ -106,6 +106,7 @@ def inversions():
         row['successor_sha256'] = digest(s[row['successor']])
 
     refuse('scope removed despite rehash', 'scoped source bytes drifted', change_sources=lambda v, s: replace_successor(v, s, lambda old, new: old))
+    refuse('unsupported bare-block form despite rehash', 'scoped source bytes drifted', change_sources=lambda v, s: replace_successor(v, s, lambda old, new: new.replace(b'    if 1 {', b'    {')))
     refuse('outer behavior changed despite rehash', 'scoped source bytes drifted', change_sources=lambda v, s: replace_successor(v, s, lambda old, new: new.replace(b'return 0;', b'return 1;')))
     refuse('support digest changed', 'support contract drifted', lambda v: v['support'].update(sha256='0' * 64))
     refuse('support bytes changed', 'support source bytes drifted', change_sources=lambda v, s: s.update({SUPPORT: b'changed'}))
@@ -113,7 +114,7 @@ def inversions():
     refuse('historical exit rewritten', 'historical positive expectation relabelled', lambda v: v['original_expectation'].update(compile_exit=1))
     refuse('refusal diagnostic removed', 'original refusal weakened', lambda v: v['current_original_expectation'].update(diagnostic=''))
     refuse('new authority field', 'fixture contract fields drifted', lambda v: v.update(directory_selected=True))
-    assert len(outcomes) == 17
+    assert len(outcomes) == 18
     return outcomes
 
 

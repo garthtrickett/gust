@@ -7,7 +7,7 @@ type Counter struct {
 func main() int {
     mut arena := os.Arena.New();
     defer arena.Free();
-    {
+    if 1 {
         mut mutex: std.Mutex[Counter, arena];
         mut owner                                  := sync.lock(&mutex);
         mut value := sync.get(&owner);

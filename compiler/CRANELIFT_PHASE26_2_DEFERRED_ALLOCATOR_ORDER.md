@@ -166,7 +166,14 @@ rejects that order. The operator selected only those three fixture corrections:
 retain original bytes and historical expectations, add separate scoped positive
 successors, and require compile-only original refusals through both retained
 routes. The shared Stdlib module, compiler and cleanup order remain unchanged.
-The source contract includes 17 mutation controls; actual native, enrollment,
+The source contract includes 18 mutation controls; actual native, enrollment,
 production and publication results must bind the corrected committed source.
 The directory-wrapper counterpart remains unselected and blocks its owning
 Resource acquisition parity and dependent issue-health gates.
+
+
+The first scoped-positive attempt used a bare block, which the current parser
+correctly refused before worker entry. Preserve that failed source/receipt.
+The successor uses the already-supported constant `if 1` lexical block: the same
+three guard lifetimes end before outer Free. A mutation rejects reintroduction
+of the unsupported bare-block form. No parser or backend change is selected.
