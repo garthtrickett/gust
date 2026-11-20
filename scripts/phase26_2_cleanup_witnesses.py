@@ -33,14 +33,19 @@ REFUSAL = {'compile_exit': 1, 'diagnostic': '[LinearResourceLeak]',
 DIRECTORY_RECIPE = 'phase26-cleanup-directory-positive'
 DIRECTORY_LABELS = ('phase20_resource_cleanup_unbound_directory',
                     'phase20_resource_scope_cleanup_unbound_directory')
-PREDECESSOR = 'compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v1.json.gz'
-PREDECESSOR_SHA256 = 'c6984ca239f79c98cb66f9407ddd8e654c159f735e3381eae12cc878b697136e'
+HISTORICAL_PREDECESSOR = 'compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v1.json.gz'
+HISTORICAL_PREDECESSOR_SHA256 = 'c6984ca239f79c98cb66f9407ddd8e654c159f735e3381eae12cc878b697136e'
+PREDECESSOR = 'compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v2.json.gz'
+PREDECESSOR_SHA256 = '64c759fd6afa3d2f26b4fff3ba7b2e51cb255e264e06588ba9720419d1ebdce1'
+PREDECESSOR_ARCHIVES = (HISTORICAL_PREDECESSOR, PREDECESSOR)
 PREDECESSOR_BASE = '39e37696b775b25827d54c1c5a52b005d30e386b'
 PREDECESSOR_FILES = {
     'scripts/phase24_cr15_qualification.py': '13fa77156c2aa97113fc3303460f0ad1b0db5ac3d6ce55c9908ff11179aeddc1',
     'compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md': '4e4bebb53af1d8376672b1fc59f2eb49813bf37fd8455f839a8ffccb0d5237e4',
     'scripts/phase20_resource_acquisition.py': '74926ed7c1d0f4cd03a19febc641d09a98a9f83e57af28af1c62526c7e4828f7',
     'compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md': '357f69e8677975fb42382beae2c721527533ee88f90da797f2f9802582a88a19',
+    'scripts/phase20_resource_declaration_migration.py': '12482b955033311660a206bb282879ad50fc0cc33c6a5e7099606dc007c3df75',
+    'compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md': 'bd339fd678d0a206c9e5b18ff6134aeb3902186108e743224b06abdcdd0c1d58',
 }
 DIRECTORY_JUST_RECIPE = (
     '\n# Selected fixture-only successor; original remains a frontend-only refusal witness.\n'
@@ -55,7 +60,7 @@ def digest(data):
 
 def checked_predecessor(value):
     assert (set(value) == {'schema', 'base', 'files'} and
-            value['schema'] == 'gust.cleanup_witness.predecessor.v1' and
+            value['schema'] == 'gust.cleanup_witness.predecessor.v2' and
             value['base'] == PREDECESSOR_BASE and
             set(value['files']) == set(PREDECESSOR_FILES)), 'cleanup predecessor identity or population drifted'
     for name, expected in PREDECESSOR_FILES.items():
@@ -69,6 +74,7 @@ def decoded_predecessor(raw):
 
 
 def predecessor_bytes(name):
+    assert digest((ROOT / HISTORICAL_PREDECESSOR).read_bytes()) == HISTORICAL_PREDECESSOR_SHA256, 'cleanup predecessor history drifted'
     raw = (ROOT / PREDECESSOR).read_bytes()
     assert digest(raw) == PREDECESSOR_SHA256, 'cleanup predecessor archive drifted'
     assert name in PREDECESSOR_FILES, 'unknown cleanup predecessor file'
@@ -91,6 +97,8 @@ def predecessor_controls():
             raise AssertionError(label + ': ACCEPTED')
 
     original_read = Path.read_bytes
+    with patch.object(Path, 'read_bytes', lambda p: original_read(p) + b'changed' if p == ROOT / HISTORICAL_PREDECESSOR else original_read(p)):
+        reject('changed historical archive bytes', 'cleanup predecessor history drifted', lambda: predecessor_bytes(next(iter(PREDECESSOR_FILES))))
     with patch.object(Path, 'read_bytes', lambda p: original_read(p) + b'changed' if p == ROOT / PREDECESSOR else original_read(p)):
         reject('changed archive bytes', 'cleanup predecessor archive drifted', lambda: predecessor_bytes(next(iter(PREDECESSOR_FILES))))
     for key, replacement in (('schema', 'unselected'), ('base', '0' * 40)):
@@ -108,7 +116,7 @@ def predecessor_controls():
         substituted['files'][name] = base64.b64encode(b'changed').decode()
         reject('substituted ' + name, 'cleanup predecessor payload drifted', lambda substituted=substituted: checked_predecessor(substituted))
     reject('unknown predecessor lookup', 'unknown cleanup predecessor file', lambda: predecessor_bytes('unselected.gst'))
-    assert len(rows) == 13
+    assert len(rows) == 18
     return rows
 
 
@@ -269,6 +277,71 @@ def successor(role):
     return ROOT / next(row['successor'] for row in value['cases'] if row['role'] == role)
 
 
+def directory_inventory_addition():
+    value, _ = validate()
+    row = next(row for row in value['cases'] if row['role'] == 'directory_unbound')
+    return row['original'], row['successor']
+
+
+def inventory_controls():
+    """Exercise the real ordered inventory comparison, not only its mapping."""
+    from unittest.mock import patch
+    import phase20_resource_declaration_migration as migration
+    authority = json.loads(migration.REGISTRY.read_text())
+    departed = authority['phase2510_emitter_deletion']['frozen_inventory_departures']['directory_vocabulary']['departed_owner_files']
+    tokens = ('os.OpenDir', 'os.ReadDir', 'os.CloseDir')
+    actual = [migration.relative(p) for p in migration.compiler_gst_files()
+              if any(token in p.read_text() for token in tokens)]
+    migration.check_directory_inventory(actual, departed)
+    original, added = directory_inventory_addition()
+    rows = [dict(label='actual current ordered inventory', outcome='ACCEPTED')]
+
+    def reject(label, needle, fn):
+        try:
+            fn()
+        except (migration.Error, AssertionError) as error:
+            verdict = 'REJECTED (expected assertion)' if needle in str(error) else 'REJECTED (different assertion)'
+            rows.append(dict(label=label, outcome=verdict, assertion=str(error)))
+            assert verdict == 'REJECTED (expected assertion)', rows[-1]
+        else:
+            raise AssertionError(label + ': ACCEPTED')
+
+    changed = list(actual)
+    i = changed.index(added)
+    changed[i - 1], changed[i] = changed[i], changed[i - 1]
+    for label, candidate in (
+        ('missing successor', [n for n in actual if n != added]),
+        ('duplicate successor', actual[:i] + [added] + actual[i:]),
+        ('substituted successor', [n if n != added else 'compiler/future/unselected.gst' for n in actual]),
+        ('extra vocabulary file', actual + ['compiler/future/unselected.gst']),
+        ('changed ordering', changed),
+        ('missing original anchor', [n for n in actual if n != original]),
+    ):
+        assert candidate != actual, 'inventory mutation did not move: ' + label
+        reject(label, 'compiler-owned directory vocabulary inventory drifted:',
+               lambda candidate=candidate: migration.check_directory_inventory(candidate, departed))
+    for name in departed:
+        assert name not in actual
+        reject('departed file reappears ' + name, 'but it still speaks it',
+               lambda name=name: migration.check_directory_inventory(sorted(actual + [name]), departed))
+    without_anchor = [n for n in migration.DIRECTORY_VOCABULARY_FILES if n != original]
+    with patch.object(migration, 'DIRECTORY_VOCABULARY_FILES', without_anchor):
+        reject('missing historical anchor', 'selected directory inventory anchor drifted',
+               lambda: migration.check_directory_inventory(actual, departed))
+    with patch.object(migration, 'DIRECTORY_VOCABULARY_FILES', migration.DIRECTORY_VOCABULARY_FILES + [added]):
+        reject('addition already in historical authority', 'selected directory inventory addition drifted',
+               lambda: migration.check_directory_inventory(actual, departed))
+    original_read = Path.read_bytes
+    for label, target, needle in (
+        ('changed enrolled mapping', MANIFEST, 'cleanup witness manifest drifted'),
+        ('changed successor bytes', ROOT / added, 'scoped witness bytes drifted'),
+    ):
+        with patch.object(Path, 'read_bytes', lambda p, target=target: original_read(p) + b'changed' if p == target else original_read(p)):
+            reject(label, needle, lambda: migration.check_directory_inventory(actual, departed))
+    assert len(rows) == 11 + len(departed) and len({r['label'] for r in rows}) == len(rows)
+    return rows
+
+
 def qualification_successors(witnesses):
     result = dict(witnesses)
     for key, role in (('inferred', 'qualification_inferred'), ('explicit', 'qualification_explicit')):
@@ -313,7 +386,7 @@ if __name__ == '__main__':
     validate()
     if args.command == 'inversions':
         print(json.dumps(dict(mapping=inversions(), routes=route_controls(), predecessor=predecessor_controls(),
-                              refusal=refusal_controls()), indent=2))
+                              inventory=inventory_controls(), refusal=refusal_controls()), indent=2))
     if args.command == 'reject-directory':
         inversions()
         refusal_controls()

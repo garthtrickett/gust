@@ -6348,3 +6348,11 @@ primitive18. Enroll the complete actual source/command set with closed predecess
 proofs, review the committed patch, and qualify genuinely amended source through
 local/native/product/public/R5/FP and owning exact-head CI/review/rules/merge.
 The B8 checkpoint remains prior evidence; it does not qualify these amended bytes.
+
+The first amended63-command census completed with62 passes and one inventory
+failure: the scoped directory successor was missing from the live Phase20
+directory-vocabulary expectation. Preserve that failed checkpoint. Add exactly
+the hash-validated successor after its historical original while keeping the
+original authority, departure filtering and live scan unchanged. Preserve the
+four-file predecessor and add a closed six-file supplement; invert the actual
+inventory comparison, re-enroll, review and obtain all fresh gates.

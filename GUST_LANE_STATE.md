@@ -1197,3 +1197,14 @@ parser-result cache with live-file and physical-authority checks retained.
 All61 commands, current native/public/product/R5FP and publication gates remain
 mandatory. No live job or CI observer; the separate directory amendment remains
 unselected. No compiler, resource, ABI, quota or deadline change is selected.
+
+
+## Cranelift current continuation — 2026-11-20 directory inventory correction
+
+ACTIVE same owner/worktree. Current72 census ended62/63 PASS, one exact
+Phase20 directory-vocabulary inventory failure, actual work reaped1/source stable.
+The reviewed additive enrollment preserves historical authority/departures and
+permits only the selected scoped successor. Source/profile correction is under
+committed review and fresh qualification; no current native/product/R5/FP/CI
+acceptance is claimed. OD23 remains OPEN/unselected; full Phase26 activation
+continues. No live job or observer at this correction checkpoint.

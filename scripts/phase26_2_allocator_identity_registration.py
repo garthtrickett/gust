@@ -77,7 +77,7 @@ CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED,
     R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
-    cleanup_witnesses.PREDECESSOR,
+    *cleanup_witnesses.PREDECESSOR_ARCHIVES,
     'scripts/phase26_2_cleanup_witnesses.py',
     'compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json',
     'tests/phase24_cr15_qualification_positive_scoped.gst',
