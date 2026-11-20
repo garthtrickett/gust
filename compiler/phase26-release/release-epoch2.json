@@ -2666,7 +2666,7 @@
     "compiler/phase26-2-allocator-identity/cases.json": "c412e8d5a60174915ce1f3f1e741415c7329d2e79f8c80184b8c685ecd0eb26f",
     "compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor.json.gz": "954b34d58a9bef15bdd4e0783e6ec5e878b6ae4e4a8482a266a49a78194a0c91",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor-v2.json.gz": "1f82b0f3b52dedacabd39a111b18b68fee3ebddc541f17bfe5ad6ce5287fe91c",
-    "scripts/phase26_2_allocator_identity_registration.py": "c850a9448dcaba8f6679078f2b2425958e9838ae5eb9c9ccc542e588006d2cfc",
+    "scripts/phase26_2_allocator_identity_registration.py": "818ba6b4013918f0d27366e7b0c3a934b437b9202d6bfd5c7a33f48bbaaf81a8",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz": "49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502",
     "scripts/phase26_2_allocator_lifecycle_evidence.py": "dc9088e5620faa41f1d5645022aa0d647516c6b2239b719c0b8ddb3167cbad9e",
     "compiler/phase26-2-allocator-identity/primitive_fields.gst": "4d37c9d24dc8626dbb221079771396a510ed869bcdfc139647e526c15739a5cb",
@@ -2714,10 +2714,13 @@
     "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md": "ea11c27ab70da1041b9e35e9d4c59848a5734851aa3a2c1636f51946118a8dda",
     "scripts/phase24_cr15_qualification.py": "22829f79a3aeacffa8907f699e73db41dc84895ab43e115dc16eb6856c6d0042",
     "scripts/phase20_resource_acquisition.py": "e5d9e920ffbc5e402cbdb8d678a27e80677ea663b08ac402e31d922a702b7b75",
-    "scripts/phase26_2_cleanup_witnesses.py": "624305a7f9abba2475bef98e6be6dec4ba3a5c9789f2cf04d12d0e6617217da9",
+    "scripts/phase26_2_cleanup_witnesses.py": "7147d7be371603c56ae0e83d7ecf8c2c32b75bce8f4cba876244bd240aded436",
     "compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md": "c140fc43bb176bd5028a0589a1cdb4ddb878a20c7337f76476ae4433c0da43ba",
     "compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json": "155dd067deb8e2dadff8a7975a18bf40c9b8418237cc81723ec86fbccbc7de5e",
-    "tests/phase24_cr15_qualification_positive_scoped.gst": "86c7274df52a8629ed237190b5b33f46687e0af7698fbd50411ece2d76b5884d"
+    "tests/phase24_cr15_qualification_positive_scoped.gst": "86c7274df52a8629ed237190b5b33f46687e0af7698fbd50411ece2d76b5884d",
+    "compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v2.json.gz": "64c759fd6afa3d2f26b4fff3ba7b2e51cb255e264e06588ba9720419d1ebdce1",
+    "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md": "d0613af4f501742ca2b49e7dca4ac998897794455ca29b6292670f7cbd1ed4bf",
+    "scripts/phase20_resource_declaration_migration.py": "17e6618e2e17c787b931449b75982e3f9680e7295121c61c8feda21b5d0c43b8"
   },
   "snapshot": {
     "signer": "gust-github-release-1",
