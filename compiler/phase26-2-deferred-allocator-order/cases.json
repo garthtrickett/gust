@@ -488,7 +488,10 @@
       "stdout": null,
       "exit": 1,
       "diagnostic": "Argument type mismatch for function 'expose'",
-      "original_baseline": false
+      "original_baseline": false,
+      "forbidden_diagnostics": [
+        "[ResourceDeferredUnresolved]"
+      ]
     },
     {
       "name": "unsupported_explicit_reference_parameter_call",

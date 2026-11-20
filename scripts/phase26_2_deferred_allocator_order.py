@@ -14,7 +14,7 @@ CHECKER = ROOT / 'compiler/typechecker.gst'
 SUPPORT = ROOT / 'compiler/phase20_protected_access_module.gst'
 BUILD = ROOT / 'build/guards/phase26_2_deferred_allocator_order'
 INTERNAL = ROOT / 'compiler/phase26-2-deferred-allocator-order/observation_facts.gst'
-CASE_DIGEST = 'e853d17f935625b2666126a23d1417e01832045a210a859d9689e7f868b04477'
+CASE_DIGEST = 'c1ba4728cedec9c4f0f6f8a9937a0f4a0086ef061b79858f0bf8132d56ccbf8f'
 ORIGINAL54_DIGEST = 'ef229dbe96fd8c7bfb3f63785c9c4b41df9e392bb4e75a8824ef1f766624c066'
 MALFORMED_REFERENCE_CASE = 'unsupported_implicit_reference_call'
 REFERENCE_ARGUMENT_DIAGNOSTIC = "Argument type mismatch for function 'expose'"
@@ -38,7 +38,8 @@ def validate_reference_fixture_amendment(value):
         limitation='Ordinary calls require an explicit reference argument; the previous cleanup diagnostic was secondary.'
     ), 'failed reference fixture preservation drifted'
     malformed = copy.deepcopy(attempted)
-    malformed.update(name='reject_malformed_reference_argument', diagnostic=REFERENCE_ARGUMENT_DIAGNOSTIC)
+    malformed.update(name='reject_malformed_reference_argument', diagnostic=REFERENCE_ARGUMENT_DIAGNOSTIC,
+                     forbidden_diagnostics=['[ResourceDeferredUnresolved]'])
     reference = copy.deepcopy(attempted)
     assert reference['source'].count('expose(holder);') == 1, 'original reference-call source drifted'
     reference.update(name='unsupported_explicit_reference_parameter_call',
@@ -235,6 +236,12 @@ def reference_fixture_inversions(value):
     changed('malformed primary diagnostic weakened',
             lambda v: v['cases'][-2].update(diagnostic='[ResourceDeferredUnresolved]'),
             'reviewed reference fixture population mapping drifted')
+    changed('malformed secondary diagnostic exclusion removed',
+            lambda v: v['cases'][-2].pop('forbidden_diagnostics'),
+            'reviewed reference fixture population mapping drifted')
+    changed('malformed secondary diagnostic exclusion weakened',
+            lambda v: v['cases'][-2].update(forbidden_diagnostics=[]),
+            'reviewed reference fixture population mapping drifted')
     changed('valid reference changed back to malformed value',
             lambda v: v['cases'][-1].update(source=v['cases'][-2]['source']),
             'reviewed reference fixture population mapping drifted')
@@ -364,6 +371,13 @@ def qualify_diagnostic_precedence(binary, output):
     return report
 
 
+def expected_rejection(case, status, stdout, stderr, executable_present):
+    return (status == 1 and not stderr and case['diagnostic'].encode() in stdout and
+            all(text.encode() not in stdout for text in case.get('forbidden_diagnostics', [])) and
+            b'driver_handshake' not in stdout and b'gust_native_capability_decision' not in stdout and
+            not executable_present)
+
+
 def native(output):
     cases = validate()
     budget = 128 * 1024 ** 2
@@ -393,10 +407,8 @@ def native(output):
         (folder / 'compile.status').write_text(str(compiled.returncode) + '\n')
         row = dict(name=case['name'], command=command, mode=case['mode'], compile_exit=compiled.returncode, executed=False)
         if case['mode'] == 'reject':
-            expected = (compiled.returncode == 1 and not compiled.stderr and
-                        case['diagnostic'].encode() in compiled.stdout and
-                        b'driver_handshake' not in compiled.stdout and
-                        b'gust_native_capability_decision' not in compiled.stdout and not binary.exists())
+            expected = expected_rejection(case, compiled.returncode, compiled.stdout,
+                                          compiled.stderr, binary.exists())
             row.update(passed=expected, verdict='REJECTED (expected assertion)' if expected else
                        'ACCEPTED' if compiled.returncode == 0 else 'REJECTED (different assertion)')
         else:
