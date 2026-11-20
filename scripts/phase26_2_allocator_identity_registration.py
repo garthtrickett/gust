@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 import sys
 
+import phase26_2_cleanup_witnesses as cleanup_witnesses
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '39e37696b775b25827d54c1c5a52b005d30e386b'
 KEY = 'allocator_identity_successor_v1'
@@ -69,11 +71,18 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
     'phase26_imported_native_registration', 'phase26_ticket_publication_registration')
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     *CR15_CHANGED,
+    *cleanup_witnesses.PREDECESSOR_FILES,
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
     *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED,
     R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
+    cleanup_witnesses.PREDECESSOR,
+    'scripts/phase26_2_cleanup_witnesses.py',
+    'compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json',
+    'tests/phase24_cr15_qualification_positive_scoped.gst',
+    'tests/phase24_cr15_qualification_explicit_scoped.gst',
+    'compiler/future/p20_issue106_unbound_directory_current_scoped.gst',
     CR15_BASELINE,
     'scripts/phase26_2_cr15_cleanup_fixtures.py',
     'compiler/phase26-2-deferred-allocator-order/cr15-cleanup-fixtures.json',
@@ -120,7 +129,9 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_defer_lexical.py native\n'
     '    python3 scripts/phase26_2_deferred_allocator_order.py validate\n'
     '    python3 scripts/phase26_2_deferred_allocator_order.py inversions\n'
-    '    python3 scripts/phase26_2_deferred_allocator_order.py native\n')
+    '    python3 scripts/phase26_2_deferred_allocator_order.py native\n'
+    '    python3 scripts/phase26_2_cleanup_witnesses.py validate\n'
+    '    python3 scripts/phase26_2_cleanup_witnesses.py inversions\n')
 
 
 def require(ok, message):
@@ -239,6 +250,8 @@ def cr15_predecessor_controls(rejected):
 def base_bytes(path):
     from phase26_predecessor_data import decoded_payload
     files = baseline()['files']
+    if path in cleanup_witnesses.PREDECESSOR_FILES:
+        return cleanup_witnesses.predecessor_bytes(path)
     if path in CR15_CHANGED:
         return decoded_payload(cr15_predecessor()['files'][path])
     if path in files:
@@ -893,7 +906,8 @@ def validate():
         artifact = 'phase26-2-allocator-'+('identity' if guard == GUARD else 'liveness')+'-toolchain'
         toolchain_workflow_profile((ROOT/path).read_text(), artifact)
     release_workflow_profile((ROOT/RELEASE_WORKFLOW).read_text())
-    require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
+    require((ROOT/'justfile').read_bytes() == cleanup_witnesses.directory_justfile(
+        base_bytes('justfile')+RECIPE.encode()), 'allocator recipe drifted')
     levels = json.loads((ROOT/'scripts/cranelift_test_levels.json').read_text())
     require(levels['guards'].pop(GUARD,None)==2 and levels==json.loads(base_bytes('scripts/cranelift_test_levels.json')),
             'allocator test level or predecessor guards drifted')
@@ -922,6 +936,8 @@ def inversions():
         else:
             raise SystemExit(label+': ACCEPTED')
     cr15_predecessor_controls(rejected)
+    for result in cleanup_witnesses.predecessor_controls():
+        print(result['label'] + ': ' + result['outcome'] + ': ' + result['assertion'], flush=True)
     invocation_cache_controls(registry, rejected)
     import phase22_opening as opening
     import phase26_r3_zlib_adapter_registration as r3

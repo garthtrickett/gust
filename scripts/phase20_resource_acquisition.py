@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+import phase26_2_cleanup_witnesses as cleanup_witnesses
+
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
@@ -158,6 +160,7 @@ def validate() -> dict:
     justfile = JUSTFILE.read_text(encoding="utf-8")
     require(f"{GUARD_L1}:" in justfile and f"{GUARD_L2}:" in justfile,
             "Patch 20.9 just guards are missing")
+    cleanup_witnesses.validate()
     return authority
 
 
@@ -193,6 +196,9 @@ def render(authority: dict) -> str:
         "another obligation.",
         "",
         "Patch 20.10 consumes stored obligations with automatic cleanup.",
+        "The current unbound directory positive uses its separately scoped successor;",
+        "the original source and historical positive expectation remain unqualified",
+        "history, with current compile-only cleanup-order refusal controls.",
         "Both #106 directory shapes, a user-declared bound owner, and an",
         "otherwise empty by-value callee now compile with exactly-once cleanup.",
         "Ignored directory and user-resource",

@@ -6329,3 +6329,22 @@ Require warm-content, parser-substitution, race, alias, exception and two-entry
 eviction controls for both existing runners. Re-enroll, review the committed
 successor and run all61 commands under the same limits; no preceding partial
 or native/product proof qualifies it. The directory amendment stays unselected.
+
+
+The operator selected the reviewed **remaining three cleanup-fixture** amendment
+on 2026-11-20: the inferred and explicit CR15 qualification positives and the
+unbound-directory witness. This prospectively supersedes the preceding exclusion
+for exactly these three witnesses. Preserve every original tracked source byte
+and its historical positive expectation as unqualified history. Require current
+frontend cleanup-order refusals without worker entry or execution, and route
+positive compilation/runtime checks to separate supported inner-scope successors.
+The repeated Lease and fallible directory wrapper must finish cleanup before the
+unchanged outer deferred allocator Free. Retain all existing outputs, negative
+diagnostics, protected/brand/reference checks and historical frozen oracle bytes.
+Invert original preservation, unsafe-positive readmission, missing scopes and
+changed outer behavior. This fixture-only selection changes no compiler/resource/
+MIR/ABI/runtime/Stdlib-helper/OD23 semantics. Preserve original54/active55 and
+primitive18. Enroll the complete actual source/command set with closed predecessor
+proofs, review the committed patch, and qualify genuinely amended source through
+local/native/product/public/R5/FP and owning exact-head CI/review/rules/merge.
+The B8 checkpoint remains prior evidence; it does not qualify these amended bytes.

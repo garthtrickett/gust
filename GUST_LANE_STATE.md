@@ -1,3 +1,19 @@
+# Cranelift ACTIVE selected remaining cleanup-witness amendment — 2026-11-20
+
+The operator selected exactly the two CR15 qualification fixtures and the
+unbound-directory counterpart. This prospectively supersedes the preceding
+three-derivation-only boundary for these three witnesses. Preserve their original
+bytes and historical positive expectations as unqualified; require compile-only
+cleanup refusals and route positive checks to separately scoped successors with
+all prior outputs and negative checks. No compiler/resource/MIR/ABI/Stdlib-helper
+or OD23 semantics change. The B8 source61/full production-public/R5FP/strict104
+and five-component checkpoint is retained as prior evidence. Its frozen jobs are
+reaped; no pass automatically qualifies amended bytes. Complete additive
+pins/closed predecessors/inversions, committed reviews, current qualification
+and own exact-head CI/reviews/rules/merge. Full26.2–26.6/all20 remains active.
+
+---
+
 # Cranelift ACTIVE selected three-fixture CR15 amendment — 2026-11-20
 
 The operator selected only the three reviewed CR15 cleanup fixtures. Resume the
