@@ -42,6 +42,15 @@ DISK_SCAN_BASELINE_SHA256 = '38fae8d1b71ffb732f023eec5e8d344ba4785a5d63f9ba07201
 R3_GUARD = 'scripts/phase26_r3_zlib_adapter_guard.sh'
 R3_BASELINE = 'compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz'
 R3_BASELINE_SHA256 = '4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b'
+CR15_BASELINE = 'compiler/phase26-2-deferred-allocator-order/cr15-cleanup-predecessor-v1.json.gz'
+CR15_BASELINE_SHA256 = '70e6aa282b01eea9f43f1fe5b7971e96e208792039e1198baf6a5e912e584c7f'
+CR15_PREDECESSOR_DIGESTS = {
+    'scripts/phase24_cr15_derivation.py': 'df2e7b2d0bc10e44bc31535a944e38919497a6777bcfcdba877d74f4cc47961f',
+    'compiler/CRANELIFT_PHASE24_CR15_DERIVATION.md': '1302bf5478b6bc9a50fc95468f53a509c52467aaa2c572a86e6a4d5d97d21bb9',
+    '.github/workflows/phase24-cr15-derivation.yml': '9acbdfe2ff96bb1ebfb2a4b4f839db081ffc425d2814863bc5897d19e45640ff',
+    '.github/workflows/phase24-cr15-qualification.yml': 'cf9745a25df539a502f75da62a4c24bf0e2d14243b73d65e87aeb7a1efc9857c',
+}
+CR15_CHANGED = tuple(CR15_PREDECESSOR_DIGESTS)
 HISTORICAL_BASELINES = {
     'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz':
         '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b',
@@ -59,13 +68,13 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
     'phase26_readonly_input_copy_registration', 'phase26_ticket_composition_registration',
     'phase26_imported_native_registration', 'phase26_ticket_publication_registration')
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
-    'scripts/phase24_cr15_derivation.py', 'compiler/CRANELIFT_PHASE24_CR15_DERIVATION.md',
-    '.github/workflows/phase24-cr15-derivation.yml', '.github/workflows/phase24-cr15-qualification.yml',
+    *CR15_CHANGED,
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
     *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED,
     R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
+    CR15_BASELINE,
     'scripts/phase26_2_cr15_cleanup_fixtures.py',
     'compiler/phase26-2-deferred-allocator-order/cr15-cleanup-fixtures.json',
     'tests/phase24_cr15_protected_resource_native_inferred_scoped.gst',
@@ -176,9 +185,62 @@ def lifecycle_baseline():
     return _lifecycle_baseline(raw)
 
 
+def checked_cr15_predecessor(value):
+    from phase26_predecessor_data import decoded_payload
+    require(set(value) == {'schema', 'base', 'files'} and
+            value['schema'] == 'gust.cr15_cleanup_fixture.predecessor.v1' and
+            value['base'] == BASE and set(value['files']) == set(CR15_CHANGED),
+            'CR15 cleanup predecessor identity or population drifted')
+    for path, digest in CR15_PREDECESSOR_DIGESTS.items():
+        require(sha(decoded_payload(value['files'][path])) == digest,
+                'CR15 cleanup predecessor payload drifted: ' + path)
+    return value
+
+
+def cr15_predecessor():
+    raw = (ROOT / CR15_BASELINE).read_bytes()
+    require(sha(raw) == CR15_BASELINE_SHA256, 'CR15 cleanup predecessor archive bytes drifted')
+    return checked_cr15_predecessor(json.loads(gzip.decompress(raw)))
+
+
+def cr15_predecessor_controls(rejected):
+    value = cr15_predecessor()
+    from unittest.mock import patch
+    original_read = Path.read_bytes
+    archive = ROOT / CR15_BASELINE
+    with patch.object(Path, 'read_bytes', lambda path:
+                      original_read(path) + b'changed' if path == archive else original_read(path)):
+        rejected('CR15 predecessor archive substitution', cr15_predecessor,
+                 'CR15 cleanup predecessor archive bytes drifted')
+    for field, replacement in (('schema', 'unregistered'), ('base', '0' * 40)):
+        changed = copy.deepcopy(value)
+        changed[field] = replacement
+        rejected('CR15 predecessor ' + field,
+                 lambda changed=changed: checked_cr15_predecessor(changed),
+                 'CR15 cleanup predecessor identity or population drifted')
+    changed = copy.deepcopy(value)
+    changed['files']['compiler/future/p20_issue106_unbound_directory_current.gst'] = base64.b64encode(b'unselected').decode()
+    rejected('CR15 predecessor unselected directory',
+             lambda: checked_cr15_predecessor(changed),
+             'CR15 cleanup predecessor identity or population drifted')
+    for path in CR15_CHANGED:
+        omitted = copy.deepcopy(value)
+        omitted['files'].pop(path)
+        rejected('CR15 predecessor omitted ' + path,
+                 lambda omitted=omitted: checked_cr15_predecessor(omitted),
+                 'CR15 cleanup predecessor identity or population drifted')
+        substituted = copy.deepcopy(value)
+        substituted['files'][path] = base64.b64encode(b'changed').decode()
+        rejected('CR15 predecessor substituted ' + path,
+                 lambda substituted=substituted: checked_cr15_predecessor(substituted),
+                 'CR15 cleanup predecessor payload drifted: ' + path)
+
+
 def base_bytes(path):
     from phase26_predecessor_data import decoded_payload
     files = baseline()['files']
+    if path in CR15_CHANGED:
+        return decoded_payload(cr15_predecessor()['files'][path])
     if path in files:
         return decoded_payload(files[path])
     if path in DISK_SCAN_CHANGED:
@@ -723,6 +785,7 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    cr15_predecessor_controls(rejected)
     import phase22_opening as opening
     import phase26_r3_zlib_adapter_registration as r3
     require(not opening.python_compiler_lists(Path(__file__)),

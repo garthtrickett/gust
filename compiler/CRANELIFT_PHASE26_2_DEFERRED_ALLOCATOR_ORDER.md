@@ -177,3 +177,13 @@ correctly refused before worker entry. Preserve that failed source/receipt.
 The successor uses the already-supported constant `if 1` lexical block: the same
 three guard lifetimes end before outer Free. A mutation rejects reintroduction
 of the unsupported bare-block form. No parser or backend change is selected.
+
+
+Additive enrollment initially refused the four newly owned CR15 guard/review/
+workflow paths because the fixed predecessor inventory had no byte payloads for
+them. The failed generation and partial metadata were preserved, then only its
+three allowed outputs were restored to the reviewed commit. A new, separately
+pinned supplement stores exactly those four files from the same original Git
+base. No old archive or foreign registry row is rewritten. Current physical
+checks and all existing projections remain; twelve direct controls reject the
+archive substitution, wrong identity/population and each missing/changed payload.
