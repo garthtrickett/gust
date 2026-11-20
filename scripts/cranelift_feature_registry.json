@@ -48115,12 +48115,12 @@
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "5ca6d1bcc479be308642d2b139a903e1f8e1bc8f98cb41a6a321872d2f19dfb1"
+          "current_digest": "ffec101ab61200768026dddd0a0fa736ae0be17c22a8bf5ff0f28f46511d1702"
         },
         {
           "path": "justfile",
           "previous_digest": "1a394ba10c83831838cc65e3b889fca90dc9238ffb8152522fa4b2111621d55b",
-          "current_digest": "5eaef3c223c28fc777750e201993e2e350a64d93d13a1f1e09e42a9f2d15437d"
+          "current_digest": "4aaf7e90ff6b8976c451c4d6234bd159055c02006817c29f12f0f532571fdbd2"
         },
         {
           "path": "scripts/phase24_cr15_derivation.py",
@@ -48140,7 +48140,27 @@
         {
           "path": ".github/workflows/phase24-cr15-qualification.yml",
           "previous_digest": "cf9745a25df539a502f75da62a4c24bf0e2d14243b73d65e87aeb7a1efc9857c",
-          "current_digest": "2a6f0af643d90c7d9488534fe044bff93694ef9dd3bc20c22c830c0f97b2986a"
+          "current_digest": "aa88f47b1ab4e94ee592d945d43daec7972b243f553cb174a1eb580dad3eda2d"
+        },
+        {
+          "path": "scripts/phase24_cr15_qualification.py",
+          "previous_digest": "13fa77156c2aa97113fc3303460f0ad1b0db5ac3d6ce55c9908ff11179aeddc1",
+          "current_digest": "22829f79a3aeacffa8907f699e73db41dc84895ab43e115dc16eb6856c6d0042"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md",
+          "previous_digest": "4e4bebb53af1d8376672b1fc59f2eb49813bf37fd8455f839a8ffccb0d5237e4",
+          "current_digest": "c140fc43bb176bd5028a0589a1cdb4ddb878a20c7337f76476ae4433c0da43ba"
+        },
+        {
+          "path": "scripts/phase20_resource_acquisition.py",
+          "previous_digest": "74926ed7c1d0f4cd03a19febc641d09a98a9f83e57af28af1c62526c7e4828f7",
+          "current_digest": "e5d9e920ffbc5e402cbdb8d678a27e80677ea663b08ac402e31d922a702b7b75"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md",
+          "previous_digest": "357f69e8677975fb42382beae2c721527533ee88f90da797f2f9802582a88a19",
+          "current_digest": "ea11c27ab70da1041b9e35e9d4c59848a5734851aa3a2c1636f51946118a8dda"
         },
         {
           "path": "scripts/cranelift_test_levels.json",
@@ -48155,12 +48175,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "a612b8dd94c075d4c38efb475e5bda94e1f10e5507bad5fb637ccfd034c182c6"
+          "current_digest": "b0433e5dfb62702cb060dec3c5e457d87d6ba8f1f9f6f699fbdf8671de44a4a7"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "09bf0cc4261d10e21246f816cd24545df2e9ab04e215c90bc6c51074a13f2498"
+          "current_digest": "b138102504093ce6ce72f48e23d91587723ce7ea456857b3a0015ecc23796d48"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48217,6 +48237,30 @@
         {
           "path": "compiler/phase26-2-defer-lexical/predecessor-worker.json.gz",
           "digest": "ce9b0a78b3782d868ce47ab405382461411809588f45b265b1bc3c6a5267619f"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v1.json.gz",
+          "digest": "c6984ca239f79c98cb66f9407ddd8e654c159f735e3381eae12cc878b697136e"
+        },
+        {
+          "path": "scripts/phase26_2_cleanup_witnesses.py",
+          "digest": "624305a7f9abba2475bef98e6be6dec4ba3a5c9789f2cf04d12d0e6617217da9"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json",
+          "digest": "155dd067deb8e2dadff8a7975a18bf40c9b8418237cc81723ec86fbccbc7de5e"
+        },
+        {
+          "path": "tests/phase24_cr15_qualification_positive_scoped.gst",
+          "digest": "86c7274df52a8629ed237190b5b33f46687e0af7698fbd50411ece2d76b5884d"
+        },
+        {
+          "path": "tests/phase24_cr15_qualification_explicit_scoped.gst",
+          "digest": "4400173c7a651bf8735fcd9f91ca816fbc1f43edeaa07502ab9389e36815517f"
+        },
+        {
+          "path": "compiler/future/p20_issue106_unbound_directory_current_scoped.gst",
+          "digest": "29340e3c72bb367fe7d17d09959ad0ec0d5f0fa5abf949cd55659f0dab14fdd7"
         },
         {
           "path": "compiler/phase26-2-deferred-allocator-order/cr15-cleanup-predecessor-v1.json.gz",
@@ -48320,7 +48364,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "c24c3c8ba91bc4792bf46303665642219550c4060259cb9c50a32e8930a9fd53"
+          "digest": "c850a9448dcaba8f6679078f2b2425958e9838ae5eb9c9ccc542e588006d2cfc"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48376,20 +48420,20 @@
         }
       ],
       "owned_text": {
-        "text": "9eb5fd3cb23ff19854a607c1c795bcf9323dc2ab606ba299c9d57b84c6459b1e",
-        "r4_text": "6ae4f838bf3ef5473f2564508193167940f51138148e4ec3044805dfb023c4b0"
+        "text": "9c710780003ed02fd9e140d90a19593665957e5936aaa5562c7e8b1aa7c0ef3d",
+        "r4_text": "275b0b93d4a2b8d3b47630bec0386c904c5ba0442c450852c23d0272ac88e84a"
       },
       "projections": {
-        "r4_text": "5668c31b00a9465efb054e273a4b48b556ec52ae0966ae309bfcfb9e48d94d2a",
-        "spelling": "09e118bd9543a308e5da6c0649ddcff6dbc27cd8bd67efa1e8e79523cb2a9bac",
+        "r4_text": "65b36229b63e8a2c968698f4d8e03704094a28e35acec64e94ff48116188ee7a",
+        "spelling": "98df650645f938f6036aa4154ca262b0c2ae58f4016104feec3b23eecb46c90e",
         "filename": "336aa6d87ff7d9667161e0481a7a246eb87c413db8738ecf1933e7c8ae13f993",
-        "r3_record": "83cfc1eec5e43e11fed830d2311de0b4aa82b261c93621c14d09ff6385e84869",
+        "r3_record": "945b90ba7daf7eda8dbfc85f867034cae83dc40b1c09b59c2959a62a7a40ea17",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "576cd33dd20c6747eaac611784d58bc9e6a83684ad79bcc2b238c2ccd416b8cd",
-        "text": "0a34742c4662b9cf63c866ae8f88b8a78c2acf871b1077222aa007dbccce2e69"
+        "r4_record": "715db26e9c625e4b302d7fb16abc4d76ab222bb736e6826d28464817393e2b1a",
+        "text": "d54b4712f05f89d13f8cd99deac13b26e8115da54f47c5f39971c69c9eb7cdd2"
       },
-      "spelling_render_current_digest": "ab5918a59d8377bb62c16f028b0d21d315093b6dbd2587a893cc5de4a46456b8"
+      "spelling_render_current_digest": "a8076c7620ceaeb69ba818fa1576317ff992be95e046b95d8b886009e97680b0"
     },
     "production_epoch2_renewal_successor_v1": {
       "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",
