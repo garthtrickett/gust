@@ -2649,7 +2649,7 @@
     "scripts/phase26_release_paging.py": "01f0041b693889f1896dba4efc754034787b4a0cb644f1e173426c258423cf00",
     "scripts/phase26_release_execution.py": "01d9fd7382579de81a14e6000c35b1e4fb2f095b7071d8e004a268016b9f5295",
     "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v5.json.gz": "dfc306e5b2eaf18a8c92dd5d4993efbc83a31ca8b3a4a50006499797ad565666",
-    "scripts/phase26_predecessor_data.py": "ca2471330d60edc16de486d11272b77c8c866a0161963a4a3e3666b222beef37",
+    "scripts/phase26_predecessor_data.py": "84b192fd4c481ba1bc5560519d4e8024181f0b297e16bff8a8bea1a1c7c7ccea",
     "scripts/phase26_predecessor_data_controls.py": "a617c771babcfcdb60ff079cc38b69c6220b347c21fe6b8dc55703e30db3c36d",
     "scripts/phase26_fresh_view_controls.py": "7c251c77adcc1338a01370cdc57730e1aa8ca09e30fb12a652fc093416096916",
     "compiler/experiments/cranelift/production/epoch1/predecessor-baseline-v6.json.gz": "0f6cec4910fe8aabb4a53b5a7d830021c2b9767e307adddcec92b0942fa845d9",
@@ -2657,7 +2657,7 @@
     "compiler/phase26-2-allocator-identity/cases.json": "c412e8d5a60174915ce1f3f1e741415c7329d2e79f8c80184b8c685ecd0eb26f",
     "compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor.json.gz": "954b34d58a9bef15bdd4e0783e6ec5e878b6ae4e4a8482a266a49a78194a0c91",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor-v2.json.gz": "1f82b0f3b52dedacabd39a111b18b68fee3ebddc541f17bfe5ad6ce5287fe91c",
-    "scripts/phase26_2_allocator_identity_registration.py": "818ba6b4013918f0d27366e7b0c3a934b437b9202d6bfd5c7a33f48bbaaf81a8",
+    "scripts/phase26_2_allocator_identity_registration.py": "3f244911e563f7d2b6ddcbb2281dbddd963f8b9731f928d69cd00a564e9f1a51",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz": "49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502",
     "scripts/phase26_2_allocator_lifecycle_evidence.py": "dc9088e5620faa41f1d5645022aa0d647516c6b2239b719c0b8ddb3167cbad9e",
     "compiler/phase26-2-allocator-identity/primitive_fields.gst": "4d37c9d24dc8626dbb221079771396a510ed869bcdfc139647e526c15739a5cb",
@@ -2671,7 +2671,7 @@
     "scripts/phase20_arena_lifecycle.py": "2d80c6d2d52b8e15192bb48112cf410beab4a473735b6d2ec80d63089864bdf5",
     "scripts/phase26_bootstrap_bounded.py": "15c00cc944077693a1ec39b6b86a69a690b3c716a2c824fddf56a761f0aba4af",
     "compiler/phase26-2-allocator-identity/predecessor-pin-controls-v1.json.gz": "39852d3d4aa62f0b8298d8f81bda9609a0f8dd9722e05d048777edc28ceae6d2",
-    "scripts/phase26_2_allocator_predecessor_controls.py": "145ad4beb71c6e603881df0a3f2036687301f923b60807a2fa9500aefdeca14d",
+    "scripts/phase26_2_allocator_predecessor_controls.py": "7e1b0613276490cef3b2fb76f10bd47b388fe3f69f8e448c22a49f0f4987f3a2",
     "scripts/phase26_production_toolchain_controls.py": "e1c6be561f0af0f3ea7b4e407d81044c7b4d43e50b4af968619e089fe261ddfa",
     "scripts/phase26_toolchain_compatibility.py": "722f2721eb7fac790a183874a5260aa0e1c0839ab13877731b915ae9e7a26cb6",
     "compiler/experiments/cranelift/production/ci-toolchain-compatibility.json": "3de0527b393589571f9b40ed6aaef04ed2a990a585f374965d93e3d9ce27e473",
@@ -2711,7 +2711,8 @@
     "tests/phase24_cr15_qualification_positive_scoped.gst": "86c7274df52a8629ed237190b5b33f46687e0af7698fbd50411ece2d76b5884d",
     "compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v2.json.gz": "64c759fd6afa3d2f26b4fff3ba7b2e51cb255e264e06588ba9720419d1ebdce1",
     "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md": "d0613af4f501742ca2b49e7dca4ac998897794455ca29b6292670f7cbd1ed4bf",
-    "scripts/phase20_resource_declaration_migration.py": "17e6618e2e17c787b931449b75982e3f9680e7295121c61c8feda21b5d0c43b8"
+    "scripts/phase20_resource_declaration_migration.py": "17e6618e2e17c787b931449b75982e3f9680e7295121c61c8feda21b5d0c43b8",
+    "scripts/phase26_2_predecessor_index_controls.py": "bda302d40aaec4a567ec433a840262abc217e064a1d35882784666724faebf38"
   },
   "origin_dispositions": {
     "safe": "scalar inputs and pure classified errors",
