@@ -150,7 +150,8 @@ def inversions():
     changed['cases'][1]['mode'] = 'native'
     changes.append(('unsafe baseline admitted', changed, source, 'deferred allocator case contract drifted'))
     changed = copy.deepcopy(value)
-    changed['cases'].pop()
+    changed['cases'].remove(next(row for row in changed['cases']
+                                 if row['name'] == value['original54_cases'][-1]['name']))
     changes.append(('missing late unknown control', changed, source, 'deferred allocator case contract drifted'))
     changed = copy.deepcopy(value)
     changed['unqualified_fixture_attempts'][0]['original_case']['source'] += '\n'
