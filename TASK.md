@@ -6313,3 +6313,19 @@ The additional unbound-directory fixture is **not selected** by this reply;
 its observed Resource acquisition parity failure and dependent issue-health
 gate remain blocked pending their own authority. Do not compensate locally or
 waive either gate. The original54/active55 and primitive18 contracts stand.
+
+The final three-fixture source61 census on `4addf635` reached its unchanged
+3600-second outer deadline after29 successful commands, interrupting R4
+collection-registration validation. Sources, limits and bounded output stayed
+stable; preserve that failed census without relabelling it. A separately
+reviewed bounded profile completed that static validator and observed1285
+reparses of each unchanged deferred runner. This supports a narrow adapter-cost
+correction, not a complete cause attribution or deadline waiver: cache only
+immutable parsed invocation data by exact live source text, canonical runner
+path and actual parser callable. Read physical files on every call; retain live
+classification, selection, registry authority, physical pins and normalization.
+Preserve exact parser rows/order, exception behavior and fresh mutable results.
+Require warm-content, parser-substitution, race, alias, exception and two-entry
+eviction controls for both existing runners. Re-enroll, review the committed
+successor and run all61 commands under the same limits; no preceding partial
+or native/product proof qualifies it. The directory amendment stays unselected.

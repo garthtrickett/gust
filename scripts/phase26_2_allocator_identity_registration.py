@@ -549,10 +549,33 @@ def prior_render_digest(registry, live):
         'phase26_activation_audit'][PREDECESSOR_KEY]['spelling_render_current_digest']
 
 
+@lru_cache(maxsize=2)
+def _parsed_invocation_lists(path, source, parser):
+    """Cache decoding only; immutable text cannot share mutable rows with callers."""
+    require(path in (ROOT / DEFER_RUNNER, ROOT / DEFER_ORDER_RUNNER),
+            'unregistered deferred invocation parser path')
+    require(path.read_text(encoding='utf-8') == source,
+            'deferred invocation source changed while parsing')
+    rows = parser(path)
+    require(path.read_text(encoding='utf-8') == source,
+            'deferred invocation source changed while parsing')
+    # The maintained parser returns (line:int, command:str, token:str) tuples.
+    # Store an immutable snapshot, then reconstruct fresh tuple rows below.
+    return json.dumps(rows, ensure_ascii=False)
+
+
+def live_invocation_lists(path):
+    from phase22_opening import python_compiler_lists
+    # Never cache a physical-file read, registry verdict, pin or classification.
+    source = path.read_text(encoding='utf-8')
+    snapshot = _parsed_invocation_lists(path, source, python_compiler_lists)
+    return [tuple(row) for row in json.loads(snapshot)]
+
+
 def defer_invocation_rows():
-    from phase22_opening import python_compiler_lists, classify, selection
+    from phase22_opening import classify, selection
     return [classify(ROOT/DEFER_RUNNER, line, command, '', token, selection(command))
-            for line, command, token in python_compiler_lists(ROOT/DEFER_RUNNER)]
+            for line, command, token in live_invocation_lists(ROOT/DEFER_RUNNER)]
 
 
 def normalize_defer_invocations(registry, rows):
@@ -571,10 +594,123 @@ def normalize_defer_invocations(registry, rows):
 
 
 def defer_order_invocation_rows():
-    from phase22_opening import python_compiler_lists, classify, selection
+    from phase22_opening import classify, selection
     return sorted((classify(ROOT/DEFER_ORDER_RUNNER, line, command, '', token, selection(command))
-                   for line, command, token in python_compiler_lists(ROOT/DEFER_ORDER_RUNNER)),
+                   for line, command, token in live_invocation_lists(ROOT/DEFER_ORDER_RUNNER)),
                   key=lambda row: (row['line'], row['command']))
+
+
+def invocation_cache_controls(registry, rejected):
+    """Warm-cache controls exercise the real readers and uncached authority."""
+    from unittest.mock import patch
+    import phase22_opening as opening
+    original_text = Path.read_text
+    original_parser = opening.python_compiler_lists
+    for relative, rows_function, diagnostic in (
+            (DEFER_RUNNER, defer_invocation_rows,
+             'deferred lexical compiler invocation enrollment drifted'),
+            (DEFER_ORDER_RUNNER, defer_order_invocation_rows,
+             'deferred allocator order compiler invocation enrollment drifted')):
+        path = ROOT / relative
+        source = original_text(path, encoding='utf-8')
+        expected = original_parser(path)
+        _parsed_invocation_lists.cache_clear()
+        require(live_invocation_lists(path) == expected == live_invocation_lists(path),
+                'cached deferred parser changed original rows or ordering')
+        expected_rows = rows_function()
+        changed_rows = rows_function()
+        changed_rows[0]['command'] = 'caller mutation'
+        require(rows_function() == expected_rows,
+                'cached deferred classification shared mutable rows')
+        reads = []
+        def counted_text(target, *args, **kwargs):
+            if target == path:
+                reads.append(target)
+            return original_text(target, *args, **kwargs)
+        with patch.object(Path, 'read_text', counted_text):
+            live_invocation_lists(path)
+            live_invocation_lists(path)
+        require(reads == [path, path], 'warm deferred cache skipped physical reads')
+
+        # Each mutation follows a warm original read. Path/stat identity stays
+        # fixed; exact live text, not metadata, must select a new parser result.
+        replacements = (
+            ('same-size token', source.replace("'--backend'", "'--backenx'", 1)),
+            ('backend substitution', source.replace("'cranelift'", "'mir-to-c'", 1)),
+            ('omitted invocation', source.replace("ROOT / 'gust'", "ROOT / 'missing'", 1)),
+            ('extra invocation', source + '\ncache_probe = ' + expected[0][1] + '\n'))
+        for label, changed in replacements:
+            require(changed != source, 'deferred cache mutation did not move: ' + label)
+            require(live_invocation_lists(path) == expected,
+                    'original deferred source failed before warm mutation')
+            with patch.object(Path, 'read_text', lambda target, *args, **kwargs:
+                    changed if target == path else original_text(target, *args, **kwargs)):
+                rejected(relative + ' warm cache ' + label,
+                         lambda: identity(registry), diagnostic)
+            require(live_invocation_lists(path) == expected,
+                    'deferred cache did not restore exact original parse')
+
+        # A replacement parser must not inherit an entry from the old callable.
+        with patch.object(opening, 'python_compiler_lists', lambda target:
+                          original_parser(target) + [expected[0]] if target == path
+                          else original_parser(target)):
+            rejected(relative + ' replacement parser', lambda: identity(registry), diagnostic)
+
+        # Immutable cached serialization also isolates nested mutable mock data.
+        nested = [(1, {'argv': ['original']}, 'probe')]
+        with patch.object(opening, 'python_compiler_lists', lambda target: nested):
+            first = live_invocation_lists(path)
+            nested[0][1]['argv'].append('parser-side mutation')
+            first[0][1]['argv'].append('caller-side mutation')
+            require(live_invocation_lists(path) == [(1, {'argv': ['original']}, 'probe')],
+                    'deferred parser cache leaked nested result mutation')
+
+        _parsed_invocation_lists.cache_clear()
+        with patch.object(opening, 'python_compiler_lists', side_effect=ValueError('parser probe')):
+            for _ in range(2):
+                try:
+                    live_invocation_lists(path)
+                except ValueError as error:
+                    require(str(error) == 'parser probe', 'deferred parser exception changed')
+                else:
+                    require(False, 'deferred parser exception was swallowed')
+            require(_parsed_invocation_lists.cache_info().currsize == 0,
+                    'deferred parser exception was cached')
+
+        # A cache miss must reject source movement during the actual parse.
+        def moving_parser(target):
+            value = original_parser(target)
+            if target == path:
+                moved[0] = True
+            return value
+        moved = [False]
+        with patch.object(opening, 'python_compiler_lists', moving_parser), \
+                patch.object(Path, 'read_text', lambda target, *args, **kwargs:
+                    source + '\n' if target == path and moved[0]
+                    else original_text(target, *args, **kwargs)):
+            rejected(relative + ' source movement during parse',
+                     lambda: live_invocation_lists(path),
+                     'deferred invocation source changed while parsing')
+
+        _parsed_invocation_lists.cache_clear()
+        parsed = []
+        def counting_parser(target):
+            parsed.append(target)
+            return original_parser(target)
+        with patch.object(opening, 'python_compiler_lists', counting_parser):
+            for suffix in ('', '\n', '\n\n', ''):
+                with patch.object(Path, 'read_text', lambda target, *args, **kwargs:
+                        source + suffix if target == path
+                        else original_text(target, *args, **kwargs)):
+                    require(live_invocation_lists(path) == expected,
+                            'deferred cache eviction changed original parser result')
+            require(parsed == [path] * 4 and _parsed_invocation_lists.cache_info().maxsize == 2
+                    and _parsed_invocation_lists.cache_info().currsize == 2,
+                    'deferred parser cache eviction or two-entry bound drifted')
+        require(rows_function() == expected_rows,
+                'deferred parser cache controls changed original authority')
+    _parsed_invocation_lists.cache_clear()
+    print('DEFERRED_INVOCATION_DECODE_CACHE_CONTROLS_PASS', flush=True)
 
 
 def normalize_defer_order_invocations(registry, rows):
@@ -786,6 +922,7 @@ def inversions():
         else:
             raise SystemExit(label+': ACCEPTED')
     cr15_predecessor_controls(rejected)
+    invocation_cache_controls(registry, rejected)
     import phase22_opening as opening
     import phase26_r3_zlib_adapter_registration as r3
     require(not opening.python_compiler_lists(Path(__file__)),

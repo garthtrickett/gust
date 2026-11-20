@@ -1166,3 +1166,18 @@ cleanup refusal. Compiler code and diagnostic precedence remain unchanged.
 Fresh focused controls, committed review, additive enrollment and all mandatory
 current-source/native/product/public/R5FP/exact-head CI/merge gates are pending.
 Full26.2–26.6/20requirements remains active; OD23 stays OPEN/unselected.
+
+# Selected three CR15 fixtures and bounded census diagnosis — 2026-11-20
+
+The operator separately selected only the three derivation-fixture amendment.
+All three originals remain byte-identical compile-only refusals; separate
+supported inner-scope successors passed the focused owning compilation checks.
+The final4add source61 census was reaped with inner124/work1 at its original
+3600-second outer deadline after29 passes. Source/limit/output integrity stayed
+valid; this is not a complete census or native/product qualification pass.
+The finite static-validator profile finished0 and identified repeated runner
+parsing as one observed cost. The same owner is implementing/reviewing a narrow
+parser-result cache with live-file and physical-authority checks retained.
+All61 commands, current native/public/product/R5FP and publication gates remain
+mandatory. No live job or CI observer; the separate directory amendment remains
+unselected. No compiler, resource, ABI, quota or deadline change is selected.
