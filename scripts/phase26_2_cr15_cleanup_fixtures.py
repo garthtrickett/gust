@@ -124,6 +124,36 @@ def successors(witnesses):
     return {row['role']: ROOT / row['successor'] for row in value['cases']}
 
 
+def frontend_refusal(status, stdout, stderr, artifact_present):
+    return (status == 1 and not stderr and not artifact_present and
+            b'[LinearResourceLeak]' in stdout and
+            b'Deferred allocator Free executes before dependent cleanup' in stdout and
+            b'driver_handshake' not in stdout and
+            b'gust_native_capability_decision' not in stdout)
+
+
+def refusal_controls():
+    valid = b'[LinearResourceLeak] Deferred allocator Free executes before dependent cleanup\n'
+    cases = [
+        ('canonical frontend refusal', 1, valid, b'', False, True),
+        ('successful compile', 0, valid, b'', False, False),
+        ('worker stderr', 1, valid, b'handshake failed', False, False),
+        ('missing diagnostic', 1, b'', b'', False, False),
+        ('missing order reason', 1, b'[LinearResourceLeak]', b'', False, False),
+        ('produced artifact', 1, valid, b'', True, False),
+        ('mixed handshake output', 1, valid + b'driver_handshake', b'', False, False),
+        ('mixed capability output', 1, valid + b'gust_native_capability_decision', b'', False, False),
+        ('both worker markers', 1, valid + b'driver_handshake gust_native_capability_decision', b'', False, False),
+    ]
+    rows = []
+    for label, status, stdout, stderr, artifact, expected in cases:
+        actual = frontend_refusal(status, stdout, stderr, artifact)
+        assert actual == expected, 'frontend-refusal predicate control failed: ' + label
+        rows.append(dict(label=label, accepted_as_frontend_refusal=actual, expected=expected))
+    assert len(rows) == 9
+    return rows
+
+
 def reject_originals(compiler):
     """Require frontend refusals; a false worker makes accidental admission fail."""
     value, _ = validate()
@@ -141,13 +171,14 @@ def reject_originals(compiler):
             (output / (label + '.stdout')).write_bytes(result.stdout)
             (output / (label + '.stderr')).write_bytes(result.stderr)
             (output / (label + '.status')).write_text(str(result.returncode) + '\n')
-            passed = (result.returncode == 1 and not result.stderr and
-                      b'[LinearResourceLeak]' in result.stdout and
-                      b'Deferred allocator Free executes before dependent cleanup' in result.stdout and
-                      not artifact.exists() and not artifact.is_symlink())
+            artifact_present = artifact.exists() or artifact.is_symlink()
+            worker_reached = (b'driver_handshake' in result.stdout or
+                              b'gust_native_capability_decision' in result.stdout or bool(result.stderr))
+            passed = frontend_refusal(result.returncode, result.stdout, result.stderr, artifact_present)
             rows.append(dict(role=row['role'], route=route, command=command, compile_exit=result.returncode,
                              stdout_sha256=digest(result.stdout), stderr_sha256=digest(result.stderr),
-                             passed=passed, program_executed=False))
+                             passed=passed, worker_reached=worker_reached,
+                             artifact_present=artifact_present, program_executed=False))
             (output / 'result.json').write_text(json.dumps(dict(cases=rows), indent=2) + '\n')
             assert passed, 'original cleanup-order refusal failed: ' + label
     print('CR15_CLEANUP_ORIGINAL_REFUSALS_PASS ' + str(output))
@@ -159,5 +190,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     validate()
     if args.command == 'inversions':
-        print(json.dumps(inversions(), indent=2))
+        print(json.dumps(dict(mapping=inversions(), refusal=refusal_controls()), indent=2))
     print('phase26_cr15_cleanup_fixtures: ' + args.command + ' PASS')

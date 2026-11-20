@@ -179,6 +179,7 @@ def evidence() -> None:
     require(compiler.is_file(), "native package prerequisite is missing")
     cleanup_controls = cleanup_fixtures.inversions()
     require(len(cleanup_controls) == 17, "cleanup fixture refusal controls missing")
+    require(len(cleanup_fixtures.refusal_controls()) == 9, "frontend refusal predicate controls missing")
     cleanup_fixtures.reject_originals(compiler)
     positive_witnesses = cleanup_fixtures.successors(witnesses)
 
