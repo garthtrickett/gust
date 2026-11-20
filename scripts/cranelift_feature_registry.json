@@ -48115,7 +48115,7 @@
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "983d391cfc8aec11d5a289985339596a8c9da7950826ccdbd582d5c958ab27e3"
+          "current_digest": "5ca6d1bcc479be308642d2b139a903e1f8e1bc8f98cb41a6a321872d2f19dfb1"
         },
         {
           "path": "justfile",
@@ -48155,12 +48155,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "5656f72fa5fb3b109c78c55947c4206a377ce930a4ef9d09eaa8a81abe1a505e"
+          "current_digest": "a612b8dd94c075d4c38efb475e5bda94e1f10e5507bad5fb637ccfd034c182c6"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "66c02567b2f23cf2bd182ed99ab700361dce54e9780e6ee5506df656c2a3776a"
+          "current_digest": "09bf0cc4261d10e21246f816cd24545df2e9ab04e215c90bc6c51074a13f2498"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48320,7 +48320,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "9134c7d040a2e33ca07812cbaad7898c96669cc85a70456126a7a7f448c7f261"
+          "digest": "c24c3c8ba91bc4792bf46303665642219550c4060259cb9c50a32e8930a9fd53"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48376,7 +48376,7 @@
         }
       ],
       "owned_text": {
-        "text": "27c6a6d15056d89601aa8e0bd633a252e35f620f3b886283201b6e9c909767ac",
+        "text": "9eb5fd3cb23ff19854a607c1c795bcf9323dc2ab606ba299c9d57b84c6459b1e",
         "r4_text": "6ae4f838bf3ef5473f2564508193167940f51138148e4ec3044805dfb023c4b0"
       },
       "projections": {
@@ -48387,7 +48387,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "576cd33dd20c6747eaac611784d58bc9e6a83684ad79bcc2b238c2ccd416b8cd",
-        "text": "bdcae37f258a539ce8b1b884ee73771795edbe642c21c2ff3c17e6685d6d6e64"
+        "text": "0a34742c4662b9cf63c866ae8f88b8a78c2acf871b1077222aa007dbccce2e69"
       },
       "spelling_render_current_digest": "ab5918a59d8377bb62c16f028b0d21d315093b6dbd2587a893cc5de4a46456b8"
     },
