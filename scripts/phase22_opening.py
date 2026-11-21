@@ -259,9 +259,11 @@ def scan_invocations() -> list[dict[str, object]]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     if registry.get('phase26_activation_audit', {}).get('allocator_identity_successor_v1'):
         from phase26_2_allocator_identity_registration import (normalize_defer_invocations,
-                                                              normalize_defer_order_invocations)
+                                                              normalize_defer_order_invocations,
+                                                              normalize_keys_invocations)
         rows = normalize_defer_order_invocations(registry, rows)
         rows = normalize_defer_invocations(registry, rows)
+        rows = normalize_keys_invocations(registry, rows)
     if "stdlib_guard_transition" not in registry.get("phase24_cr15_opening", {}):
         return rows
     path = ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py"
