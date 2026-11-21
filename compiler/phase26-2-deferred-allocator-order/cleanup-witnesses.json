@@ -1,0 +1,43 @@
+{
+  "contract": "phase26_cleanup_witnesses_v1",
+  "original_expectation": {
+    "status": "UNQUALIFIED historical native-positive expectation",
+    "compile_exit": 0,
+    "routes": [
+      "default",
+      "cranelift"
+    ]
+  },
+  "current_original_expectation": {
+    "compile_exit": 1,
+    "diagnostic": "[LinearResourceLeak]",
+    "worker_reached": false,
+    "program_executed": false
+  },
+  "supports": {
+    "tests/phase24_cr15_qualification_module.gst": "bced9d4aee1e7bd66314b08ac6be8f8507dbc8f583b50ccb96b111ede2663f7e"
+  },
+  "cases": [
+    {
+      "role": "qualification_inferred",
+      "original": "tests/phase24_cr15_qualification_positive.gst",
+      "original_sha256": "1b5ebd3679f9c0790b504dbc5ef9538ea23dedc731fd376b93561a5d4e6b5fe9",
+      "successor": "tests/phase24_cr15_qualification_positive_scoped.gst",
+      "successor_sha256": "86c7274df52a8629ed237190b5b33f46687e0af7698fbd50411ece2d76b5884d"
+    },
+    {
+      "role": "qualification_explicit",
+      "original": "tests/phase24_cr15_qualification_explicit.gst",
+      "original_sha256": "7df0159f34dc57dd64a3306064672be2dee600cb79427c2eff41bd59cfcbe8c8",
+      "successor": "tests/phase24_cr15_qualification_explicit_scoped.gst",
+      "successor_sha256": "4400173c7a651bf8735fcd9f91ca816fbc1f43edeaa07502ab9389e36815517f"
+    },
+    {
+      "role": "directory_unbound",
+      "original": "compiler/future/p20_issue106_unbound_directory_current.gst",
+      "original_sha256": "f0f12baf396c5baa7a0119bb52cd44de70ef26ea9f1d7d85fa73b65c54ef0bea",
+      "successor": "compiler/future/p20_issue106_unbound_directory_current_scoped.gst",
+      "successor_sha256": "29340e3c72bb367fe7d17d09959ad0ec0d5f0fa5abf949cd55659f0dab14fdd7"
+    }
+  ]
+}

@@ -16519,7 +16519,7 @@ guard-cranelift-phase20-resource-acquisition-contract:
     just guard-compile-pass compiler/phase20_resource_acquisition_directory_source.gst phase20_resource_acquisition_directory_positive
     just guard-compile-pass compiler/phase20_resource_acquisition_path_transfer_source.gst phase20_resource_acquisition_path_transfer_positive
     just guard-compile-pass compiler/future/p20_issue106_bound_directory_current.gst phase20_resource_cleanup_bound_directory
-    just guard-compile-pass compiler/future/p20_issue106_unbound_directory_current.gst phase20_resource_cleanup_unbound_directory
+    just phase26-cleanup-directory-positive phase20_resource_cleanup_unbound_directory
     just guard-compile-pass compiler/phase20_resource_acquisition_user_bound_invalid.gst phase20_resource_cleanup_user_bound
     just guard-compile-fail compiler/phase20_resource_acquisition_user_discarded_invalid.gst ResourceAcquisitionDiscarded phase20_resource_acquisition_user_discarded
     just guard-compile-fail compiler/phase20_resource_acquisition_directory_discarded_invalid.gst ResourceAcquisitionDiscarded phase20_resource_acquisition_directory_discarded
@@ -16549,7 +16549,7 @@ guard-cranelift-phase20-resource-scope-cleanup-contract:
     python3 scripts/phase20_resource_scope_cleanup.py check-review
     just guard-compile-pass compiler/phase20_resource_scope_cleanup_source.gst phase20_resource_scope_cleanup_positive
     just guard-compile-pass compiler/future/p20_issue106_bound_directory_current.gst phase20_resource_scope_cleanup_bound_directory
-    just guard-compile-pass compiler/future/p20_issue106_unbound_directory_current.gst phase20_resource_scope_cleanup_unbound_directory
+    just phase26-cleanup-directory-positive phase20_resource_scope_cleanup_unbound_directory
     just guard-compile-pass compiler/phase20_resource_acquisition_user_bound_invalid.gst phase20_resource_scope_cleanup_user_bound
     just guard-compile-pass compiler/phase20_resource_acquisition_callee_drop_invalid.gst phase20_resource_scope_cleanup_callee
     just guard-compile-fail compiler/phase20_resource_acquisition_conditional_close_invalid.gst ResourceAcquisitionLeak phase20_resource_scope_cleanup_conditional_mismatch
@@ -24633,3 +24633,15 @@ guard-cranelift-phase26-2-allocator-identities:
     python3 scripts/phase26_2_defer_lexical.py validate
     python3 scripts/phase26_2_defer_lexical.py inversions
     python3 scripts/phase26_2_defer_lexical.py native
+    python3 scripts/phase26_2_deferred_allocator_order.py validate
+    python3 scripts/phase26_2_deferred_allocator_order.py inversions
+    python3 scripts/phase26_2_deferred_allocator_order.py native
+    python3 scripts/phase26_2_cleanup_witnesses.py validate
+    python3 scripts/phase26_2_cleanup_witnesses.py inversions
+    python3 scripts/phase26_2_cr16_cleanup_fixture.py validate
+    python3 scripts/phase26_2_cr16_cleanup_fixture.py inversions
+
+# Selected fixture-only successor; original remains a frontend-only refusal witness.
+phase26-cleanup-directory-positive label:
+    python3 scripts/phase26_2_cleanup_witnesses.py reject-directory
+    just guard-compile-pass compiler/future/p20_issue106_unbound_directory_current_scoped.gst {{label}}

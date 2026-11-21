@@ -11,6 +11,8 @@ import stat
 import subprocess
 import sys
 import tempfile
+
+import phase26_2_cleanup_witnesses as cleanup_witnesses
 from pathlib import Path
 
 
@@ -146,6 +148,7 @@ def validate() -> dict:
         "tools/normalize_generated_arena_offsets.py", GUARD_L1, GUARD_L2,
     ):
         require(required in workflow, f"workflow is missing {required}")
+    cleanup_witnesses.validate()
     return value
 
 
@@ -164,6 +167,8 @@ def render(value: dict) -> str:
         "",
         "The selected MutexGuard family and a spelling-substituted Lease family derive only from resolved protected-Resource metadata. Counter and Flag payloads across first_arena and third_arena brands preserve inferred/explicit identity.",
         "Normal, return, break, and continue exits execute existing canonical ScopeCleanup exactly once. Nested scopes, explicit move transfer, repeated acquisition, and guard-rooted mutation agree through MIR-to-C and explicit no-fallback Cranelift.",
+        "",
+        "Current positive successors end the repeated Lease in an inner frame before the outer deferred allocator Free. Both original sources and historical native-positive expectations remain unchanged and unqualified; current compile-only controls require their cleanup-order rejection before worker entry.",
         "",
         "## Adversarial boundary",
         "",
@@ -200,6 +205,11 @@ def evidence() -> None:
     # runtime. Same shape as the dead `CC_BIN` bindings 24.14 removes.
     for prerequisite in (compiler, driver, runtime_package):
         require(prerequisite.is_file(), f"missing prerequisite {prerequisite}")
+
+    cleanup_witnesses.inversions()
+    cleanup_witnesses.refusal_controls()
+    cleanup_witnesses.reject_originals(compiler, ["qualification_inferred", "qualification_explicit"])
+    witnesses = cleanup_witnesses.qualification_successors(witnesses)
 
     expected_stdout = value["positive_authority"]["expected_stdout"].encode()
     # Patch 24.12b: retired, and INVERTED rather than deleted -- same

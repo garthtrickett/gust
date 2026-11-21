@@ -16,6 +16,7 @@ Lowering remains `ordinary_canonical_calls_and_existing_resource_cleanup` under 
 ## Evidence boundary
 
 Equivalent inferred and explicit guards agree; distinct payload/brand identities remain distinct; two protected payload types compile through retained explicit compatibility and explicit no-fallback Cranelift paths.
+Current positive successors end the guard's inner scope before the outer deferred allocator Free. The three original sources and historical expectations remain unchanged; current compile-only controls require their cleanup-order rejection before worker entry.
 Arbitrary user generic functions and unprotected inputs remain rejected before backend selection. No backend recognizes MutexGuard, sync.lock, or sync.get.
 
 Patch 24.0c adds no MIR operation or meaning, ABI/layout/runtime symbol, target/linker policy, route/default/fallback, Stdlib source, bootstrap route, or seed change. Patch 24.0d remains separate.

@@ -10,8 +10,86 @@ import tempfile
 from unittest.mock import patch
 
 import phase26_toolchain_compatibility as compatibility
+import phase26_production_toolchain as toolchain
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def transfer_controls(build, accepted, rejected):
+    payload = b"pinned complete package"
+    package = dict(package="fixture", filename="fixture.deb", url="https://example.invalid/pinned",
+                   sha256=hashlib.sha256(payload).hexdigest())
+    split = 7
+    first = (0, 28, "200", "", payload[:split])
+    last = len(payload) - 1
+    resumed = f"bytes {split}-{last}/{len(payload)}"
+
+    def exercise(label, replies, result, diagnostic=None):
+        with tempfile.TemporaryDirectory(prefix="toolchain-transfer-", dir=build) as temporary:
+            directory = Path(temporary) / "download"
+            output = directory / "fixture.deb"
+            partial = output.with_suffix(".deb.partial")
+            pending = iter(replies)
+            calls = []
+
+            def fake_run(command, **kwargs):
+                offset, code, status, content_range, more = next(pending)
+                calls.append(command)
+                assert not output.exists(), "unverified bytes gained the installation name"
+                assert command[-1] == package["url"]
+                assert command[command.index("--proto") + 1] == "=https"
+                assert command[command.index("--tlsv1.2") + 1] == "--fail"
+                assert command[command.index("--max-time") + 1] == "60"
+                assert "--retry" not in command and command[command.index("-o") + 1] == str(partial)
+                assert ("--continue-at" in command) == bool(offset)
+                if offset:
+                    assert command[command.index("--continue-at") + 1] == str(offset)
+                    assert partial.read_bytes() == payload[:offset]
+                if more:
+                    with partial.open("ab") as stream:
+                        stream.write(more)
+                return subprocess.CompletedProcess(command, code, stdout=status + "\t" + content_range + "\n")
+
+            def acquire():
+                with patch.object(toolchain.subprocess, "run", side_effect=fake_run), \
+                        patch.object(toolchain.time, "sleep") as backoff:
+                    try:
+                        return toolchain.fetch({"packages": [package]}, directory)
+                    finally:
+                        assert len(calls) == len(replies)
+                        assert [call.args[0] for call in backoff.call_args_list] == [2 ** i for i in range(len(replies) - 1)]
+
+            if result == "pass":
+                accepted(label, lambda: require(acquire() == [str(output)]))
+                assert output.read_bytes() == payload and not partial.exists()
+            elif result == "exhausted":
+                def exhausted():
+                    try:
+                        acquire()
+                    except subprocess.CalledProcessError as error:
+                        assert error.returncode == 28
+                        raise SystemExit("production dependency download exhausted") from error
+                rejected(label, exhausted, "production dependency download exhausted")
+                assert not output.exists() and partial.is_file()
+            else:
+                rejected(label, acquire, diagnostic)
+                assert not output.exists()
+
+    exercise("complete pinned response", [(0, 0, "200", "", payload)], "pass")
+    exercise("same-origin resume after timeout", [first, (split, 0, "206", resumed, payload[split:])], "pass")
+    exercise("retryable response without bytes", [(0, 22, "503", "", b""),
+             (0, 0, "200", "", payload)], "pass")
+    exercise("download timeout stops after three attempts", [first, (split, 28, "000", "", b""),
+             (split, 28, "000", "", b"")], "exhausted")
+    exercise("server ignored resume range", [first, (split, 33, "200", "", b"")], "reject",
+             "resume did not return a byte range")
+    exercise("server supplied the wrong offset", [first, (split, 0, "206",
+             f"bytes {split + 1}-{last}/{len(payload)}", payload[split:])], "reject",
+             "resume returned an inconsistent byte range")
+    exercise("server supplied incomplete bytes", [first, (split, 0, "206", resumed, payload[split:-1])], "reject",
+             "resume ended with an incomplete byte range")
+    exercise("assembled package has the wrong digest", [first, (split, 0, "206", resumed,
+             payload[split:-1] + b"X")], "reject", "production dependency digest mismatch")
 
 
 def main():
@@ -64,6 +142,7 @@ def main():
 
     build = ROOT / "build/guards"
     build.mkdir(parents=True, exist_ok=True)
+    transfer_controls(build, accepted, rejected)
     with tempfile.TemporaryDirectory(prefix="toolchain-control-", dir=build) as temporary:
         temporary = Path(temporary)
         package = temporary / "fixture"

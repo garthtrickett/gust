@@ -28,6 +28,9 @@ destructor is the terminal operation and does not recursively acquire
 another obligation.
 
 Patch 20.10 consumes stored obligations with automatic cleanup.
+The current unbound directory positive uses its separately scoped successor;
+the original source and historical positive expectation remain unqualified
+history, with current compile-only cleanup-order refusal controls.
 Both #106 directory shapes, a user-declared bound owner, and an
 otherwise empty by-value callee now compile with exactly-once cleanup.
 Ignored directory and user-resource

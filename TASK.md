@@ -6200,3 +6200,191 @@ errors, symlink escapes and exhaustion. Preserve GNUdu allocation semantics,
 all product quotas/deadlines and exact merged59 predecessor bytes. Run the
 additive real-file/error/budget controls in the owning recipe, re-enroll exact
 bytes and obtain committed reviews before fresh full qualification and CI.
+
+### Deferred allocator-order validation resumed — 2026-11-19
+
+PR622 merged as `1717c32f` with qualified-tree equality, all 155 eligible PR
+workflows plus Trusted and seven owning artifact checks passed. The same owner
+now resumes the held canonical26.2D frontend correction. Preserve the original
+eight compile-only allocator-order reproductions and the qualified native
+lexical-binding controls; do not execute unsafe admitted resource witnesses.
+
+Validate against the existing lowering order: reverse explicit defers in each
+exited frame before that frame's automatic cleanup; on return, evaluate and
+transfer the result, run all active explicit defers, then run transported
+automatic cleanup. Retain lexical storage identity and late allocator values,
+actual acquisition dependencies, and isolated sibling/return facts. Cover
+shadowing, nested exits, aliases/fields, LIFO, return transport and loop exits.
+This enforces existing resource/allocator contracts without changing cleanup
+emission, canonical MIR, ABI, runtime symbols, source brand meaning or OD23.
+
+The selected patch requires committed Spec/Standards reviews, positive source
+and native controls plus compile-only unsafe rejections, actual rollback
+refusals, complete additive source/pattern enrollment, fresh current-source
+strict104/180s, protected4GiB production/public R5 and native fixed point,
+byte/provenance checks, and its own eligible exact-head CI/reviews/rules/merge.
+Then continue the remaining activated26.2–26.6/20requirements; this prerequisite
+merge does not close a canonical row or select slot-observation semantics.
+
+The current-source cold qualification exposed a frontend false refusal in the
+unchanged Stdlib clone-destination guard: a fresh Arena assigned to an unbranded
+field has a physical receiver but no immutable resource-origin constraint.
+Within this same correction, retain those proofs separately, preserve observed
+uncertainty, and conservatively invalidate deferred field precision on aggregate
+reference exposure or unrepresented indirect writes. Preserve the original32
+case payloads and expectations and add fresh-field, alias, unknown-factory,
+branch/exposure and owner-overlap controls. No library compensation, changed
+native capability expectation or new alias/lifetime semantics is authorized.
+
+The current owning workflow also exposed a false refusal in the unchanged
+primitive18: an outer field updated under literal `if true` was joined with
+the impossible other value. Correct only literal-Bool physical-observation
+selection, preserving both-arm checking, conservative lifecycle/resource joins,
+the complete exposure/indirect-write union and explicit unknown one-sided fields.
+Names, comparisons, calls, casts and integer conditions remain conservative.
+Keep all original54 order cases and primitive18 expectations unchanged; add
+internal current-checker source controls and direct snapshot assertions.
+Preserve the failed owning matrix and current tools before replacement, then
+obtain committed reviews, additive enrollment and fresh current-source/native/
+protected-product/fixed-point/publication gates. No old2a pass qualifies the
+corrected source or closes a Phase26 row.
+
+The literal correction restored all original primitive18 and54 case rows, but
+its new batched internal source fixture exhausted unchanged fixed TLS scratch.
+Preserve that failure. Isolate the same18 registered source/expectation checks
+into separate invocations of the same current compiled checker unit; retain all
+default snapshot assertions/four groups and reject malformed argument modes.
+Do not change runtime scratch, environment, quotas, timeouts or any expectation.
+This fixture correction grants no compiler/resource semantic change; fresh
+committed review, actual controls and all remaining qualification gates apply.
+
+The exact frozen CR15 nominal-mismatch control then exposed a secondary
+deferred-order diagnostic derived from an already-invalid owner annotation.
+Preserve its failed component receipt and the original frozen output. At entry
+to the new deferred-order simulation, retain earlier errors unchanged and skip
+the secondary analysis without publishing facts; compilation remains rejected.
+Clean entries still perform the complete simulation. Direct internal controls
+cover all four exit modes with prior errors, clean invalid storage and clean
+valid consumption. Keep exact nominal TypeMismatch parity, same-type shadow
+BrandIdentityMismatch, every original54 case and all existing error-free cleanup
+checks. Re-enroll, obtain committed reviews and qualify the corrected source;
+the preceding head's successful components do not qualify this successor.
+
+The first batched16 diagnostic-control unit compiled successfully but exhausted
+unchanged fixed TLS scratch before producing output. Preserve that failure
+without attributing its precise site. Run the same16 registered tuples in
+separate processes of the same unit, retaining the default four groups and
+original18 source/four argument controls. Add four malformed diagnostic-mode
+refusals and require all physical outputs/unit hashes. Runtime, scratch, caps,
+deadlines and the compiler correction stay unchanged. Current-source reviews,
+enrollment and all native/product/fixed-point/publication gates still apply.
+
+The operator selected the reviewed fixture-only amendment on 2026-11-20 after
+the genuine current-source cold workflow found one stale original54 expectation.
+`expose(holder)` is ill-typed for an ordinary `&Holder` parameter; the former
+cleanup diagnostic was secondary to its primary argument mismatch. Preserve
+the exact54 original objects and digest as explicitly unqualified historical
+data. This scoped selection supersedes only the earlier requirement to keep
+that malformed row's active expectation unchanged. Keep the other53 active
+objects unchanged, require the same malformed source's primary type error in
+a distinct control, and add a valid `expose(&holder)` cleanup-refusal control.
+The resulting active cohort is55. Explicit reference formation already exposes
+the aggregate; this is not proof of implicit reference coercion. Add inversions
+for original preservation, active mapping and refusal strength. Do not change
+compiler code, diagnostic precedence, original primitive18, first8 payloads,
+runtime or product limits. Committed reviews, additive enrollment and all
+genuinely current native/product/public/R5FP/publication gates remain mandatory.
+
+
+The operator separately selected the reviewed **three CR15 fixture** amendment
+on 2026-11-20 after the owning derivation guard exposed correct cleanup-order
+refusals. This exception covers only inferred, explicit and second-payload
+native derivation witnesses. Preserve all three original tracked source bytes,
+their historical native-positive expectation as unqualified history, the shared
+Stdlib helper, and all frozen negative-diagnostic comparisons. Route both
+existing positive compilation paths to separate successors whose mutex/guard
+and protected use finish in an inner frame before the unchanged outer deferred
+Arena.Free. Require each original to reject with LinearResourceLeak before
+worker entry; never execute it. Invert original preservation, live successor
+routing and scope removal. No compiler, cleanup emission, runtime, resource,
+brand, ABI or OD23 semantics change is selected. Re-enroll and obtain committed
+reviews plus actual current native/product/public/R5FP/publication evidence.
+The additional unbound-directory fixture is **not selected** by this reply;
+its observed Resource acquisition parity failure and dependent issue-health
+gate remain blocked pending their own authority. Do not compensate locally or
+waive either gate. The original54/active55 and primitive18 contracts stand.
+
+The final three-fixture source61 census on `4addf635` reached its unchanged
+3600-second outer deadline after29 successful commands, interrupting R4
+collection-registration validation. Sources, limits and bounded output stayed
+stable; preserve that failed census without relabelling it. A separately
+reviewed bounded profile completed that static validator and observed1285
+reparses of each unchanged deferred runner. This supports a narrow adapter-cost
+correction, not a complete cause attribution or deadline waiver: cache only
+immutable parsed invocation data by exact live source text, canonical runner
+path and actual parser callable. Read physical files on every call; retain live
+classification, selection, registry authority, physical pins and normalization.
+Preserve exact parser rows/order, exception behavior and fresh mutable results.
+Require warm-content, parser-substitution, race, alias, exception and two-entry
+eviction controls for both existing runners. Re-enroll, review the committed
+successor and run all61 commands under the same limits; no preceding partial
+or native/product proof qualifies it. The directory amendment stays unselected.
+
+
+The operator selected the reviewed **remaining three cleanup-fixture** amendment
+on 2026-11-20: the inferred and explicit CR15 qualification positives and the
+unbound-directory witness. This prospectively supersedes the preceding exclusion
+for exactly these three witnesses. Preserve every original tracked source byte
+and its historical positive expectation as unqualified history. Require current
+frontend cleanup-order refusals without worker entry or execution, and route
+positive compilation/runtime checks to separate supported inner-scope successors.
+The repeated Lease and fallible directory wrapper must finish cleanup before the
+unchanged outer deferred allocator Free. Retain all existing outputs, negative
+diagnostics, protected/brand/reference checks and historical frozen oracle bytes.
+Invert original preservation, unsafe-positive readmission, missing scopes and
+changed outer behavior. This fixture-only selection changes no compiler/resource/
+MIR/ABI/runtime/Stdlib-helper/OD23 semantics. Preserve original54/active55 and
+primitive18. Enroll the complete actual source/command set with closed predecessor
+proofs, review the committed patch, and qualify genuinely amended source through
+local/native/product/public/R5/FP and owning exact-head CI/review/rules/merge.
+The B8 checkpoint remains prior evidence; it does not qualify these amended bytes.
+
+The first amended63-command census completed with62 passes and one inventory
+failure: the scoped directory successor was missing from the live Phase20
+directory-vocabulary expectation. Preserve that failed checkpoint. Add exactly
+the hash-validated successor after its historical original while keeping the
+original authority, departure filtering and live scan unchanged. Preserve the
+four-file predecessor and add a closed six-file supplement; invert the actual
+inventory comparison, re-enroll, review and obtain all fresh gates.
+
+The corrected A4 census hit the unchanged3600-second outer deadline after60
+successful commands, interrupting zlib-registration inversions; three commands
+were unfinished. Preserve that failure and the separate four-owning-guard pass.
+A bounded R4 profile measured repeated JSON decoding and strict predecessor
+coordinate extraction, while the new fixture helper consumed under0.1 seconds.
+Optimize only immutable extraction: a uniform-string document/cohort index may
+share the existing64-entry/128MiB cache, keeping the original strict fallback,
+per-path results, public counter behavior and every live physical/pin check.
+Malformed or substituted-parser inputs must retain original results/errors.
+Prove shared eviction/accounting, more-than64-path reuse and lazy unrelated-row
+errors, then re-enroll/review and run all63 under the same original limits.
+
+
+The operator selected the reviewed **coordinated CR16 raw-witness amendment** on
+2026-11-21 after PR626 exposed the unchanged Stdlib S1.9 witness's correct
+cleanup-order refusal. This prospectively extends the preceding six-fixture
+selection for exactly this additional compile-only witness. Apply the Stdlib
+owner-provided strict-refusal patch in this coordinated compiler correction:
+preserve original source/frozen accepted-emission and syntax-only checks, require
+its current frontend LinearResourceLeak refusal with /bin/false worker, empty
+stderr, no worker markers and no output/symlink, and add a separately named
+inner-scope native compile-only successor. Neither raw double-unlock program may
+ever execute. Keep safe scope outputs and five misuse classes unchanged.
+Enroll exactly the new explicit-unsafe zero-Lock/one-Unlock site through the
+owned allocator successor; preserve historical CR16 authority and its two states.
+Invert missing/substituted sites, unsafe/context/count/hash/role drift and refusal
+weakening; keep mutation tests source-stable. Re-enumerate actual pins and obtain
+committed reviews, actual current guard/source/native/product/R5FP and exact-head
+CI/artifact/review/rule/merge evidence. No Resource/defer/move/MIR/ABI/runtime or
+OD23 semantics change, C-backend revival, quota or test-budget waiver is selected.
+The prior CI failure and unqualified proposal remain preserved historical data.

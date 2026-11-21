@@ -30,7 +30,11 @@ The synthesized `os_Dir_ctx` resource records inert destructor
 linear/destructor metadata. Its source compatibility, explicit close
 behavior, cleanup scheduling, and diagnostics are unchanged.
 
-The exact directory vocabulary cohort contains 23 compiler files. The
+The historical directory vocabulary authority contains 23 compiler files. Its
+recorded departures remain enforced. The selected Phase26 cleanup
+fixture contract adds only the hash-validated scoped unbound-directory
+successor immediately after its preserved original; it does not change
+the historical authority or permit discovered files implicitly. The
 inventory guard derives both cohorts from live compiler sources and
 rejects any unclassified declaration or directory use site.
 

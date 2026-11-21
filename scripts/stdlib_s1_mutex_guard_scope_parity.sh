@@ -22,6 +22,9 @@ for path in "$positive" \
   tests/stdlib_s1_mutex_guard_scope_two_owners_rejected.gst \
   tests/stdlib_s1_mutex_guard_scope_fabricated_rejected.gst \
   tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst \
+  tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst \
+  scripts/stdlib_s1_mutex_guard_scope_refusal.py \
+  scripts/stdlib_s1_mutex_guard_scope_refusal_test.py \
   docs/STDLIB_MUTEX_GUARD_SCOPE.md
 do
   if [ ! -f "$path" ]; then
@@ -31,6 +34,7 @@ do
 done
 
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/stdlib_s1_raw_double_unlock_test.py
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/stdlib_s1_mutex_guard_scope_refusal_test.py
 
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
@@ -185,10 +189,39 @@ cat src/runtime/core_headers.h >"$build_dir/raw-double-unlock.c"
 cat "$build_dir/raw-double-unlock.log" >>"$build_dir/raw-double-unlock.c"
 "${CC:-cc}" -fsyntax-only -pthread -Isrc "$build_dir/raw-double-unlock.c" \
   >"$build_dir/raw-double-unlock.c-check.log" 2>&1
-# Native compilation confirms accepted source on the already-qualified scope
-# cohort. Creating the executable is evidence; executing it would double unlock.
-./build/phase10-package/bin/gust --backend cranelift -o "$build_dir/raw-double-unlock.bin" "$raw_fixture" \
-  >"$build_dir/raw-double-unlock.native.log" 2>&1
-test -s "$build_dir/raw-double-unlock.bin"
+# The unchanged original remains a historical accepted-emission witness above.
+# It is UNQUALIFIED as a current native positive: current allocator-order
+# validation rejects outer Free before same-scope dependent owner cleanup.
+# This refusal is not evidence that explicit unsafe Unlock discharges the owner.
+raw_refusal_stdout="$build_dir/raw-double-unlock.current-cleanup-refusal.stdout"
+raw_refusal_stderr="$build_dir/raw-double-unlock.current-cleanup-refusal.stderr"
+raw_refused_output="$build_dir/raw-double-unlock.original-refused.bin"
+test ! -e "$raw_refused_output"
+test ! -L "$raw_refused_output"
+if GUST_NATIVE_BACKEND_DRIVER=/bin/false \
+    ./build/phase10-package/bin/gust --backend cranelift \
+    -o "$raw_refused_output" "$raw_fixture" \
+    >"$raw_refusal_stdout" 2>"$raw_refusal_stderr"; then
+  raw_refusal_status=0
+else
+  raw_refusal_status="$?"
+fi
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/stdlib_s1_mutex_guard_scope_refusal.py \
+  "$raw_refusal_status" "$raw_refusal_stdout" "$raw_refusal_stderr" \
+  "$raw_refused_output"
 
-echo "guard-stdlib-s1-mutex-guard-scope: ok (7 control-flow forms; 5 compile-fail classes; frozen MIR-to-C record and live Cranelift parity, retired route refused; CR-16 compile-only witness)"
+# Separately named successor: owner/raw Unlock are in an inner lexical scope,
+# so registered owner cleanup precedes outer arena Free. Compile directly only;
+# NEVER pass this fixture to the positive runner or execute the produced file.
+raw_successor="tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst"
+raw_successor_output="$build_dir/raw-double-unlock.inner-scope.bin"
+test ! -e "$raw_successor_output"
+test ! -L "$raw_successor_output"
+./build/phase10-package/bin/gust --backend cranelift \
+  -o "$raw_successor_output" "$raw_successor" \
+  >"$build_dir/raw-double-unlock.inner-scope.native.log" 2>&1
+test -f "$raw_successor_output"
+test ! -L "$raw_successor_output"
+test -s "$raw_successor_output"
+
+echo "guard-stdlib-s1-mutex-guard-scope: ok (7 control-flow forms; 5 compile-fail classes; frozen MIR-to-C record and live Cranelift parity, retired route refused; CR-16 historical emission, current original cleanup-refusal, inner-scope compile-only successor; neither raw fixture executed)"

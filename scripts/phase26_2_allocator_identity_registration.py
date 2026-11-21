@@ -11,6 +11,10 @@ import json
 from pathlib import Path
 import sys
 
+import phase26_2_cleanup_witnesses as cleanup_witnesses
+import phase26_2_cr16_cleanup_fixture as cr16_fixture
+import phase26_2_cr16_workflow as cr16_workflow
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '39e37696b775b25827d54c1c5a52b005d30e386b'
 KEY = 'allocator_identity_successor_v1'
@@ -32,6 +36,7 @@ TOOLCHAIN_BASELINE_SHA256 = 'c827c1ed55fecc9238352e6f640d9d7663ac5b6de1ec24b812c
 DEFER_WORKER = 'compiler/experiments/cranelift/src/full_program.rs'
 DEFER_INVOCATION_ADAPTER = 'scripts/phase22_opening.py'
 DEFER_RUNNER = 'scripts/phase26_2_defer_lexical.py'
+DEFER_ORDER_RUNNER = 'scripts/phase26_2_deferred_allocator_order.py'
 DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz'
 DEFER_BASELINE_SHA256 = '7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee'
 DISK_SCAN_CHANGED = ('scripts/phase26_release_paging.py',
@@ -41,6 +46,15 @@ DISK_SCAN_BASELINE_SHA256 = '38fae8d1b71ffb732f023eec5e8d344ba4785a5d63f9ba07201
 R3_GUARD = 'scripts/phase26_r3_zlib_adapter_guard.sh'
 R3_BASELINE = 'compiler/phase26-2-allocator-identity/r3-source-guard-predecessor-v1.json.gz'
 R3_BASELINE_SHA256 = '4805ad37481c4d5646638503a6728a895b923ad4e68bda0d28e9a90138f9100b'
+CR15_BASELINE = 'compiler/phase26-2-deferred-allocator-order/cr15-cleanup-predecessor-v1.json.gz'
+CR15_BASELINE_SHA256 = '70e6aa282b01eea9f43f1fe5b7971e96e208792039e1198baf6a5e912e584c7f'
+CR15_PREDECESSOR_DIGESTS = {
+    'scripts/phase24_cr15_derivation.py': 'df2e7b2d0bc10e44bc31535a944e38919497a6777bcfcdba877d74f4cc47961f',
+    'compiler/CRANELIFT_PHASE24_CR15_DERIVATION.md': '1302bf5478b6bc9a50fc95468f53a509c52467aaa2c572a86e6a4d5d97d21bb9',
+    '.github/workflows/phase24-cr15-derivation.yml': '9acbdfe2ff96bb1ebfb2a4b4f839db081ffc425d2814863bc5897d19e45640ff',
+    '.github/workflows/phase24-cr15-qualification.yml': 'cf9745a25df539a502f75da62a4c24bf0e2d14243b73d65e87aeb7a1efc9857c',
+}
+CR15_CHANGED = tuple(CR15_PREDECESSOR_DIGESTS)
 HISTORICAL_BASELINES = {
     'compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz':
         '38118f9047355b4a925a313c58221283c565a85ea945fd933c45b36390c5f10b',
@@ -58,16 +72,44 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
     'phase26_readonly_input_copy_registration', 'phase26_ticket_composition_registration',
     'phase26_imported_native_registration', 'phase26_ticket_publication_registration')
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
+    *CR15_CHANGED,
+    *cr16_fixture.PREDECESSOR_FILES,
+    *cr16_workflow.PREDECESSOR_FILES,
+    *cleanup_witnesses.PREDECESSOR_FILES,
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
     *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED,
     R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
+    cr16_fixture.PREDECESSOR,
+    cr16_workflow.PREDECESSOR,
+    'scripts/phase26_2_cr16_workflow.py',
+    'scripts/phase26_2_cr16_cleanup_fixture.py',
+    cr16_fixture.SUCCESSOR,
+    'scripts/stdlib_s1_mutex_guard_scope_refusal.py',
+    'scripts/stdlib_s1_mutex_guard_scope_refusal_test.py',
+    *cleanup_witnesses.PREDECESSOR_ARCHIVES,
+    'scripts/phase26_2_cleanup_witnesses.py',
+    'compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json',
+    'tests/phase24_cr15_qualification_positive_scoped.gst',
+    'tests/phase24_cr15_qualification_explicit_scoped.gst',
+    'compiler/future/p20_issue106_unbound_directory_current_scoped.gst',
+    CR15_BASELINE,
+    'scripts/phase26_2_cr15_cleanup_fixtures.py',
+    'compiler/phase26-2-deferred-allocator-order/cr15-cleanup-fixtures.json',
+    'tests/phase24_cr15_protected_resource_native_inferred_scoped.gst',
+    'tests/phase24_cr15_protected_resource_native_explicit_scoped.gst',
+    'tests/phase24_cr15_protected_resource_native_second_type_scoped.gst',
     'compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz', DEFER_BASELINE,
     DISK_SCAN_BASELINE, 'scripts/phase26_2_defer_lexical.py',
     'compiler/phase26-2-defer-lexical/cases.json',
-    'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md', *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
+    'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md',
+    DEFER_ORDER_RUNNER, 'compiler/phase26-2-deferred-allocator-order/cases.json',
+    'compiler/phase26-2-deferred-allocator-order/observation_facts.gst',
+    'compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md',
+    *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
     'scripts/phase26_2_allocator_predecessor_controls.py',
+    'scripts/phase26_2_predecessor_index_controls.py',
     LIFECYCLE_HELPER, 'scripts/phase26_2_allocator_identity_registration.py',
     'scripts/phase26_2_allocator_identity_guard.py',
     'compiler/phase26-2-allocator-identity/cases.json',
@@ -96,7 +138,14 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_allocator_identity_guard.py\n'
     '    python3 scripts/phase26_2_defer_lexical.py validate\n'
     '    python3 scripts/phase26_2_defer_lexical.py inversions\n'
-    '    python3 scripts/phase26_2_defer_lexical.py native\n')
+    '    python3 scripts/phase26_2_defer_lexical.py native\n'
+    '    python3 scripts/phase26_2_deferred_allocator_order.py validate\n'
+    '    python3 scripts/phase26_2_deferred_allocator_order.py inversions\n'
+    '    python3 scripts/phase26_2_deferred_allocator_order.py native\n'
+    '    python3 scripts/phase26_2_cleanup_witnesses.py validate\n'
+    '    python3 scripts/phase26_2_cleanup_witnesses.py inversions\n'
+    '    python3 scripts/phase26_2_cr16_cleanup_fixture.py validate\n'
+    '    python3 scripts/phase26_2_cr16_cleanup_fixture.py inversions\n')
 
 
 def require(ok, message):
@@ -161,9 +210,68 @@ def lifecycle_baseline():
     return _lifecycle_baseline(raw)
 
 
+def checked_cr15_predecessor(value):
+    from phase26_predecessor_data import decoded_payload
+    require(set(value) == {'schema', 'base', 'files'} and
+            value['schema'] == 'gust.cr15_cleanup_fixture.predecessor.v1' and
+            value['base'] == BASE and set(value['files']) == set(CR15_CHANGED),
+            'CR15 cleanup predecessor identity or population drifted')
+    for path, digest in CR15_PREDECESSOR_DIGESTS.items():
+        require(sha(decoded_payload(value['files'][path])) == digest,
+                'CR15 cleanup predecessor payload drifted: ' + path)
+    return value
+
+
+def cr15_predecessor():
+    raw = (ROOT / CR15_BASELINE).read_bytes()
+    require(sha(raw) == CR15_BASELINE_SHA256, 'CR15 cleanup predecessor archive bytes drifted')
+    return checked_cr15_predecessor(json.loads(gzip.decompress(raw)))
+
+
+def cr15_predecessor_controls(rejected):
+    value = cr15_predecessor()
+    from unittest.mock import patch
+    original_read = Path.read_bytes
+    archive = ROOT / CR15_BASELINE
+    with patch.object(Path, 'read_bytes', lambda path:
+                      original_read(path) + b'changed' if path == archive else original_read(path)):
+        rejected('CR15 predecessor archive substitution', cr15_predecessor,
+                 'CR15 cleanup predecessor archive bytes drifted')
+    for field, replacement in (('schema', 'unregistered'), ('base', '0' * 40)):
+        changed = copy.deepcopy(value)
+        changed[field] = replacement
+        rejected('CR15 predecessor ' + field,
+                 lambda changed=changed: checked_cr15_predecessor(changed),
+                 'CR15 cleanup predecessor identity or population drifted')
+    changed = copy.deepcopy(value)
+    changed['files']['compiler/future/p20_issue106_unbound_directory_current.gst'] = base64.b64encode(b'unselected').decode()
+    rejected('CR15 predecessor unselected directory',
+             lambda: checked_cr15_predecessor(changed),
+             'CR15 cleanup predecessor identity or population drifted')
+    for path in CR15_CHANGED:
+        omitted = copy.deepcopy(value)
+        omitted['files'].pop(path)
+        rejected('CR15 predecessor omitted ' + path,
+                 lambda omitted=omitted: checked_cr15_predecessor(omitted),
+                 'CR15 cleanup predecessor identity or population drifted')
+        substituted = copy.deepcopy(value)
+        substituted['files'][path] = base64.b64encode(b'changed').decode()
+        rejected('CR15 predecessor substituted ' + path,
+                 lambda substituted=substituted: checked_cr15_predecessor(substituted),
+                 'CR15 cleanup predecessor payload drifted: ' + path)
+
+
 def base_bytes(path):
     from phase26_predecessor_data import decoded_payload
     files = baseline()['files']
+    if path in cr16_workflow.PREDECESSOR_FILES:
+        return cr16_workflow.predecessor_bytes(path)
+    if path in cr16_fixture.PREDECESSOR_FILES:
+        return cr16_fixture.predecessor_bytes(path)
+    if path in cleanup_witnesses.PREDECESSOR_FILES:
+        return cleanup_witnesses.predecessor_bytes(path)
+    if path in CR15_CHANGED:
+        return decoded_payload(cr15_predecessor()['files'][path])
     if path in files:
         return decoded_payload(files[path])
     if path in DISK_SCAN_CHANGED:
@@ -235,6 +343,10 @@ def identity(registry):
         'allocator proof identity, file population or operational-state retirement drifted')
     require(row.get('defer_native_invocations') == defer_invocation_rows(),
             'deferred lexical compiler invocation enrollment drifted')
+    require(row.get('defer_order_native_invocations') == defer_order_invocation_rows(),
+            'deferred allocator order compiler invocation enrollment drifted')
+    require(cr16_fixture.registration_matches(row.get(cr16_fixture.KEY)),
+            'CR16 scoped fixture enrollment drifted')
     require((ROOT / STATE).is_file() and (ROOT / STATE).stat().st_size > 0,
             'operational lane state is absent')
     return row
@@ -470,10 +582,33 @@ def prior_render_digest(registry, live):
         'phase26_activation_audit'][PREDECESSOR_KEY]['spelling_render_current_digest']
 
 
+@lru_cache(maxsize=2)
+def _parsed_invocation_lists(path, source, parser):
+    """Cache decoding only; immutable text cannot share mutable rows with callers."""
+    require(path in (ROOT / DEFER_RUNNER, ROOT / DEFER_ORDER_RUNNER),
+            'unregistered deferred invocation parser path')
+    require(path.read_text(encoding='utf-8') == source,
+            'deferred invocation source changed while parsing')
+    rows = parser(path)
+    require(path.read_text(encoding='utf-8') == source,
+            'deferred invocation source changed while parsing')
+    # The maintained parser returns (line:int, command:str, token:str) tuples.
+    # Store an immutable snapshot, then reconstruct fresh tuple rows below.
+    return json.dumps(rows, ensure_ascii=False)
+
+
+def live_invocation_lists(path):
+    from phase22_opening import python_compiler_lists
+    # Never cache a physical-file read, registry verdict, pin or classification.
+    source = path.read_text(encoding='utf-8')
+    snapshot = _parsed_invocation_lists(path, source, python_compiler_lists)
+    return [tuple(row) for row in json.loads(snapshot)]
+
+
 def defer_invocation_rows():
-    from phase22_opening import python_compiler_lists, classify, selection
+    from phase22_opening import classify, selection
     return [classify(ROOT/DEFER_RUNNER, line, command, '', token, selection(command))
-            for line, command, token in python_compiler_lists(ROOT/DEFER_RUNNER)]
+            for line, command, token in live_invocation_lists(ROOT/DEFER_RUNNER)]
 
 
 def normalize_defer_invocations(registry, rows):
@@ -491,6 +626,144 @@ def normalize_defer_invocations(registry, rows):
     return [p for p in rows if p['path'] != DEFER_RUNNER]
 
 
+def defer_order_invocation_rows():
+    from phase22_opening import classify, selection
+    return sorted((classify(ROOT/DEFER_ORDER_RUNNER, line, command, '', token, selection(command))
+                   for line, command, token in live_invocation_lists(ROOT/DEFER_ORDER_RUNNER)),
+                  key=lambda row: (row['line'], row['command']))
+
+
+def invocation_cache_controls(registry, rejected):
+    """Warm-cache controls exercise the real readers and uncached authority."""
+    from unittest.mock import patch
+    import phase22_opening as opening
+    original_text = Path.read_text
+    original_parser = opening.python_compiler_lists
+    for relative, rows_function, diagnostic in (
+            (DEFER_RUNNER, defer_invocation_rows,
+             'deferred lexical compiler invocation enrollment drifted'),
+            (DEFER_ORDER_RUNNER, defer_order_invocation_rows,
+             'deferred allocator order compiler invocation enrollment drifted')):
+        path = ROOT / relative
+        source = original_text(path, encoding='utf-8')
+        expected = original_parser(path)
+        _parsed_invocation_lists.cache_clear()
+        require(live_invocation_lists(path) == expected == live_invocation_lists(path),
+                'cached deferred parser changed original rows or ordering')
+        expected_rows = rows_function()
+        changed_rows = rows_function()
+        changed_rows[0]['command'] = 'caller mutation'
+        require(rows_function() == expected_rows,
+                'cached deferred classification shared mutable rows')
+        reads = []
+        def counted_text(target, *args, **kwargs):
+            if target == path:
+                reads.append(target)
+            return original_text(target, *args, **kwargs)
+        with patch.object(Path, 'read_text', counted_text):
+            live_invocation_lists(path)
+            live_invocation_lists(path)
+        require(reads == [path, path], 'warm deferred cache skipped physical reads')
+
+        # Each mutation follows a warm original read. Path/stat identity stays
+        # fixed; exact live text, not metadata, must select a new parser result.
+        replacements = (
+            ('same-size token', source.replace("'--backend'", "'--backenx'", 1)),
+            ('backend substitution', source.replace("'cranelift'", "'mir-to-c'", 1)),
+            ('omitted invocation', source.replace("ROOT / 'gust'", "ROOT / 'missing'", 1)),
+            ('extra invocation', source + '\ncache_probe = ' + expected[0][1] + '\n'))
+        for label, changed in replacements:
+            require(changed != source, 'deferred cache mutation did not move: ' + label)
+            require(live_invocation_lists(path) == expected,
+                    'original deferred source failed before warm mutation')
+            with patch.object(Path, 'read_text', lambda target, *args, **kwargs:
+                    changed if target == path else original_text(target, *args, **kwargs)):
+                rejected(relative + ' warm cache ' + label,
+                         lambda: identity(registry), diagnostic)
+            require(live_invocation_lists(path) == expected,
+                    'deferred cache did not restore exact original parse')
+
+        # A replacement parser must not inherit an entry from the old callable.
+        with patch.object(opening, 'python_compiler_lists', lambda target:
+                          original_parser(target) + [expected[0]] if target == path
+                          else original_parser(target)):
+            rejected(relative + ' replacement parser', lambda: identity(registry), diagnostic)
+
+        # Immutable cached serialization also isolates nested mutable mock data.
+        nested = [(1, {'argv': ['original']}, 'probe')]
+        with patch.object(opening, 'python_compiler_lists', lambda target: nested):
+            first = live_invocation_lists(path)
+            nested[0][1]['argv'].append('parser-side mutation')
+            first[0][1]['argv'].append('caller-side mutation')
+            require(live_invocation_lists(path) == [(1, {'argv': ['original']}, 'probe')],
+                    'deferred parser cache leaked nested result mutation')
+
+        _parsed_invocation_lists.cache_clear()
+        with patch.object(opening, 'python_compiler_lists', side_effect=ValueError('parser probe')):
+            for _ in range(2):
+                try:
+                    live_invocation_lists(path)
+                except ValueError as error:
+                    require(str(error) == 'parser probe', 'deferred parser exception changed')
+                else:
+                    require(False, 'deferred parser exception was swallowed')
+            require(_parsed_invocation_lists.cache_info().currsize == 0,
+                    'deferred parser exception was cached')
+
+        # A cache miss must reject source movement during the actual parse.
+        def moving_parser(target):
+            value = original_parser(target)
+            if target == path:
+                moved[0] = True
+            return value
+        moved = [False]
+        with patch.object(opening, 'python_compiler_lists', moving_parser), \
+                patch.object(Path, 'read_text', lambda target, *args, **kwargs:
+                    source + '\n' if target == path and moved[0]
+                    else original_text(target, *args, **kwargs)):
+            rejected(relative + ' source movement during parse',
+                     lambda: live_invocation_lists(path),
+                     'deferred invocation source changed while parsing')
+
+        _parsed_invocation_lists.cache_clear()
+        parsed = []
+        def counting_parser(target):
+            parsed.append(target)
+            return original_parser(target)
+        with patch.object(opening, 'python_compiler_lists', counting_parser):
+            for suffix in ('', '\n', '\n\n', ''):
+                with patch.object(Path, 'read_text', lambda target, *args, **kwargs:
+                        source + suffix if target == path
+                        else original_text(target, *args, **kwargs)):
+                    require(live_invocation_lists(path) == expected,
+                            'deferred cache eviction changed original parser result')
+            require(parsed == [path] * 4 and _parsed_invocation_lists.cache_info().maxsize == 2
+                    and _parsed_invocation_lists.cache_info().currsize == 2,
+                    'deferred parser cache eviction or two-entry bound drifted')
+        require(rows_function() == expected_rows,
+                'deferred parser cache controls changed original authority')
+    _parsed_invocation_lists.cache_clear()
+    print('DEFERRED_INVOCATION_DECODE_CACHE_CONTROLS_PASS', flush=True)
+
+
+def normalize_defer_order_invocations(registry, rows):
+    """Project only the complete, physically pinned order-matrix calls."""
+    row = identity(registry)
+    physical_files(registry, row)
+    actual = [p for p in rows if p['path'] == DEFER_ORDER_RUNNER]
+    expected = row['defer_order_native_invocations']
+    without_line = lambda p: {k:v for k,v in p.items() if k != 'line'}
+    commands = ("[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]",
+                "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(INTERNAL)]")
+    require(len(actual) == len(expected) == 2 and
+            [without_line(p) for p in actual] == [without_line(p) for p in expected] and
+            actual == defer_order_invocation_rows() and
+            all(p['selection'] == 'explicit_cranelift' for p in actual) and
+            tuple(p['command'] for p in actual) == commands,
+            'deferred allocator order compiler invocation missing, extra or substituted')
+    return [p for p in rows if p['path'] != DEFER_ORDER_RUNNER]
+
+
 def current_projections():
     import phase26_2_allocator_registration as previous
     return previous.current_projections()
@@ -503,6 +776,8 @@ def build_record():
     return dict(predecessor_main=BASE, owner='cranelift', guard=GUARD,
         phase26_2_status='OPEN', od23='OPEN; no slot ownership or admission selected',
         operational_state_excluded=STATE, defer_native_invocations=defer_invocation_rows(),
+        defer_order_native_invocations=defer_order_invocation_rows(),
+        cr16_scoped_fixture=copy.deepcopy(cr16_fixture.CONTRACT),
         changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)),
             current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
         added_files=[dict(path=p, digest=sha((ROOT / p).read_bytes())) for p in ADDED],
@@ -652,7 +927,8 @@ def validate():
         artifact = 'phase26-2-allocator-'+('identity' if guard == GUARD else 'liveness')+'-toolchain'
         toolchain_workflow_profile((ROOT/path).read_text(), artifact)
     release_workflow_profile((ROOT/RELEASE_WORKFLOW).read_text())
-    require((ROOT/'justfile').read_bytes() == base_bytes('justfile')+RECIPE.encode(), 'allocator recipe drifted')
+    require((ROOT/'justfile').read_bytes() == cleanup_witnesses.directory_justfile(
+        base_bytes('justfile')+RECIPE.encode()), 'allocator recipe drifted')
     levels = json.loads((ROOT/'scripts/cranelift_test_levels.json').read_text())
     require(levels['guards'].pop(GUARD,None)==2 and levels==json.loads(base_bytes('scripts/cranelift_test_levels.json')),
             'allocator test level or predecessor guards drifted')
@@ -680,9 +956,16 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    cr15_predecessor_controls(rejected)
+    for result in cleanup_witnesses.predecessor_controls():
+        print(result['label'] + ': ' + result['outcome'] + ': ' + result['assertion'], flush=True)
+    invocation_cache_controls(registry, rejected)
     import phase22_opening as opening
     import phase26_r3_zlib_adapter_registration as r3
-    require(not any(p['path'] == DEFER_RUNNER for p in opening.scan_invocations()),
+    require(not opening.python_compiler_lists(Path(__file__)),
+            'registration metadata is represented as an executable compiler call')
+    require(not any(p['path'] in (DEFER_RUNNER, DEFER_ORDER_RUNNER)
+                    for p in opening.scan_invocations()),
             'global deferred invocation projection did not move')
     require(r3.normalize_invocations(registry, r3.invocation_rows()) == [],
             'R3 partial invocation compatibility drifted')
@@ -702,6 +985,24 @@ def inversions():
     missing['phase26_activation_audit'].pop(KEY)
     rejected('missing deferred invocation authority',
              lambda: normalize_defer_invocations(missing, calls),
+             'allocator proof identity, file population or operational-state retirement drifted')
+    order_calls = defer_order_invocation_rows()
+    require(normalize_defer_order_invocations(registry, order_calls) == [],
+            'deferred allocator order invocation projection did not move')
+    substituted = dict(order_calls[0], selection='implicit_default')
+    for label, changed_calls in (
+            ('missing all', []), ('missing source call', order_calls[1:]),
+            ('missing internal call', order_calls[:1]), ('extra', order_calls + order_calls[:1]),
+            ('substituted', [substituted, order_calls[1]]),
+            ('reordered', list(reversed(order_calls)))):
+        rejected('deferred order compiler invocation ' + label,
+                 lambda changed_calls=changed_calls: normalize_defer_order_invocations(registry, changed_calls),
+                 'deferred allocator order compiler invocation missing, extra or substituted')
+    foreign_order_call = dict(order_calls[0], path='scripts/unregistered-foreign-order.py')
+    require(normalize_defer_order_invocations(registry, order_calls + [foreign_order_call]) == [foreign_order_call],
+            'deferred allocator order invocation projection hid foreign call')
+    rejected('missing deferred order invocation authority',
+             lambda: normalize_defer_order_invocations(missing, order_calls),
              'allocator proof identity, file population or operational-state retirement drifted')
     source_route = (ROOT/R3_GUARD).read_text()
     for label, changed_route in (

@@ -1,0 +1,1257 @@
+{
+  "schema": "gust.deferred_allocator_order.cases.v1",
+  "scope": "Bound captured owner storage and existing allocator teardown order. Direct late producers and unresolved Free are explicit unsupported proof cohorts, not asserted unsafe.",
+  "support_sha256": "6d7a44741f35f5c55ea54fd64f3bfd00135d8c1a640e4b001dd53d0d05ccf813",
+  "original_baseline8_sha256": "fbc4cc9120619e27b20cdea851530d5cd6eb93822fcab9c868aa5f487b9f77d4",
+  "cases": [
+    {
+      "name": "valid_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n defer protected.consume(owner);\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_reversed_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer protected.consume(owner);\n defer ctx.Free();\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_defer_before_automatic_cleanup",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "valid_immediate_consumption",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n protected.consume(owner);\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "valid_unrelated_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n if 1 == 1 {\n  mut ctx := os.Arena.New();\n  defer ctx.Free();\n }\n protected.consume(owner);\n ctx.Free();\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_inner_defer_outer_owner",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n if 1 == 1 {\n  defer ctx.Free();\n }\n protected.consume(owner);\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "valid_inner_automatic_outer_defer",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n if 1 == 1 {\n  mut value: protected.ProtectedValue[ctx];\n  value.value = 7;\n  mut owner := protected.acquire(&value, 41);\n }\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_return_before_inner_automatic",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n if 1 == 1 {\n  mut value: protected.ProtectedValue[ctx];\n  value.value = 7;\n  mut owner := protected.acquire(&value, 41);\n  return 0;\n }\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "native_alias_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); defer protected.consume(owner); return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_alias_reversed",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer protected.consume(owner); defer alias.Free(); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_early_return_allocator_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); if 1 == 1 { mut ctx := os.Arena.New(); defer ctx.Free(); return 0; } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_later_declaration_coordinate",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n protected.consume(owner); if 1 == 1 { defer ctx.Free(); mut ctx := os.Arena.New(); defer ctx.Free(); } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_break_frame_cleanup",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); defer ctx.Free(); while 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); if 1 == 1 { break; } } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_break_free_before_outer_auto",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); if 1 == 1 { defer ctx.Free(); break; } } return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_continue_frame_cleanup",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut i := 0; while i < 2 { mut ctx := os.Arena.New(); defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); i = i + 1; continue; } } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_continue_free_before_outer_auto",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut i := 0; while i < 1 { mut ctx := os.Arena.New(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); i = i + 1; if 1 == 1 { defer ctx.Free(); continue; } } return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_sibling_shadow_frees",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n if 1 == 1 { mut ctx := os.Arena.New(); defer ctx.Free(); } else { mut ctx := os.Arena.New(); defer ctx.Free(); } protected.consume(owner); ctx.Free(); return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_conditional_return_isolated",
+      "source": "import \"support.gst\" as protected;\nfunc run(flag: int) int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); if flag == 1 { return 0; } return 0;\n}\nfunc main() int {\n return run(1);\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_fallthrough_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc run() {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner);\n}\nfunc main() int {\n run(); return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_fallthrough_auto_after_free",
+      "source": "import \"support.gst\" as protected;\nfunc run() {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n}\nfunc main() int {\n run(); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_returned_owner_allocator_free",
+      "source": "import \"support.gst\" as protected;\nfunc invalid(ctx: &Arena, value: &protected.ProtectedValue[ctx]) protected.Guard[ctx] { mut owner := protected.acquire(value,41); defer ctx.Free(); return owner; }\nfunc main() int {\n return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_deferred_producer",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); defer ctx.Free(); mut value: protected.ProtectedValue[ctx]; value.value = 7; defer protected.consume(protected.acquire(&value,41)); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_unknown_free",
+      "source": "import \"support.gst\" as protected;\nfunc make_arena() Arena { return os.Arena.New(); }\nfunc main() int {\n mut ctx := make_arena(); defer ctx.Free(); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_late_unknown_field",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int {\n mut ctx := os.Arena.New(); mut other := os.Arena.New(); mut holder: Holder; holder.arena = ctx; defer holder.arena.Free(); mut alias := &holder; unsafe { (*alias).arena = other; } return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_continue_entry_allocator",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); mut i := 0; while i < 1 { defer ctx.Free(); i = i + 1; continue; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_conditional_field_origin",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut ctx := os.Arena.New(); mut other := os.Arena.New(); mut holder: Holder; holder.arena = ctx; defer holder.arena.Free(); if 1 == 1 { holder.arena = ctx; } else { holder.arena = other; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_fallthrough_entry_allocator",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); mut i := 0; while i < 2 { defer ctx.Free(); i = i + 1; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_fallthrough_fresh_iteration",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut i := 0; while i < 2 { mut ctx := os.Arena.New(); defer ctx.Free(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); defer protected.consume(owner); i = i + 1; } return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_immutable_arena_reassignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); alias = ctx; defer protected.consume(owner); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "Reassignment of immutable allocator binding 'alias' is strictly prohibited",
+      "original_baseline": false
+    },
+    {
+      "name": "native_late_scalar_storage_assignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); mut token := 11; defer os.LogInt(token); token = 33; return 0;\n}\n",
+      "mode": "native",
+      "stdout": "33\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_break_inner_cleanup_explicit_termination",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); break; } return 0; } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_break_free_direct_allocation",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); break; } mut item: Index[int,ctx] := os.ArenaAlloc(ctx); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ArenaUseAfterFree]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_fresh_field_receiver",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_late_field_initialization",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; defer holder.arena.Free(); holder.arena = os.Arena.New(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_copied_field_receiver",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); mut copied := holder; defer copied.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_unrelated_aggregate_reference",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\ntype Other struct { value: int }\nfunc main() int { mut unrelated: Other; mut alias := &unrelated; mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_nested_fresh_field_receiver",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\ntype Nested struct { inner: Holder }\nfunc main() int { mut holder: Nested; holder.inner.arena = os.Arena.New(); defer holder.inner.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_fresh_field_alias_write",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); mut alias := &holder; unsafe { (*alias).arena = os.Arena.New(); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_reference_before_field_creation",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; mut alias := &holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_write_after_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); mut alias := &holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_branch_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); if 1 == 1 { mut alias := &holder; } else { os.LogInt(0); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_nested_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\ntype Nested struct { inner: Holder }\nfunc main() int { mut holder: Nested; holder.inner.arena = os.Arena.New(); defer holder.inner.arena.Free(); mut alias := &holder.inner; return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_loop_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); while 1 == 1 { mut alias := &holder; break; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_unknown_factory_field",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc make_arena() Arena { return os.Arena.New(); }\nfunc main() int { mut holder: Holder; holder.arena = make_arena(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_late_unknown_factory_field",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc make_arena() Arena { return os.Arena.New(); }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); holder.arena = make_arena(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_repeated_observed_field_free",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); mut copied := holder; defer holder.arena.Free(); defer copied.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ArenaUseAfterFree]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_observed_field_live_owner_disjointness",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut ctx := os.Arena.New(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_observed_field_returned_owner_disjointness",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc invalid(ctx: &Arena, value: &protected.ProtectedValue[ctx]) protected.Guard[ctx] { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); mut owner := protected.acquire(value,41); return owner; }\nfunc main() int {  return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_arena_reference_retarget",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); mut alias := &holder.arena; unsafe { *alias = os.Arena.New(); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_raw_arena_reference_retarget",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); unsafe { mut alias := &holder.arena as *Arena; *alias = os.Arena.New(); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_generic_arena_reference_retarget",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc replace(destination: &Arena, other: Arena) { unsafe { *destination = other; } }\nfunc main() int {  return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[BrandIdentityMismatch]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_aggregate_reference_parameter_alias",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc invalid(holder: &Holder) { holder.arena = os.Arena.New(); defer holder.arena.Free(); mut alias := holder; unsafe { (*alias).arena = os.Arena.New(); } }\nfunc main() int { return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_raw_aggregate_parameter_alias",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc invalid(holder: *Holder) { unsafe { (*holder).arena = os.Arena.New(); defer (*holder).arena.Free(); mut alias := holder; (*alias).arena = os.Arena.New(); } }\nfunc main() int { return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_malformed_reference_argument",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc expose(holder: &Holder) { }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); expose(holder); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "Argument type mismatch for function 'expose'",
+      "original_baseline": false,
+      "forbidden_diagnostics": [
+        "[ResourceDeferredUnresolved]"
+      ]
+    },
+    {
+      "name": "unsupported_explicit_reference_parameter_call",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc expose(holder: &Holder) { }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); expose(&holder); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    }
+  ],
+  "internal_control_sha256": "0226adb1dd4b547982690b0ef343862b4ad12eacae0042ac7b96273e0037aadb",
+  "unqualified_fixture_attempts": [
+    {
+      "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
+      "reason": "Canonical immutable Arena binding contract prohibits the attempted assignment; old native expectation never qualified.",
+      "original_case": {
+        "name": "native_original_binding_assignment",
+        "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); alias = ctx; defer protected.consume(owner); return 0;\n}\n",
+        "mode": "native",
+        "stdout": "41\n",
+        "exit": 0,
+        "diagnostic": null,
+        "original_baseline": false
+      }
+    },
+    {
+      "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
+      "reason": "Possible implicit backedge is not excluded by current proof; explicit fallback termination retains the actual break cleanup-order oracle without assuming constant-folded control flow.",
+      "original_case": {
+        "name": "native_break_inner_auto_before_loop_free",
+        "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); break; } } return 0;\n}\n",
+        "mode": "native",
+        "stdout": "41\n",
+        "exit": 0,
+        "diagnostic": null,
+        "original_baseline": false
+      }
+    },
+    {
+      "status": "UNQUALIFIED original attempted fixture; not capability or oracle acceptance",
+      "reason": "VectorNew does not exercise a directly represented existing caller lifecycle hook here; frontend handshake admission is unqualified, ordinary comparison hits a separate source-route boundary. ArenaAlloc isolates actual selected loop-exit state propagation.",
+      "original_case": {
+        "name": "reject_break_free_continuation",
+        "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); break; } mut values: std.Vector[int,ctx] := std.VectorNew(ctx); values.Push(1); return 0; }\n",
+        "mode": "reject",
+        "stdout": null,
+        "exit": 1,
+        "diagnostic": "[ArenaUseAfterFree]",
+        "original_baseline": false
+      }
+    }
+  ],
+  "original54_cases_sha256": "ef229dbe96fd8c7bfb3f63785c9c4b41df9e392bb4e75a8824ef1f766624c066",
+  "literal_source_controls": [
+    {
+      "name": "original_inner_writes_outer_holder",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "literal_false_without_else",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if false { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(second,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "literal_false_with_else",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if false { holder.arena = first; } else { holder.arena = second; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "literal_true_with_else",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } else { holder.arena = first; } holder.arena.Free(); mut value := std.Clone(first,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "unknown_bool_parameter",
+      "source": "type Holder struct { arena: Arena } func probe(flag: bool) { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if flag { holder.arena = second; } defer holder.arena.Free(); } func main() { probe(true); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "named_bool_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut flag := true; if flag { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "comparison_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if 1 == 1 { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "uninitialized_unselected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut holder: Holder; if false { holder.arena = first; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "initialized_selected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut holder: Holder; if true { holder.arena = first; } holder.arena.Free(); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "nested_holder_shadow",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { mut holder: Holder; holder.arena = second; } holder.arena.Free(); mut value := std.Clone(second,\"live\"); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "exposure_before_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := &holder; if true { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "exposure_in_selected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { mut alias := &holder; } else { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "exposure_in_unselected_arm",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; } else { mut alias := &holder; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "indirect_write_before_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; mut alias := &holder; unsafe { (*alias).arena = second; } if true { holder.arena = first; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[ResourceDeferredUnresolved]"
+    },
+    {
+      "name": "selected_arm_terminates",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if true { holder.arena = second; return; } else { holder.arena = first; } defer holder.arena.Free(); }",
+      "expected_diagnostic": ""
+    },
+    {
+      "name": "call_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func yes() bool { return true; } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if yes() { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "cast_is_not_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if (true as bool) { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    },
+    {
+      "name": "integer_is_not_bool_literal",
+      "source": "type Holder struct { arena: Arena } func main() { mut first := os.Arena.New(); mut second := os.Arena.New(); mut holder: Holder; holder.arena = first; if 1 { holder.arena = second; } defer holder.arena.Free(); }",
+      "expected_diagnostic": "[BrandIdentityMismatch]"
+    }
+  ],
+  "diagnostic_precedence_controls": [
+    {
+      "name": "exit_0_prior_0_storage_0",
+      "index": "0",
+      "mode": 0,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_0_prior_0_storage_1",
+      "index": "1",
+      "mode": 0,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_0_prior_1_storage_0",
+      "index": "2",
+      "mode": 0,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_0_prior_1_storage_1",
+      "index": "3",
+      "mode": 0,
+      "prior_error": 1,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_1_prior_0_storage_0",
+      "index": "4",
+      "mode": 1,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_1_prior_0_storage_1",
+      "index": "5",
+      "mode": 1,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_1_prior_1_storage_0",
+      "index": "6",
+      "mode": 1,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_1_prior_1_storage_1",
+      "index": "7",
+      "mode": 1,
+      "prior_error": 1,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_2_prior_0_storage_0",
+      "index": "8",
+      "mode": 2,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_2_prior_0_storage_1",
+      "index": "9",
+      "mode": 2,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_2_prior_1_storage_0",
+      "index": "10",
+      "mode": 2,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_2_prior_1_storage_1",
+      "index": "11",
+      "mode": 2,
+      "prior_error": 1,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_3_prior_0_storage_0",
+      "index": "12",
+      "mode": 3,
+      "prior_error": 0,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_3_prior_0_storage_1",
+      "index": "13",
+      "mode": 3,
+      "prior_error": 0,
+      "valid_storage": 1
+    },
+    {
+      "name": "exit_3_prior_1_storage_0",
+      "index": "14",
+      "mode": 3,
+      "prior_error": 1,
+      "valid_storage": 0
+    },
+    {
+      "name": "exit_3_prior_1_storage_1",
+      "index": "15",
+      "mode": 3,
+      "prior_error": 1,
+      "valid_storage": 1
+    }
+  ],
+  "original54_cases": [
+    {
+      "name": "valid_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n defer protected.consume(owner);\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_reversed_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer protected.consume(owner);\n defer ctx.Free();\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_defer_before_automatic_cleanup",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "valid_immediate_consumption",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n protected.consume(owner);\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "valid_unrelated_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n if 1 == 1 {\n  mut ctx := os.Arena.New();\n  defer ctx.Free();\n }\n protected.consume(owner);\n ctx.Free();\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_inner_defer_outer_owner",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx];\n value.value = 7;\n mut owner := protected.acquire(&value, 41);\n if 1 == 1 {\n  defer ctx.Free();\n }\n protected.consume(owner);\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "valid_inner_automatic_outer_defer",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n if 1 == 1 {\n  mut value: protected.ProtectedValue[ctx];\n  value.value = 7;\n  mut owner := protected.acquire(&value, 41);\n }\n return 0;\n}\n",
+      "mode": "native",
+      "diagnostic": null,
+      "stdout": "41\n",
+      "exit": 0,
+      "original_baseline": true
+    },
+    {
+      "name": "invalid_return_before_inner_automatic",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n defer ctx.Free();\n if 1 == 1 {\n  mut value: protected.ProtectedValue[ctx];\n  value.value = 7;\n  mut owner := protected.acquire(&value, 41);\n  return 0;\n }\n return 0;\n}\n",
+      "mode": "reject",
+      "diagnostic": "[LinearResourceLeak]",
+      "stdout": null,
+      "exit": 1,
+      "original_baseline": true
+    },
+    {
+      "name": "native_alias_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); defer protected.consume(owner); return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_alias_reversed",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer protected.consume(owner); defer alias.Free(); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_early_return_allocator_shadow",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); if 1 == 1 { mut ctx := os.Arena.New(); defer ctx.Free(); return 0; } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_later_declaration_coordinate",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n protected.consume(owner); if 1 == 1 { defer ctx.Free(); mut ctx := os.Arena.New(); defer ctx.Free(); } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_break_frame_cleanup",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); defer ctx.Free(); while 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); if 1 == 1 { break; } } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_break_free_before_outer_auto",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); if 1 == 1 { defer ctx.Free(); break; } } return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_continue_frame_cleanup",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut i := 0; while i < 2 { mut ctx := os.Arena.New(); defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); i = i + 1; continue; } } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_continue_free_before_outer_auto",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut i := 0; while i < 1 { mut ctx := os.Arena.New(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); i = i + 1; if 1 == 1 { defer ctx.Free(); continue; } } return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_sibling_shadow_frees",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n if 1 == 1 { mut ctx := os.Arena.New(); defer ctx.Free(); } else { mut ctx := os.Arena.New(); defer ctx.Free(); } protected.consume(owner); ctx.Free(); return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_conditional_return_isolated",
+      "source": "import \"support.gst\" as protected;\nfunc run(flag: int) int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); if flag == 1 { return 0; } return 0;\n}\nfunc main() int {\n return run(1);\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_fallthrough_lifo",
+      "source": "import \"support.gst\" as protected;\nfunc run() {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner);\n}\nfunc main() int {\n run(); return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_fallthrough_auto_after_free",
+      "source": "import \"support.gst\" as protected;\nfunc run() {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free();\n}\nfunc main() int {\n run(); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_returned_owner_allocator_free",
+      "source": "import \"support.gst\" as protected;\nfunc invalid(ctx: &Arena, value: &protected.ProtectedValue[ctx]) protected.Guard[ctx] { mut owner := protected.acquire(value,41); defer ctx.Free(); return owner; }\nfunc main() int {\n return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_deferred_producer",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); defer ctx.Free(); mut value: protected.ProtectedValue[ctx]; value.value = 7; defer protected.consume(protected.acquire(&value,41)); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_unknown_free",
+      "source": "import \"support.gst\" as protected;\nfunc make_arena() Arena { return os.Arena.New(); }\nfunc main() int {\n mut ctx := make_arena(); defer ctx.Free(); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_late_unknown_field",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int {\n mut ctx := os.Arena.New(); mut other := os.Arena.New(); mut holder: Holder; holder.arena = ctx; defer holder.arena.Free(); mut alias := &holder; unsafe { (*alias).arena = other; } return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_continue_entry_allocator",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); mut i := 0; while i < 1 { defer ctx.Free(); i = i + 1; continue; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_conditional_field_origin",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut ctx := os.Arena.New(); mut other := os.Arena.New(); mut holder: Holder; holder.arena = ctx; defer holder.arena.Free(); if 1 == 1 { holder.arena = ctx; } else { holder.arena = other; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_fallthrough_entry_allocator",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); mut i := 0; while i < 2 { defer ctx.Free(); i = i + 1; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_fallthrough_fresh_iteration",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut i := 0; while i < 2 { mut ctx := os.Arena.New(); defer ctx.Free(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); defer protected.consume(owner); i = i + 1; } return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_immutable_arena_reassignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n mut alias := ctx; defer alias.Free(); alias = ctx; defer protected.consume(owner); return 0;\n}\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "Reassignment of immutable allocator binding 'alias' is strictly prohibited",
+      "original_baseline": false
+    },
+    {
+      "name": "native_late_scalar_storage_assignment",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New();\n mut value: protected.ProtectedValue[ctx]; value.value = 7;\n mut owner := protected.acquire(&value, 41);\n defer ctx.Free(); defer protected.consume(owner); mut token := 11; defer os.LogInt(token); token = 33; return 0;\n}\n",
+      "mode": "native",
+      "stdout": "33\n41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_break_inner_cleanup_explicit_termination",
+      "source": "import \"support.gst\" as protected;\nfunc main() int {\n mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); if 1 == 1 { mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); break; } return 0; } return 0;\n}\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "reject_break_free_direct_allocation",
+      "source": "import \"support.gst\" as protected;\nfunc main() int { mut ctx := os.Arena.New(); while 1 == 1 { defer ctx.Free(); break; } mut item: Index[int,ctx] := os.ArenaAlloc(ctx); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ArenaUseAfterFree]",
+      "original_baseline": false
+    },
+    {
+      "name": "native_fresh_field_receiver",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_late_field_initialization",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; defer holder.arena.Free(); holder.arena = os.Arena.New(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_copied_field_receiver",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); mut copied := holder; defer copied.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_unrelated_aggregate_reference",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\ntype Other struct { value: int }\nfunc main() int { mut unrelated: Other; mut alias := &unrelated; mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "native_nested_fresh_field_receiver",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\ntype Nested struct { inner: Holder }\nfunc main() int { mut holder: Nested; holder.inner.arena = os.Arena.New(); defer holder.inner.arena.Free(); os.LogInt(41); return 0; }\n",
+      "mode": "native",
+      "stdout": "41\n",
+      "exit": 0,
+      "diagnostic": null,
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_fresh_field_alias_write",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); mut alias := &holder; unsafe { (*alias).arena = os.Arena.New(); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_reference_before_field_creation",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; mut alias := &holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_write_after_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); mut alias := &holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_branch_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); if 1 == 1 { mut alias := &holder; } else { os.LogInt(0); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_implicit_reference_call",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc expose(holder: &Holder) { }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); expose(holder); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_nested_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\ntype Nested struct { inner: Holder }\nfunc main() int { mut holder: Nested; holder.inner.arena = os.Arena.New(); defer holder.inner.arena.Free(); mut alias := &holder.inner; return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_loop_reference_exposure",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); while 1 == 1 { mut alias := &holder; break; } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_unknown_factory_field",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc make_arena() Arena { return os.Arena.New(); }\nfunc main() int { mut holder: Holder; holder.arena = make_arena(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_late_unknown_factory_field",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc make_arena() Arena { return os.Arena.New(); }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); holder.arena = make_arena(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_repeated_observed_field_free",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); mut copied := holder; defer holder.arena.Free(); defer copied.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ArenaUseAfterFree]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_observed_field_live_owner_disjointness",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut ctx := os.Arena.New(); mut value: protected.ProtectedValue[ctx]; value.value = 7; mut owner := protected.acquire(&value,41); mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_observed_field_returned_owner_disjointness",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc invalid(ctx: &Arena, value: &protected.ProtectedValue[ctx]) protected.Guard[ctx] { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); mut owner := protected.acquire(value,41); return owner; }\nfunc main() int {  return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[LinearResourceLeak]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_arena_reference_retarget",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); mut alias := &holder.arena; unsafe { *alias = os.Arena.New(); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_raw_arena_reference_retarget",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); unsafe { mut alias := &holder.arena as *Arena; *alias = os.Arena.New(); } return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "reject_generic_arena_reference_retarget",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc replace(destination: &Arena, other: Arena) { unsafe { *destination = other; } }\nfunc main() int {  return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[BrandIdentityMismatch]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_aggregate_reference_parameter_alias",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc invalid(holder: &Holder) { holder.arena = os.Arena.New(); defer holder.arena.Free(); mut alias := holder; unsafe { (*alias).arena = os.Arena.New(); } }\nfunc main() int { return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    {
+      "name": "unsupported_raw_aggregate_parameter_alias",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc invalid(holder: *Holder) { unsafe { (*holder).arena = os.Arena.New(); defer (*holder).arena.Free(); mut alias := holder; (*alias).arena = os.Arena.New(); } }\nfunc main() int { return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    }
+  ],
+  "unqualified_reference_fixture_attempt": {
+    "status": "UNQUALIFIED historical attempted implicit-reference control",
+    "original_case": {
+      "name": "unsupported_implicit_reference_call",
+      "source": "import \"support.gst\" as protected;\ntype Holder struct { arena: Arena }\nfunc expose(holder: &Holder) { }\nfunc main() int { mut holder: Holder; holder.arena = os.Arena.New(); defer holder.arena.Free(); expose(holder); return 0; }\n",
+      "mode": "reject",
+      "stdout": null,
+      "exit": 1,
+      "diagnostic": "[ResourceDeferredUnresolved]",
+      "original_baseline": false
+    },
+    "actual_primary_diagnostic": "Argument type mismatch for function 'expose'",
+    "limitation": "Ordinary calls require an explicit reference argument; the previous cleanup diagnostic was secondary."
+  }
+}

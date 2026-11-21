@@ -141,6 +141,27 @@ def require(condition: bool, message: str) -> None:
         raise Error(message)
 
 
+def check_directory_inventory(actual: list[str], departed: list[str]) -> None:
+    # Preserve the original authority and its ordered departure filtering.
+    # The selected fixture contract permits exactly one hash-validated addition.
+    from phase26_2_cleanup_witnesses import directory_inventory_addition
+    for path in departed:
+        require(path not in actual,
+                f"Patch 25.10 records {path} as leaving the directory "
+                "vocabulary, but it still speaks it")
+    expected = [path for path in DIRECTORY_VOCABULARY_FILES
+                if path not in departed]
+    original, successor = directory_inventory_addition()
+    require(expected.count(original) == 1,
+            "selected directory inventory anchor drifted")
+    require(successor not in expected,
+            "selected directory inventory addition drifted")
+    expected.insert(expected.index(original) + 1, successor)
+    require(actual == expected,
+            "compiler-owned directory vocabulary inventory drifted: " +
+            repr(actual))
+
+
 def compiler_gst_files() -> list[Path]:
     return sorted((ROOT / "compiler").rglob("*.gst"))
 
@@ -348,15 +369,7 @@ def validate() -> dict:
         "phase2510_emitter_deletion", {}).get(
             "frozen_inventory_departures", {}).get(
                 "directory_vocabulary", {}).get("departed_owner_files", [])
-    for path in departed_directory_files:
-        require(path not in actual_directory_files,
-                f"Patch 25.10 records {path} as leaving the directory "
-                "vocabulary, but it still speaks it")
-    expected_directory_files = [path for path in DIRECTORY_VOCABULARY_FILES
-                                if path not in departed_directory_files]
-    require(actual_directory_files == expected_directory_files,
-            "compiler-owned directory vocabulary inventory drifted: " +
-            repr(actual_directory_files))
+    check_directory_inventory(actual_directory_files, departed_directory_files)
 
     typechecker = TYPECHECKER.read_text(encoding="utf-8")
     inert_call = ('env_register_inert_resource_declaration_metadata(env, '
@@ -437,8 +450,12 @@ def render(authority: dict) -> str:
         "linear/destructor metadata. Its source compatibility, explicit close",
         "behavior, cleanup scheduling, and diagnostics are unchanged.",
         "",
-        f"The exact directory vocabulary cohort contains "
-        f"{len(authority['directory_vocabulary_files'])} compiler files. The",
+        f"The historical directory vocabulary authority contains "
+        f"{len(authority['directory_vocabulary_files'])} compiler files. Its",
+        "recorded departures remain enforced. The selected Phase26 cleanup",
+        "fixture contract adds only the hash-validated scoped unbound-directory",
+        "successor immediately after its preserved original; it does not change",
+        "the historical authority or permit discovered files implicitly. The",
         "inventory guard derives both cohorts from live compiler sources and",
         "rejects any unclassified declaration or directory use site.",
         "",

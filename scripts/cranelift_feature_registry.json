@@ -48078,21 +48078,136 @@
           "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]"
         }
       ],
+      "defer_order_native_invocations": [
+        {
+          "path": "scripts/phase26_2_deferred_allocator_order.py",
+          "line": 404,
+          "recipe": "none",
+          "compiler_token": "python_argv",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]"
+        },
+        {
+          "path": "scripts/phase26_2_deferred_allocator_order.py",
+          "line": 433,
+          "recipe": "none",
+          "compiler_token": "python_argv",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(INTERNAL)]"
+        }
+      ],
+      "cr16_scoped_fixture": {
+        "contract_version": "phase26_2d_cr16_scoped_compile_only_v1",
+        "expectation": "compile_only_never_execute",
+        "safe_raw_calls_added": 0,
+        "added_call_site": {
+          "path": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst",
+          "role": "stdlib_s1_9_scoped_raw_double_unlock_compile_only",
+          "lock_calls": 0,
+          "unlock_calls": 1
+        },
+        "source_digest": "3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e"
+      },
       "changed_files": [
         {
           "path": "compiler/typechecker.gst",
           "previous_digest": "54f9d3b21d0f28c7819de8bf4254daa643fbd5829340c2c0a69ae3d586441d9f",
-          "current_digest": "2824c01275dc525448c55cb8a638c860e1fba8f630093ab3f601ec06aaa27889"
+          "current_digest": "c63ef6d5d45d839c9495390192446aea8d88184a2ab9f8a5eea6a48f16e58e01"
         },
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "0d4604a62a25fbacedba7a0c34db4bbcd4169a5d4b64895b0741dffc2c42b9f9"
+          "current_digest": "0a48efa76a6d307398edc194e76957ae77f0c6865bb778b93b3a266d054455f4"
         },
         {
           "path": "justfile",
           "previous_digest": "1a394ba10c83831838cc65e3b889fca90dc9238ffb8152522fa4b2111621d55b",
-          "current_digest": "ebddbb5a2b954c90d1a3388048c5033a6b8bf6b268117edbfdf45a8ad2c7466a"
+          "current_digest": "790372b7ab463cd105ae98434a5ff4652fa4b52400fc40482da6781d2ca2d81a"
+        },
+        {
+          "path": "scripts/phase24_cr15_derivation.py",
+          "previous_digest": "df2e7b2d0bc10e44bc31535a944e38919497a6777bcfcdba877d74f4cc47961f",
+          "current_digest": "a1442d9d879f25f1745f8a21876cca81e494aab8111176dad4beabc6a13c729a"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE24_CR15_DERIVATION.md",
+          "previous_digest": "1302bf5478b6bc9a50fc95468f53a509c52467aaa2c572a86e6a4d5d97d21bb9",
+          "current_digest": "bfa1be9e757a7c3e7f93b3e3f49de59793900a3b16b5fdbff2389f3a3bd577ec"
+        },
+        {
+          "path": ".github/workflows/phase24-cr15-derivation.yml",
+          "previous_digest": "9acbdfe2ff96bb1ebfb2a4b4f839db081ffc425d2814863bc5897d19e45640ff",
+          "current_digest": "9b86286f37390328745efba52e220b5008bc6743e503f1ca2929349411264360"
+        },
+        {
+          "path": ".github/workflows/phase24-cr15-qualification.yml",
+          "previous_digest": "cf9745a25df539a502f75da62a4c24bf0e2d14243b73d65e87aeb7a1efc9857c",
+          "current_digest": "aa88f47b1ab4e94ee592d945d43daec7972b243f553cb174a1eb580dad3eda2d"
+        },
+        {
+          "path": "scripts/phase20_unsafe_mutex_migration.py",
+          "previous_digest": "d8da255ba0ca89c075f911850d5a86bf92e6c3e1c734f7ec70af1e0b852e80d8",
+          "current_digest": "fcb88d8f5a622549a98642afa111adf056161700ebd0a589e297c1b11ca67259"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE20_UNSAFE_MUTEX_MIGRATION.md",
+          "previous_digest": "01dd1107f7fd93c129794d007a0c58b1d0575fdfc4ec67f77c716d9123d06a0d",
+          "current_digest": "349efa6970d192a249b2c6fe6ab09a158c819e5210e626168750d803be9a239f"
+        },
+        {
+          "path": "scripts/stdlib_s1_mutex_guard_scope_parity.sh",
+          "previous_digest": "46a248c2f81afa9c3c655e3c8ff834d96bc5942810de33ef6af3ee52af2d18d6",
+          "current_digest": "321cbd085eb8752182b9d957930646279b511aacbee9dc977531204623256bf3"
+        },
+        {
+          "path": "docs/STDLIB_MUTEX_GUARD_SCOPE.md",
+          "previous_digest": "04d81b917095e7bc24297a47af35fbc924d887ea061820aa394cd40cc122b535",
+          "current_digest": "69288dad85920336cdb53754cc58ae5ba7ec3e14db4cb421f4041b06ba958c67"
+        },
+        {
+          "path": ".github/workflows/stdlib-s1-mutex-guard-scope.yml",
+          "previous_digest": "16e4b2d2a7fb6f2f5cf2ef3b48378488b98829d97978f0523487df3f23440fe7",
+          "current_digest": "26e54d024080c198d2cc74f0f92e555610bea4becc00a6ef4682ca2ff4ddad64"
+        },
+        {
+          "path": "scripts/phase24_cr15_qualification.py",
+          "previous_digest": "13fa77156c2aa97113fc3303460f0ad1b0db5ac3d6ce55c9908ff11179aeddc1",
+          "current_digest": "22829f79a3aeacffa8907f699e73db41dc84895ab43e115dc16eb6856c6d0042"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md",
+          "previous_digest": "4e4bebb53af1d8376672b1fc59f2eb49813bf37fd8455f839a8ffccb0d5237e4",
+          "current_digest": "c140fc43bb176bd5028a0589a1cdb4ddb878a20c7337f76476ae4433c0da43ba"
+        },
+        {
+          "path": "scripts/phase20_resource_acquisition.py",
+          "previous_digest": "74926ed7c1d0f4cd03a19febc641d09a98a9f83e57af28af1c62526c7e4828f7",
+          "current_digest": "e5d9e920ffbc5e402cbdb8d678a27e80677ea663b08ac402e31d922a702b7b75"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE20_RESOURCE_ACQUISITION_OBLIGATIONS.md",
+          "previous_digest": "357f69e8677975fb42382beae2c721527533ee88f90da797f2f9802582a88a19",
+          "current_digest": "ea11c27ab70da1041b9e35e9d4c59848a5734851aa3a2c1636f51946118a8dda"
+        },
+        {
+          "path": "scripts/phase20_resource_declaration_migration.py",
+          "previous_digest": "12482b955033311660a206bb282879ad50fc0cc33c6a5e7099606dc007c3df75",
+          "current_digest": "17e6618e2e17c787b931449b75982e3f9680e7295121c61c8feda21b5d0c43b8"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE20_RESOURCE_DECLARATION_MIGRATION.md",
+          "previous_digest": "bd339fd678d0a206c9e5b18ff6134aeb3902186108e743224b06abdcdd0c1d58",
+          "current_digest": "d0613af4f501742ca2b49e7dca4ac998897794455ca29b6292670f7cbd1ed4bf"
         },
         {
           "path": "scripts/cranelift_test_levels.json",
@@ -48107,12 +48222,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "9cd6013ba56a5a16727666acd36d30f425f237e9d7a4c766126de9ef69e63f86"
+          "current_digest": "c92e92b6cacc3a33436573f7ee7abfa0fbb6ce5a5ddc85afcb609f9c4e9d0d41"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "1a5b5d12b45e452283f386e8d343df2dcdc04db41ff9cde71cefbf8207e3d1ae"
+          "current_digest": "36563e7f02cb20bc208f4c267e8a6ddd7739b17f9ba92aa36cee9abef571c607"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48132,12 +48247,12 @@
         {
           "path": "scripts/phase26_predecessor_data.py",
           "previous_digest": "07d1675c25930101affe9ac515ce5d676632511b69be04db88cfc724c111bc2b",
-          "current_digest": "ca2471330d60edc16de486d11272b77c8c866a0161963a4a3e3666b222beef37"
+          "current_digest": "84b192fd4c481ba1bc5560519d4e8024181f0b297e16bff8a8bea1a1c7c7ccea"
         },
         {
           "path": "scripts/phase26_production_toolchain.py",
           "previous_digest": "9078c812536450808d1ab85fd84fcd2728e5fa62b44678c1320e5571480f9dd6",
-          "current_digest": "272148c432ba23e5e2ba536b58ac8a6936db59346b64ff8d20104632d8dc3473"
+          "current_digest": "f0fd32efa2f9ce154d3adf828cb43373df12addadb23fba945ce70de10b9433d"
         },
         {
           "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
@@ -48152,7 +48267,7 @@
         {
           "path": "scripts/phase22_opening.py",
           "previous_digest": "4cf397725424e8842dd3584859d492bc16f0878d61cceb18ae28e0ebeb0b2e6f",
-          "current_digest": "f62dc175efcbf9a4ea367a53709828dbfebe432b33d57003e31ac689ac094d49"
+          "current_digest": "ae7584baedec4f35f3537decba6b8de2ae4b19b17b55c3f53e4052ae96b6cc19"
         },
         {
           "path": "scripts/phase26_release_paging.py",
@@ -48169,6 +48284,86 @@
         {
           "path": "compiler/phase26-2-defer-lexical/predecessor-worker.json.gz",
           "digest": "ce9b0a78b3782d868ce47ab405382461411809588f45b265b1bc3c6a5267619f"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cr16-cleanup-predecessor-v1.json.gz",
+          "digest": "615c00b15036c180c25adac8227c8f09d2260439a3ddf962966df7fdb1366e07"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cr16-workflow-predecessor-v1.json.gz",
+          "digest": "d176fc21ad94471fac5229991898a5fb368194464c7a71d07432f6a93196c9d4"
+        },
+        {
+          "path": "scripts/phase26_2_cr16_workflow.py",
+          "digest": "a963cf66799cc714ee168ad415e4ffc038215e39f5217f9a3da0d8182e5edf21"
+        },
+        {
+          "path": "scripts/phase26_2_cr16_cleanup_fixture.py",
+          "digest": "a336d975be0d08ec5ace6d169eaced4673a68355123c44e1bc2cfa3c4fcf3898"
+        },
+        {
+          "path": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst",
+          "digest": "3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e"
+        },
+        {
+          "path": "scripts/stdlib_s1_mutex_guard_scope_refusal.py",
+          "digest": "f180d9c814848bf25a10c75934c286be49d3a818ab1ecf055360126fd07c6c9d"
+        },
+        {
+          "path": "scripts/stdlib_s1_mutex_guard_scope_refusal_test.py",
+          "digest": "acae6043d8bd684e96ad01136978e673de8a437473f6ef35303eb4bab10de2a7"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v1.json.gz",
+          "digest": "c6984ca239f79c98cb66f9407ddd8e654c159f735e3381eae12cc878b697136e"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v2.json.gz",
+          "digest": "64c759fd6afa3d2f26b4fff3ba7b2e51cb255e264e06588ba9720419d1ebdce1"
+        },
+        {
+          "path": "scripts/phase26_2_cleanup_witnesses.py",
+          "digest": "7147d7be371603c56ae0e83d7ecf8c2c32b75bce8f4cba876244bd240aded436"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json",
+          "digest": "155dd067deb8e2dadff8a7975a18bf40c9b8418237cc81723ec86fbccbc7de5e"
+        },
+        {
+          "path": "tests/phase24_cr15_qualification_positive_scoped.gst",
+          "digest": "86c7274df52a8629ed237190b5b33f46687e0af7698fbd50411ece2d76b5884d"
+        },
+        {
+          "path": "tests/phase24_cr15_qualification_explicit_scoped.gst",
+          "digest": "4400173c7a651bf8735fcd9f91ca816fbc1f43edeaa07502ab9389e36815517f"
+        },
+        {
+          "path": "compiler/future/p20_issue106_unbound_directory_current_scoped.gst",
+          "digest": "29340e3c72bb367fe7d17d09959ad0ec0d5f0fa5abf949cd55659f0dab14fdd7"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cr15-cleanup-predecessor-v1.json.gz",
+          "digest": "70e6aa282b01eea9f43f1fe5b7971e96e208792039e1198baf6a5e912e584c7f"
+        },
+        {
+          "path": "scripts/phase26_2_cr15_cleanup_fixtures.py",
+          "digest": "76c7f0e4244ff5652cdb33db7d9bd47955aa2bd2623fe578812f38b07c918952"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cr15-cleanup-fixtures.json",
+          "digest": "2a59f7a88fff841d6d6c6afbf0e31df2d4e2d7b8996024e19f6c3227f287ea17"
+        },
+        {
+          "path": "tests/phase24_cr15_protected_resource_native_inferred_scoped.gst",
+          "digest": "0351b7e536895110bcabf74060b89251929a82f900e6b7abfcc6d72577ee2a81"
+        },
+        {
+          "path": "tests/phase24_cr15_protected_resource_native_explicit_scoped.gst",
+          "digest": "221863e61a792ea8e85abffbce77a99d185684e3a1160a5bb268170339a61779"
+        },
+        {
+          "path": "tests/phase24_cr15_protected_resource_native_second_type_scoped.gst",
+          "digest": "26ff6c4c323b17be1627055fd0180cb52f0cc4f0bd2d39b64dd15728e5385aaf"
         },
         {
           "path": "compiler/phase26-2-defer-lexical/predecessor-worker-and-invocation-v2.json.gz",
@@ -48193,6 +48388,22 @@
         {
           "path": "compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md",
           "digest": "94476fa0b3dc62a255fbf3f6bb88018dd407c4530e330e7b38e602c870ff6e37"
+        },
+        {
+          "path": "scripts/phase26_2_deferred_allocator_order.py",
+          "digest": "a2efad8daf28525e4188f2998b280c3780bf4cdc8604dc8c75c12a4bb120b01e"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cases.json",
+          "digest": "97fcf264f895ffa8eda5b0fbfa3a568b10eedcb56a1451f6a32a3464fbda3ca7"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/observation_facts.gst",
+          "digest": "0226adb1dd4b547982690b0ef343862b4ad12eacae0042ac7b96273e0037aadb"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md",
+          "digest": "07d664a4987a90559ef16e6c43d4ae9c417e64742dff9c876260838c47ce6fc7"
         },
         {
           "path": "compiler/phase26-2-allocator-identity/predecessor-baseline.json.gz",
@@ -48224,7 +48435,11 @@
         },
         {
           "path": "scripts/phase26_2_allocator_predecessor_controls.py",
-          "digest": "145ad4beb71c6e603881df0a3f2036687301f923b60807a2fa9500aefdeca14d"
+          "digest": "7e1b0613276490cef3b2fb76f10bd47b388fe3f69f8e448c22a49f0f4987f3a2"
+        },
+        {
+          "path": "scripts/phase26_2_predecessor_index_controls.py",
+          "digest": "bda302d40aaec4a567ec433a840262abc217e064a1d35882784666724faebf38"
         },
         {
           "path": "scripts/phase26_2_allocator_lifecycle_evidence.py",
@@ -48232,7 +48447,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "2bfed6a0686698750b151ba76e8b84047203be4b0484e001df4e004115a15bae"
+          "digest": "3b3cfa4de80b5eeae14d12ec048771078bae08ce735fd0a0cbb0633467632a8a"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48256,7 +48471,7 @@
         },
         {
           "path": ".github/workflows/phase26-2-allocator-identity.yml",
-          "digest": "4f6b05c065768e8890073e772edd4fde03c0cea7af6f6db8af5e15792012ee35"
+          "digest": "4d0be7f41593211fd6fd37671bfd5fb248fa3bbfe81e30afa702a1d4c35b2abc"
         },
         {
           "path": "compiler/CRANELIFT_PHASE26_2_ALLOCATOR_IDENTITIES.md",
@@ -48280,7 +48495,7 @@
         },
         {
           "path": "scripts/phase26_production_toolchain_controls.py",
-          "digest": "e1c6be561f0af0f3ea7b4e407d81044c7b4d43e50b4af968619e089fe261ddfa"
+          "digest": "20e79df6009279a3c17ebc2c810dfcdd9bf16efa6ca0fbea6d24f07e9bd500f8"
         },
         {
           "path": "compiler/experiments/cranelift/production/ci-toolchain-compatibility.json",
@@ -48288,20 +48503,20 @@
         }
       ],
       "owned_text": {
-        "text": "a57fdb6b7396f8749f0c1cdb321fdfe1d1bfdd47c0ea40a522e3654eccd8bcc0",
-        "r4_text": "6e404d57fbe8e27ec026228ca5b4093c71f811b898a4e55c80f02ee90cff42af"
+        "text": "770ddbc5bb0d8f41bf5d45b2da5f527ee9d6d2b0b8848de64f93cad335c885ff",
+        "r4_text": "b5b5a5da354d3b6eb748ef3826fb40bb39c4f227b28ebb712603e7e9638af9f6"
       },
       "projections": {
-        "r4_text": "577c97f4f6cbace5bf244115aee892592f5ff3b5801db774736a5aadadc82565",
-        "spelling": "91c9c7e028b304542e0577bd02be2a22d576c48aa1997631169d9218856c750c",
-        "filename": "8f33c3c68148a40f6215768e282a245bfa7bbeb7424fdbe200132d5f8043edd6",
-        "r3_record": "fce38df94e4a41ad0037a7cb90c5784491f007fb87560144fcfc97603682aedc",
+        "r4_text": "2b38ec1d13eeb2f7cc3349452b3e2ad781cc5cbb724cc9fb8b606befec15d16c",
+        "spelling": "98df650645f938f6036aa4154ca262b0c2ae58f4016104feec3b23eecb46c90e",
+        "filename": "336aa6d87ff7d9667161e0481a7a246eb87c413db8738ecf1933e7c8ae13f993",
+        "r3_record": "d391ada2ff97eff6fd1cc19f286984a98f1fd3ea6c30d8f971c042b86e7a6a0c",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "2b14244ef3c021a9935b71b0eaed14122f6864ab619b4a24cf60b31c221383e7",
-        "text": "992bd7a0727316c1ee8934ec9585cfc8e6c8ee1ec1e76315dc27719d998c0f99"
+        "r4_record": "98be0ebadc648b5b4717d14ac55c56c1c01d416bebf9e136351e6a5655004b97",
+        "text": "71ae3f7d042f910d0d41e51f87db0bf305f77f3c72d9b220454d5e554a900190"
       },
-      "spelling_render_current_digest": "cf2434f283f40edaf871e3a9399400d1f4cb2e25929233168afe129768ffb3a8"
+      "spelling_render_current_digest": "a8076c7620ceaeb69ba818fa1576317ff992be95e046b95d8b886009e97680b0"
     },
     "production_epoch2_renewal_successor_v1": {
       "predecessor_main": "9df2eb10291caa6a76e5cc1c2c20a7488a54e67d",

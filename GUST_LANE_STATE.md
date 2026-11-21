@@ -1,3 +1,30 @@
+# Cranelift ACTIVE selected remaining cleanup-witness amendment — 2026-11-20
+
+The operator selected exactly the two CR15 qualification fixtures and the
+unbound-directory counterpart. This prospectively supersedes the preceding
+three-derivation-only boundary for these three witnesses. Preserve their original
+bytes and historical positive expectations as unqualified; require compile-only
+cleanup refusals and route positive checks to separately scoped successors with
+all prior outputs and negative checks. No compiler/resource/MIR/ABI/Stdlib-helper
+or OD23 semantics change. The B8 source61/full production-public/R5FP/strict104
+and five-component checkpoint is retained as prior evidence. Its frozen jobs are
+reaped; no pass automatically qualifies amended bytes. Complete additive
+pins/closed predecessors/inversions, committed reviews, current qualification
+and own exact-head CI/reviews/rules/merge. Full26.2–26.6/all20 remains active.
+
+---
+
+# Cranelift ACTIVE selected three-fixture CR15 amendment — 2026-11-20
+
+The operator selected only the three reviewed CR15 cleanup fixtures. Resume the
+same owner/worktree; prospectively invalidate the retained idle terminal for
+this bounded source/qualification work. Preserve all original sources and old
+proofs; no earlier pass qualifies this successor. The directory counterpart
+remains unselected and its owning/dependent gates blocked. No compiler/runtime/
+Stdlib/resource/OD23 semantic change or new CI wave is inferred.
+
+---
+
 # Cranelift ACTIVE native deferred lexical bindings — 2026-11-19
 
 PR619 is checked merged at59ef3f3f; its completion evidence remains historical.
@@ -1039,3 +1066,156 @@ claimed. Exact partial tools and failure evidence are preserved. The same owner
 is implementing and enrolling bounded complete-scan recovery and refusal
 controls, with product4GiB quotas, deadlines, source/native/R5/FP/CI gates and
 OD23 boundaries unchanged. Fresh committed-source qualification remains pending.
+
+## 2026-11-19 — deferred allocator-order validation resumed
+
+The native lexical-storage prerequisite merged in PR622 as `1717c32f`;
+qualified/main trees match, all155 eligible PR workflows plus Trusted and seven
+owning artifacts passed. Its tools and mutable qualification records are
+preserved and checked before replacement. The same physical worktree and
+startup symlink now host `codex/phase26-2-deferred-allocator-validation` from
+that actual main. Any earlier written wait is prospectively invalidated.
+
+The selected current work is frontend validation of existing defer/automatic
+cleanup allocator order, with lexical storage and late-value observations.
+The original unsafe compile-only admissions remain failures; no unsafe witness
+was executed. Current correction reviews, controls, enrollment, qualification,
+CI and merge are pending. Full Phase26.2–26.6/20requirements remains active;
+OD23 remains OPEN/unselected and historical first-release DONE stays frozen.
+
+The first current-source bootstrap on `62bdba70` exited1 on the new helpers'
+checked-result payload, AST variant-access and stored-Scope-write diagnostics.
+Its source/limits stayed stable, no OOM occurred, and no replacement compiler
+was produced. Failed logs and source checkpoint remain retained. The owning
+correction uses existing nested checks/guard payloads, the established unsafe
+AST-tag visitor boundary and explicit `ctx.Set`; all source/native oracles,
+resource caps, product4GiB limits and qualification gates remain unchanged.
+
+The corrected bootstrap and source32/internal4 component matrix now passed.
+The matrix executed15 positive native cases and refused17 negatives before
+worker entry, preserving all original eight controls and three unqualified
+fixture attempts. Source compile head8c4ee1 and validation head252d92 are
+explicitly distinguished by exact compiler-input equivalence. Additive own
+recipe/workflow/registry integration is in progress. Final committed-source
+full pins, protected4GiB R5/native fixed point, strict104/180s, CI and merge
+remain pending; no component pass closes a canonical Phase26 row.
+
+The integrated0be source58 checkpoint passed, but its cold full qualification
+stopped at the unchanged Stdlib clone-destination guard with an early
+ResourceDeferredUnresolved diagnostic for a fresh Arena field. The actual
+partial tools, redirected guard outputs and failure are preserved separately;
+later native/R5/fixed-point stages did not run. The same owner is correcting
+physical receiver versus immutable dependency proof, with conservative aggregate
+reference exposure and additive controls. Previous component/static passes are
+historical checkpoints; this successor requires fresh reviews and qualification.
+
+The eda75f proof-separation checkpoint passed its actual source-bound bootstrap,
+the unchanged clone-destination guard, all54 controls (20 native executions and
+34 expected frontend refusals), and internal observation assertions. Actual
+source/output/tool bytes were independently checked. Additive generation wrote
+the exact three intended metadata outputs, then its outer recorder failed on a
+missing output-allowlist field. That original failure remains unchanged. A new
+read-only reconciliation passed the real registration validator and complete
+source/pin/foreign-byte checks without rerunning generation. Final committed
+source58, protected4GiB production/public R5, native fixed point, strict104,
+current regressions, CI and merge remain mandatory and pending.
+
+The final2a source59 checkpoint passed all commands with stable sources. Its
+protected cold renewal/build/package and unchanged Arena.Free/Stdlib clone
+checks passed, but no full qualification completed. Exact disabled-driver
+stderr and isolated host-context harness failures were preserved and corrected
+prospectively. Old inactive guard outputs were moved intact before rerunning
+the unchanged owning workflow. That workflow passed45 source cases and the
+original12 plus presentation4 assertions, then failed one original primitive18
+acceptance: `inner_writes_outer_holder`. All17 other primitive cases passed.
+
+The actual failure and matrix are preserved; all four installed tool bytes were
+verified against existing immutable retained archive members before any future
+replacement. The same owner is correcting literal-Bool physical observations
+only, retaining conservative taint/resource/lifecycle joins and every existing
+case expectation. The successor is unqualified and all earlier2a gates remain
+historical. Committed reviews, enrollment, current bootstrap/native/strict104,
+protected4GiB R5/public/fixed point, authoritative CI and merge remain required.
+Full Phase26.2–26.6/20requirements stays active; OD23 stays OPEN/unselected.
+
+The bd48 literal correction passed its current-source bootstrap and physical
+tool/source check. Actual focused execution restored all18 unchanged primitive
+controls, the unchanged clone guard and all54 order rows. The new batched
+internal source fixture then exited1 with fixed thread-local scratch exhaustion
+after three snapshot groups. No full component or production pass is claimed.
+The same owner is isolating those exact18 source checks per process, retaining
+the default snapshot groups and adding explicit argument refusals. Compiler
+logic, runtime scratch and all resource/test budgets remain unchanged. The failed
+unit, source and outputs stay retained; fresh validation and review remain due.
+
+The final6ecbe source59 and genuine protected4GiB production/public/R5/native
+fixed-point job passed, with independent physical verification. The subsequent
+component job passed allocator18, then failed exact frozen CR15 nominal parity:
+an unchanged TypeMismatch was followed by a new secondary LinearResourceLeak.
+Resource, owning4 and strict104 were not run by that failed job. Its actual
+exit1 and raw evidence remain preserved. No publication or CI observer exists.
+
+The same owner is correcting diagnostic precedence only: a pre-existing compiler
+error skips the new deferred-order simulation without changing diagnostics or
+publishing cleanup facts. Clean entries still check all orders. Direct internal
+controls cover prior-error and clean invalid/valid paths in all four exit modes.
+All original54/source18/primitive18 and frozen CR15 expectations remain unchanged.
+Committed reviews, additive enrollment, fresh current-source/native/product/FP
+qualification and normal CI/merge remain required. Full Phase26 stays active;
+OD23 remains OPEN/unselected, and earlier passes do not qualify this correction.
+
+The95f2 correction's focused static checks passed. Its new unit compiled with
+the preserved qualified tools, then exhausted fixed TLS scratch before output.
+That actual exit1 is retained; no current compiler or end-to-end CR15 pass is
+claimed. The same owner is isolating the same16 tuples in registered independent
+unit invocations, preserving all assertions/default groups/original18 controls
+and adding malformed-argument refusals. No compiler logic, runtime or resource
+budget changes accompany this fixture correction. Fresh committed review and
+current-source qualification remain pending; no CI observer or publication.
+# Selected fixture-only amendment resumed — 2026-11-20
+
+The operator selected the reviewed original54 fixture amendment. The external
+bounded authority wait is prospectively invalidated. Exact54 original objects
+and the failed F2 matrix remain preserved; the successor has53 unchanged active
+cases, a malformed-call primary diagnostic check and a valid explicit-reference
+cleanup refusal. Compiler code and diagnostic precedence remain unchanged.
+Fresh focused controls, committed review, additive enrollment and all mandatory
+current-source/native/product/public/R5FP/exact-head CI/merge gates are pending.
+Full26.2–26.6/20requirements remains active; OD23 stays OPEN/unselected.
+
+# Selected three CR15 fixtures and bounded census diagnosis — 2026-11-20
+
+The operator separately selected only the three derivation-fixture amendment.
+All three originals remain byte-identical compile-only refusals; separate
+supported inner-scope successors passed the focused owning compilation checks.
+The final4add source61 census was reaped with inner124/work1 at its original
+3600-second outer deadline after29 passes. Source/limit/output integrity stayed
+valid; this is not a complete census or native/product qualification pass.
+The finite static-validator profile finished0 and identified repeated runner
+parsing as one observed cost. The same owner is implementing/reviewing a narrow
+parser-result cache with live-file and physical-authority checks retained.
+All61 commands, current native/public/product/R5FP and publication gates remain
+mandatory. No live job or CI observer; the separate directory amendment remains
+unselected. No compiler, resource, ABI, quota or deadline change is selected.
+
+
+## Cranelift current continuation — 2026-11-20 directory inventory correction
+
+ACTIVE same owner/worktree. Current72 census ended62/63 PASS, one exact
+Phase20 directory-vocabulary inventory failure, actual work reaped1/source stable.
+The reviewed additive enrollment preserves historical authority/departures and
+permits only the selected scoped successor. Source/profile correction is under
+committed review and fresh qualification; no current native/product/R5/FP/CI
+acceptance is claimed. OD23 remains OPEN/unselected; full Phase26 activation
+continues. No live job or observer at this correction checkpoint.
+
+
+## Cranelift continuation — 2026-11-20 immutable predecessor index
+
+ACTIVE same owner/worktree. A4 focused owning4 passed; source63 then hit its
+original3600-second deadline after60 successes, with three commands unfinished.
+Raw failure and current tool/source evidence remain unchanged. Bounded profiling
+measured repeated predecessor JSON/coordinate work; the selected immutable-data
+index keeps shared64-entry/128MiB limits, strict fallback and live pin checks.
+Implementation is under committed review and fresh controls/enrollment; no full
+qualification/CI/phase closure is claimed. OD23 remains OPEN/unselected.

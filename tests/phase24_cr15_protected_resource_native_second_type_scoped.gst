@@ -1,0 +1,16 @@
+import "stdlib_s1_mutex_guard_generic_derivation_module.gst" as sync;
+
+type Flag struct {
+    value: bool
+}
+
+func main() int {
+    mut arena := os.Arena.New();
+    defer arena.Free();
+    if 1 {
+        mut mutex: std.Mutex[Flag, arena];
+        mut owner := sync.lock(&mutex);
+        mut value := sync.get(&owner);
+    }
+    return 0;
+}

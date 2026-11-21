@@ -224,6 +224,8 @@ def indexed_coordinate_controls(child):
         state = data.cache_state()
         require(state['entries'] <= state['max_entries'] and state['accounted_bytes'] <= state['max_bytes'],
                 'indexed operation exceeded shared cache bounds')
+        from phase26_2_predecessor_index_controls import controls as document_index_controls
+        document_index_controls()
         print('ALLOCATOR_INDEXED_COORDINATE_CONTROLS_PASS', flush=True)
     finally:
         data.clear_cache()
