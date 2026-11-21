@@ -9,6 +9,8 @@ import sys
 import tempfile
 from unittest.mock import patch
 
+import phase26_2_cr16_workflow as workflow
+
 ROOT = Path(__file__).resolve().parents[1]
 KEY = 'cr16_scoped_fixture'
 BASE = '39e37696b775b25827d54c1c5a52b005d30e386b'
@@ -40,6 +42,7 @@ EVIDENCE = {
     'scripts/stdlib_s1_mutex_guard_scope_refusal.py': 'f180d9c814848bf25a10c75934c286be49d3a818ab1ecf055360126fd07c6c9d',
     'scripts/stdlib_s1_mutex_guard_scope_refusal_test.py': 'acae6043d8bd684e96ad01136978e673de8a437473f6ef35303eb4bab10de2a7',
     'docs/STDLIB_MUTEX_GUARD_SCOPE.md': '69288dad85920336cdb53754cc58ae5ba7ec3e14db4cb421f4041b06ba958c67',
+    workflow.WORKFLOW: '26e54d024080c198d2cc74f0f92e555610bea4becc00a6ef4682ca2ff4ddad64',
 }
 
 
@@ -117,6 +120,10 @@ def validate():
                 'CR16 evidence is missing or nonregular: ' + name)
         sources[name] = path.read_bytes()
     evidence(sources)
+    try:
+        workflow.validate()
+    except workflow.ContractError as error:
+        raise ContractError(str(error)) from error
     for name in PREDECESSOR_FILES:
         predecessor_bytes(name)
     authority, calls = legacy.validate()
@@ -236,6 +243,7 @@ def inversions():
     with patch.object(Path, 'read_bytes', lambda p: real_read(p) + b'changed' if p == ROOT / PREDECESSOR else real_read(p)):
         reject('predecessor archive substituted', 'CR16 predecessor archive drifted',
                lambda: predecessor_bytes(next(iter(PREDECESSOR_FILES))))
+    rows.extend(workflow.inversions())
     validate()
     print(json.dumps(dict(status='PASS CR16 exact registration/evidence inversions',
                          controls=rows, program_executions=0), indent=2))

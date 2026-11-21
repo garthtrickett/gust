@@ -2657,7 +2657,7 @@
     "compiler/phase26-2-allocator-identity/cases.json": "c412e8d5a60174915ce1f3f1e741415c7329d2e79f8c80184b8c685ecd0eb26f",
     "compiler/phase26-2-allocator-identity/lifecycle-evidence-predecessor.json.gz": "954b34d58a9bef15bdd4e0783e6ec5e878b6ae4e4a8482a266a49a78194a0c91",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor-v2.json.gz": "1f82b0f3b52dedacabd39a111b18b68fee3ebddc541f17bfe5ad6ce5287fe91c",
-    "scripts/phase26_2_allocator_identity_registration.py": "deb4053b1fcdb684641906c99ff845a4cde8b2248d382209269ff5af73414fa7",
+    "scripts/phase26_2_allocator_identity_registration.py": "3b3cfa4de80b5eeae14d12ec048771078bae08ce735fd0a0cbb0633467632a8a",
     "compiler/phase26-2-allocator-identity/bootstrap-profile-predecessor.json.gz": "49cc8924af5b587ab2171869c53a8feffcbf83eb2f4d5346c6526ec839fdf502",
     "scripts/phase26_2_allocator_lifecycle_evidence.py": "dc9088e5620faa41f1d5645022aa0d647516c6b2239b719c0b8ddb3167cbad9e",
     "compiler/phase26-2-allocator-identity/primitive_fields.gst": "4d37c9d24dc8626dbb221079771396a510ed869bcdfc139647e526c15739a5cb",
@@ -2719,9 +2719,12 @@
     "scripts/stdlib_s1_mutex_guard_scope_parity.sh": "321cbd085eb8752182b9d957930646279b511aacbee9dc977531204623256bf3",
     "scripts/stdlib_s1_mutex_guard_scope_refusal.py": "f180d9c814848bf25a10c75934c286be49d3a818ab1ecf055360126fd07c6c9d",
     "compiler/phase26-2-deferred-allocator-order/cr16-cleanup-predecessor-v1.json.gz": "615c00b15036c180c25adac8227c8f09d2260439a3ddf962966df7fdb1366e07",
-    "scripts/phase26_2_cr16_cleanup_fixture.py": "4f5630bd5f8929ee49d4de2e1a0181cd34982be1c085587ea95f397cb5a15790",
+    "scripts/phase26_2_cr16_cleanup_fixture.py": "0926f82eb4b6b92321360320798462957afb5aa8b852455c607389ce967389a8",
     "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst": "3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e",
-    "scripts/stdlib_s1_mutex_guard_scope_refusal_test.py": "acae6043d8bd684e96ad01136978e673de8a437473f6ef35303eb4bab10de2a7"
+    "scripts/stdlib_s1_mutex_guard_scope_refusal_test.py": "acae6043d8bd684e96ad01136978e673de8a437473f6ef35303eb4bab10de2a7",
+    "scripts/phase26_2_cr16_workflow.py": "a963cf66799cc714ee168ad415e4ffc038215e39f5217f9a3da0d8182e5edf21",
+    "compiler/phase26-2-deferred-allocator-order/cr16-workflow-predecessor-v1.json.gz": "d176fc21ad94471fac5229991898a5fb368194464c7a71d07432f6a93196c9d4",
+    ".github/workflows/stdlib-s1-mutex-guard-scope.yml": "26e54d024080c198d2cc74f0f92e555610bea4becc00a6ef4682ca2ff4ddad64"
   },
   "origin_dispositions": {
     "safe": "scalar inputs and pure classified errors",

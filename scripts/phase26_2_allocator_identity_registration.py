@@ -13,6 +13,7 @@ import sys
 
 import phase26_2_cleanup_witnesses as cleanup_witnesses
 import phase26_2_cr16_cleanup_fixture as cr16_fixture
+import phase26_2_cr16_workflow as cr16_workflow
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '39e37696b775b25827d54c1c5a52b005d30e386b'
@@ -73,6 +74,7 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     *CR15_CHANGED,
     *cr16_fixture.PREDECESSOR_FILES,
+    *cr16_workflow.PREDECESSOR_FILES,
     *cleanup_witnesses.PREDECESSOR_FILES,
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
@@ -80,6 +82,8 @@ CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
     cr16_fixture.PREDECESSOR,
+    cr16_workflow.PREDECESSOR,
+    'scripts/phase26_2_cr16_workflow.py',
     'scripts/phase26_2_cr16_cleanup_fixture.py',
     cr16_fixture.SUCCESSOR,
     'scripts/stdlib_s1_mutex_guard_scope_refusal.py',
@@ -260,6 +264,8 @@ def cr15_predecessor_controls(rejected):
 def base_bytes(path):
     from phase26_predecessor_data import decoded_payload
     files = baseline()['files']
+    if path in cr16_workflow.PREDECESSOR_FILES:
+        return cr16_workflow.predecessor_bytes(path)
     if path in cr16_fixture.PREDECESSOR_FILES:
         return cr16_fixture.predecessor_bytes(path)
     if path in cleanup_witnesses.PREDECESSOR_FILES:

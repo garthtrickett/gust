@@ -48175,6 +48175,11 @@
           "current_digest": "69288dad85920336cdb53754cc58ae5ba7ec3e14db4cb421f4041b06ba958c67"
         },
         {
+          "path": ".github/workflows/stdlib-s1-mutex-guard-scope.yml",
+          "previous_digest": "16e4b2d2a7fb6f2f5cf2ef3b48378488b98829d97978f0523487df3f23440fe7",
+          "current_digest": "26e54d024080c198d2cc74f0f92e555610bea4becc00a6ef4682ca2ff4ddad64"
+        },
+        {
           "path": "scripts/phase24_cr15_qualification.py",
           "previous_digest": "13fa77156c2aa97113fc3303460f0ad1b0db5ac3d6ce55c9908ff11179aeddc1",
           "current_digest": "22829f79a3aeacffa8907f699e73db41dc84895ab43e115dc16eb6856c6d0042"
@@ -48217,12 +48222,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "3bbe1c422f2cdff24b5293ea326cb4713aa8884283895a0024659b4a5965d9bf"
+          "current_digest": "d54caaf70f3623c3a00408ab4f83262a6dbd2498510f92d1fb380b1df3a585ad"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "094af7feed965bae822ac6278dbaa577f7b140c94877744a3eb3918c3e59d93f"
+          "current_digest": "812e870f9485b4f5ba3efda05df7ed6bf2cf6dc2c6eefcec683bba0f40ee5f23"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48285,8 +48290,16 @@
           "digest": "615c00b15036c180c25adac8227c8f09d2260439a3ddf962966df7fdb1366e07"
         },
         {
+          "path": "compiler/phase26-2-deferred-allocator-order/cr16-workflow-predecessor-v1.json.gz",
+          "digest": "d176fc21ad94471fac5229991898a5fb368194464c7a71d07432f6a93196c9d4"
+        },
+        {
+          "path": "scripts/phase26_2_cr16_workflow.py",
+          "digest": "a963cf66799cc714ee168ad415e4ffc038215e39f5217f9a3da0d8182e5edf21"
+        },
+        {
           "path": "scripts/phase26_2_cr16_cleanup_fixture.py",
-          "digest": "4f5630bd5f8929ee49d4de2e1a0181cd34982be1c085587ea95f397cb5a15790"
+          "digest": "0926f82eb4b6b92321360320798462957afb5aa8b852455c607389ce967389a8"
         },
         {
           "path": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst",
@@ -48434,7 +48447,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "deb4053b1fcdb684641906c99ff845a4cde8b2248d382209269ff5af73414fa7"
+          "digest": "3b3cfa4de80b5eeae14d12ec048771078bae08ce735fd0a0cbb0633467632a8a"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48490,7 +48503,7 @@
         }
       ],
       "owned_text": {
-        "text": "dc580c93293e91cf19d8831498421bce496298cd5494836ee55b09074a74bb6f",
+        "text": "41ab873130c12e36c9af46f561903f4bfee59e73004fda6ab86794686deef919",
         "r4_text": "b5b5a5da354d3b6eb748ef3826fb40bb39c4f227b28ebb712603e7e9638af9f6"
       },
       "projections": {
@@ -48501,7 +48514,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "98be0ebadc648b5b4717d14ac55c56c1c01d416bebf9e136351e6a5655004b97",
-        "text": "66f5ab43d8439d4f498024410f76ec1b02a6746787204945ac1b85eceb02db0b"
+        "text": "7766790f98e8c3c47877c34ff334647ea6d53cae2453f62bf20f2c77d5a17382"
       },
       "spelling_render_current_digest": "a8076c7620ceaeb69ba818fa1576317ff992be95e046b95d8b886009e97680b0"
     },
