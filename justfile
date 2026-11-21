@@ -24638,6 +24638,8 @@ guard-cranelift-phase26-2-allocator-identities:
     python3 scripts/phase26_2_deferred_allocator_order.py native
     python3 scripts/phase26_2_cleanup_witnesses.py validate
     python3 scripts/phase26_2_cleanup_witnesses.py inversions
+    python3 scripts/phase26_2_cr16_cleanup_fixture.py validate
+    python3 scripts/phase26_2_cr16_cleanup_fixture.py inversions
 
 # Selected fixture-only successor; original remains a frontend-only refusal witness.
 phase26-cleanup-directory-positive label:

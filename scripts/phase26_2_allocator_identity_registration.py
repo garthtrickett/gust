@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 
 import phase26_2_cleanup_witnesses as cleanup_witnesses
+import phase26_2_cr16_cleanup_fixture as cr16_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '39e37696b775b25827d54c1c5a52b005d30e386b'
@@ -71,12 +72,18 @@ ANCESTOR_REGISTRATIONS = ('phase26_production_renewal_registration',
     'phase26_imported_native_registration', 'phase26_ticket_publication_registration')
 CHANGED = ('compiler/typechecker.gst', 'TASK.md', 'justfile',
     *CR15_CHANGED,
+    *cr16_fixture.PREDECESSOR_FILES,
     *cleanup_witnesses.PREDECESSOR_FILES,
     'scripts/cranelift_test_levels.json', 'scripts/phase26_production_renewal_registration.py',
     'compiler/phase26-release/release-epoch2.json', 'compiler/phase26-release/reachable-audit-epoch2.json',
     *PROFILE_CHANGED, *LIFECYCLE_CHANGED, *CONTROL_CHANGED, *TOOLCHAIN_CHANGED,
     R3_GUARD, DEFER_WORKER, DEFER_INVOCATION_ADAPTER, *DISK_SCAN_CHANGED)
 ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
+    cr16_fixture.PREDECESSOR,
+    'scripts/phase26_2_cr16_cleanup_fixture.py',
+    cr16_fixture.SUCCESSOR,
+    'scripts/stdlib_s1_mutex_guard_scope_refusal.py',
+    'scripts/stdlib_s1_mutex_guard_scope_refusal_test.py',
     *cleanup_witnesses.PREDECESSOR_ARCHIVES,
     'scripts/phase26_2_cleanup_witnesses.py',
     'compiler/phase26-2-deferred-allocator-order/cleanup-witnesses.json',
@@ -132,7 +139,9 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_deferred_allocator_order.py inversions\n'
     '    python3 scripts/phase26_2_deferred_allocator_order.py native\n'
     '    python3 scripts/phase26_2_cleanup_witnesses.py validate\n'
-    '    python3 scripts/phase26_2_cleanup_witnesses.py inversions\n')
+    '    python3 scripts/phase26_2_cleanup_witnesses.py inversions\n'
+    '    python3 scripts/phase26_2_cr16_cleanup_fixture.py validate\n'
+    '    python3 scripts/phase26_2_cr16_cleanup_fixture.py inversions\n')
 
 
 def require(ok, message):
@@ -251,6 +260,8 @@ def cr15_predecessor_controls(rejected):
 def base_bytes(path):
     from phase26_predecessor_data import decoded_payload
     files = baseline()['files']
+    if path in cr16_fixture.PREDECESSOR_FILES:
+        return cr16_fixture.predecessor_bytes(path)
     if path in cleanup_witnesses.PREDECESSOR_FILES:
         return cleanup_witnesses.predecessor_bytes(path)
     if path in CR15_CHANGED:
@@ -328,6 +339,8 @@ def identity(registry):
             'deferred lexical compiler invocation enrollment drifted')
     require(row.get('defer_order_native_invocations') == defer_order_invocation_rows(),
             'deferred allocator order compiler invocation enrollment drifted')
+    require(cr16_fixture.registration_matches(row.get(cr16_fixture.KEY)),
+            'CR16 scoped fixture enrollment drifted')
     require((ROOT / STATE).is_file() and (ROOT / STATE).stat().st_size > 0,
             'operational lane state is absent')
     return row
@@ -758,6 +771,7 @@ def build_record():
         phase26_2_status='OPEN', od23='OPEN; no slot ownership or admission selected',
         operational_state_excluded=STATE, defer_native_invocations=defer_invocation_rows(),
         defer_order_native_invocations=defer_order_invocation_rows(),
+        cr16_scoped_fixture=copy.deepcopy(cr16_fixture.CONTRACT),
         changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)),
             current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
         added_files=[dict(path=p, digest=sha((ROOT / p).read_bytes())) for p in ADDED],

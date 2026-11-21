@@ -53,3 +53,12 @@ Patch 20.16e.
 The added one Lock/one Unlock pair is internal to the selected S1.8 module
 and remains explicitly unsafe. No safe raw call, backend-specific rule,
 partial lifecycle pair, path substitution, or unrelated call site is admitted.
+
+## Selected Phase26.2D CR16 scoped witness
+
+- Site: `tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst`
+- Exact delta: zero Lock, one explicit-unsafe Unlock; no safe raw calls.
+- Native compilation only; neither raw double-unlock program may execute.
+- Original CR16 source/frozen emission remain historical; its current
+  cleanup-order refusal does not discharge the raw unlock limitation.
+- No mutex/resource/MIR/runtime semantics or frozen baseline changes.

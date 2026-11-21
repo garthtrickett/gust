@@ -12,6 +12,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import phase26_2_cr16_cleanup_fixture as scoped_fixture
+
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
@@ -437,6 +439,20 @@ def validate() -> tuple[dict, list[MethodCall]]:
             expected_total_unlock_calls += added["unlock_calls"]
             expected_total_calls += (added["lock_calls"] +
                                      added["unlock_calls"])
+    # The selected scoped witness has its own exact additive authority. The
+    # historical CR16 row and its absent/present predecessor states stay intact.
+    try:
+        added = scoped_fixture.registered_site(registry, ROOT)
+    except scoped_fixture.ContractError as error:
+        raise Error(str(error)) from error
+    if added is not None:
+        require(all(row['path'] != added['path'] for row in expected_call_sites),
+                'CR16 scoped call site is already pinned')
+        require(actual.get(added['path']) == {'Lock': 0, 'Unlock': 1},
+                'CR16 scoped raw call shape drifted')
+        expected_call_sites = expected_call_sites + [added]
+        expected_total_unlock_calls += 1
+        expected_total_calls += 1
     expected = {
         row["path"]: {"Lock": row["lock_calls"],
                       "Unlock": row["unlock_calls"]}
@@ -583,6 +599,20 @@ def render(authority: dict) -> str:
             "and remains explicitly unsafe. No safe raw call, backend-specific rule,",
             "partial lifecycle pair, path substitution, or unrelated call site is admitted.",
             "",
+        ]
+    try:
+        scoped = scoped_fixture.registered_site(registry, ROOT)
+    except scoped_fixture.ContractError as error:
+        raise Error(str(error)) from error
+    if scoped is not None:
+        lines += [
+            '## Selected Phase26.2D CR16 scoped witness', '',
+            '- Site: `' + scoped['path'] + '`',
+            '- Exact delta: zero Lock, one explicit-unsafe Unlock; no safe raw calls.',
+            '- Native compilation only; neither raw double-unlock program may execute.',
+            '- Original CR16 source/frozen emission remain historical; its current',
+            '  cleanup-order refusal does not discharge the raw unlock limitation.',
+            '- No mutex/resource/MIR/runtime semantics or frozen baseline changes.', '',
         ]
     return "\n".join(lines)
 

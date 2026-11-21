@@ -48106,6 +48106,18 @@
           "command": "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(INTERNAL)]"
         }
       ],
+      "cr16_scoped_fixture": {
+        "contract_version": "phase26_2d_cr16_scoped_compile_only_v1",
+        "expectation": "compile_only_never_execute",
+        "safe_raw_calls_added": 0,
+        "added_call_site": {
+          "path": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst",
+          "role": "stdlib_s1_9_scoped_raw_double_unlock_compile_only",
+          "lock_calls": 0,
+          "unlock_calls": 1
+        },
+        "source_sha256": "3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e"
+      },
       "changed_files": [
         {
           "path": "compiler/typechecker.gst",
@@ -48115,12 +48127,12 @@
         {
           "path": "TASK.md",
           "previous_digest": "4f54c0568cce932340c7780535a335e0a23230e34119d1d50fe7dde129723aa3",
-          "current_digest": "547c2568ce650e864376ee9a9cff32abfcae264fa47d5671290b27194963b06b"
+          "current_digest": "0a48efa76a6d307398edc194e76957ae77f0c6865bb778b93b3a266d054455f4"
         },
         {
           "path": "justfile",
           "previous_digest": "1a394ba10c83831838cc65e3b889fca90dc9238ffb8152522fa4b2111621d55b",
-          "current_digest": "4aaf7e90ff6b8976c451c4d6234bd159055c02006817c29f12f0f532571fdbd2"
+          "current_digest": "790372b7ab463cd105ae98434a5ff4652fa4b52400fc40482da6781d2ca2d81a"
         },
         {
           "path": "scripts/phase24_cr15_derivation.py",
@@ -48141,6 +48153,26 @@
           "path": ".github/workflows/phase24-cr15-qualification.yml",
           "previous_digest": "cf9745a25df539a502f75da62a4c24bf0e2d14243b73d65e87aeb7a1efc9857c",
           "current_digest": "aa88f47b1ab4e94ee592d945d43daec7972b243f553cb174a1eb580dad3eda2d"
+        },
+        {
+          "path": "scripts/phase20_unsafe_mutex_migration.py",
+          "previous_digest": "d8da255ba0ca89c075f911850d5a86bf92e6c3e1c734f7ec70af1e0b852e80d8",
+          "current_digest": "fcb88d8f5a622549a98642afa111adf056161700ebd0a589e297c1b11ca67259"
+        },
+        {
+          "path": "compiler/CRANELIFT_PHASE20_UNSAFE_MUTEX_MIGRATION.md",
+          "previous_digest": "01dd1107f7fd93c129794d007a0c58b1d0575fdfc4ec67f77c716d9123d06a0d",
+          "current_digest": "349efa6970d192a249b2c6fe6ab09a158c819e5210e626168750d803be9a239f"
+        },
+        {
+          "path": "scripts/stdlib_s1_mutex_guard_scope_parity.sh",
+          "previous_digest": "46a248c2f81afa9c3c655e3c8ff834d96bc5942810de33ef6af3ee52af2d18d6",
+          "current_digest": "321cbd085eb8752182b9d957930646279b511aacbee9dc977531204623256bf3"
+        },
+        {
+          "path": "docs/STDLIB_MUTEX_GUARD_SCOPE.md",
+          "previous_digest": "04d81b917095e7bc24297a47af35fbc924d887ea061820aa394cd40cc122b535",
+          "current_digest": "69288dad85920336cdb53754cc58ae5ba7ec3e14db4cb421f4041b06ba958c67"
         },
         {
           "path": "scripts/phase24_cr15_qualification.py",
@@ -48185,12 +48217,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "e69c81c26c5968a9be43e9403980aa3e7955df3822033972b00dfe1ac38e864a"
+          "current_digest": "3bbe1c422f2cdff24b5293ea326cb4713aa8884283895a0024659b4a5965d9bf"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "5c213cf6cfa0d2b333ee3e5ab25f5647cf7f8e9641e80642ee5e0ef76e601ba3"
+          "current_digest": "094af7feed965bae822ac6278dbaa577f7b140c94877744a3eb3918c3e59d93f"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48247,6 +48279,26 @@
         {
           "path": "compiler/phase26-2-defer-lexical/predecessor-worker.json.gz",
           "digest": "ce9b0a78b3782d868ce47ab405382461411809588f45b265b1bc3c6a5267619f"
+        },
+        {
+          "path": "compiler/phase26-2-deferred-allocator-order/cr16-cleanup-predecessor-v1.json.gz",
+          "digest": "615c00b15036c180c25adac8227c8f09d2260439a3ddf962966df7fdb1366e07"
+        },
+        {
+          "path": "scripts/phase26_2_cr16_cleanup_fixture.py",
+          "digest": "4f5630bd5f8929ee49d4de2e1a0181cd34982be1c085587ea95f397cb5a15790"
+        },
+        {
+          "path": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock_inner_scope.gst",
+          "digest": "3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e"
+        },
+        {
+          "path": "scripts/stdlib_s1_mutex_guard_scope_refusal.py",
+          "digest": "f180d9c814848bf25a10c75934c286be49d3a818ab1ecf055360126fd07c6c9d"
+        },
+        {
+          "path": "scripts/stdlib_s1_mutex_guard_scope_refusal_test.py",
+          "digest": "acae6043d8bd684e96ad01136978e673de8a437473f6ef35303eb4bab10de2a7"
         },
         {
           "path": "compiler/phase26-2-deferred-allocator-order/cleanup-witness-predecessor-v1.json.gz",
@@ -48382,7 +48434,7 @@
         },
         {
           "path": "scripts/phase26_2_allocator_identity_registration.py",
-          "digest": "3f244911e563f7d2b6ddcbb2281dbddd963f8b9731f928d69cd00a564e9f1a51"
+          "digest": "deb4053b1fcdb684641906c99ff845a4cde8b2248d382209269ff5af73414fa7"
         },
         {
           "path": "scripts/phase26_2_allocator_identity_guard.py",
@@ -48438,18 +48490,18 @@
         }
       ],
       "owned_text": {
-        "text": "1311636c32cc3111ca3b5f5b7a1e9681d1361437150af58c554518d968e6cebe",
-        "r4_text": "275b0b93d4a2b8d3b47630bec0386c904c5ba0442c450852c23d0272ac88e84a"
+        "text": "dc580c93293e91cf19d8831498421bce496298cd5494836ee55b09074a74bb6f",
+        "r4_text": "b5b5a5da354d3b6eb748ef3826fb40bb39c4f227b28ebb712603e7e9638af9f6"
       },
       "projections": {
-        "r4_text": "65b36229b63e8a2c968698f4d8e03704094a28e35acec64e94ff48116188ee7a",
+        "r4_text": "2b38ec1d13eeb2f7cc3349452b3e2ad781cc5cbb724cc9fb8b606befec15d16c",
         "spelling": "98df650645f938f6036aa4154ca262b0c2ae58f4016104feec3b23eecb46c90e",
         "filename": "336aa6d87ff7d9667161e0481a7a246eb87c413db8738ecf1933e7c8ae13f993",
-        "r3_record": "945b90ba7daf7eda8dbfc85f867034cae83dc40b1c09b59c2959a62a7a40ea17",
+        "r3_record": "d391ada2ff97eff6fd1cc19f286984a98f1fd3ea6c30d8f971c042b86e7a6a0c",
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
-        "r4_record": "715db26e9c625e4b302d7fb16abc4d76ab222bb736e6826d28464817393e2b1a",
-        "text": "192829c66950ad5a1786d99727a70508a04f655518b8610a38c5577af1f07ce3"
+        "r4_record": "98be0ebadc648b5b4717d14ac55c56c1c01d416bebf9e136351e6a5655004b97",
+        "text": "66f5ab43d8439d4f498024410f76ec1b02a6746787204945ac1b85eceb02db0b"
       },
       "spelling_render_current_digest": "a8076c7620ceaeb69ba818fa1576317ff992be95e046b95d8b886009e97680b0"
     },

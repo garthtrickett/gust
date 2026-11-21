@@ -6368,3 +6368,23 @@ per-path results, public counter behavior and every live physical/pin check.
 Malformed or substituted-parser inputs must retain original results/errors.
 Prove shared eviction/accounting, more-than64-path reuse and lazy unrelated-row
 errors, then re-enroll/review and run all63 under the same original limits.
+
+
+The operator selected the reviewed **coordinated CR16 raw-witness amendment** on
+2026-11-21 after PR626 exposed the unchanged Stdlib S1.9 witness's correct
+cleanup-order refusal. This prospectively extends the preceding six-fixture
+selection for exactly this additional compile-only witness. Apply the Stdlib
+owner-provided strict-refusal patch in this coordinated compiler correction:
+preserve original source/frozen accepted-emission and syntax-only checks, require
+its current frontend LinearResourceLeak refusal with /bin/false worker, empty
+stderr, no worker markers and no output/symlink, and add a separately named
+inner-scope native compile-only successor. Neither raw double-unlock program may
+ever execute. Keep safe scope outputs and five misuse classes unchanged.
+Enroll exactly the new explicit-unsafe zero-Lock/one-Unlock site through the
+owned allocator successor; preserve historical CR16 authority and its two states.
+Invert missing/substituted sites, unsafe/context/count/hash/role drift and refusal
+weakening; keep mutation tests source-stable. Re-enumerate actual pins and obtain
+committed reviews, actual current guard/source/native/product/R5FP and exact-head
+CI/artifact/review/rule/merge evidence. No Resource/defer/move/MIR/ABI/runtime or
+OD23 semantics change, C-backend revival, quota or test-budget waiver is selected.
+The prior CI failure and unqualified proposal remain preserved historical data.
