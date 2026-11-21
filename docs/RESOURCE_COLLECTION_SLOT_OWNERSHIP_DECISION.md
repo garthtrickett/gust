@@ -111,10 +111,17 @@ is vacant. For each step record which acquisition the observation identifies,
 what it permits the caller to read or move, and who must destroy A and B.
 Compare with a still-live slot that has never been reused.
 
-Frost's generation check distinguishes a stale handle from one that names the
-new occupant. It supplies a test for identity across reuse. Exactly-once
-destruction and permitted observations under each Gust alternative still need
-their own answers. Record these as decision cases while OD-23 is open.
+Consider generational slots if a Gust workload needs long-lived handles to
+individually deleted objects, such as sessions, jobs, or entities. An arena
+brand identifies the arena. Frost's slab adds an index and generation to each
+handle. Releasing a slot advances its generation, so the old handle fails
+validation even after a new item takes the same slot. Use the witness above
+to compare an old handle and a fresh one while the arena is still live.
+
+For a slot containing a linear resource, OD-23 still has to determine which
+operations transfer ownership, what an observer may read, and who destroys
+the resource exactly once. The generation check supplies evidence of slot
+identity across reuse.
 [Frost handle and pool semantics](https://github.com/matthewjberger/frost/blob/35e5868b08d192e45e8db606538b4b7357ffc1b4/docs/book/src/reference/handles-and-pools.md)
 
 Three observation alternatives remain **UNSELECTED**:
