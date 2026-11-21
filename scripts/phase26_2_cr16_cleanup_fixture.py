@@ -31,10 +31,10 @@ CONTRACT = dict(
     added_call_site=dict(path=SUCCESSOR,
         role='stdlib_s1_9_scoped_raw_double_unlock_compile_only',
         lock_calls=0, unlock_calls=1),
-    source_sha256='3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e')
+    source_digest='3c82f4786609c6ec0354846e31a55d9abc5478008f3d96a3a1090f1c26838d1e')
 EVIDENCE = {
     ORIGINAL: '88be94b1cee6a138a5df33439f230a03be7414ef3fa93e006800f8fe5dd1ef55',
-    SUCCESSOR: CONTRACT['source_sha256'],
+    SUCCESSOR: CONTRACT['source_digest'],
     'tests/stdlib_s1_mutex_guard_generic_derivation_module.gst': '9f275fd64a4a8ff65b4be05ff25c81f10f777c507eefdf720ff5b2031d55bc07',
     'scripts/stdlib_s1_raw_double_unlock.py': '4a64ed38d2b7aca214007b7a632f442fe962fe9da21ad8c450bd7b2adbda5471',
     'scripts/stdlib_s1_raw_double_unlock_test.py': 'aa388f1fff2a8cf2ceea5c71f3830b6272f26ab701720ef039128a698e937795',
@@ -96,7 +96,7 @@ def registered_site(registry, root):
     path = root / SUCCESSOR
     require(path.is_file() and not path.is_symlink() and path.resolve() == path,
             'CR16 scoped source is missing or nonregular')
-    require(hashlib.sha256(path.read_bytes()).hexdigest() == row['source_sha256'],
+    require(hashlib.sha256(path.read_bytes()).hexdigest() == row['source_digest'],
             'CR16 scoped source bytes drifted')
     return row['added_call_site']
 
@@ -176,10 +176,15 @@ def inversions():
                 ('safe-call waiver', 'safe_raw_calls_added', 1),
                 ('boolean count', 'safe_raw_calls_added', False),
                 ('float count', 'safe_raw_calls_added', 0.0),
-                ('source digest', 'source_sha256', '0' * 64)):
+                ('source digest', 'source_digest', '0' * 64)):
             changed = copy.deepcopy(registry)
             changed['phase26_activation_audit']['allocator_identity_successor_v1'][KEY][field] = replacement
             reject(label, 'CR16 scoped registration drifted', lambda changed=changed: validate_candidate(changed))
+        changed = copy.deepcopy(registry)
+        retired = changed['phase26_activation_audit']['allocator_identity_successor_v1'][KEY]
+        retired['source_sha256'] = retired.pop('source_digest')
+        reject('retired source field', 'CR16 scoped registration drifted',
+               lambda: validate_candidate(changed))
         for field, replacement in (('path', ORIGINAL), ('role', 'unowned'),
                                    ('lock_calls', 1), ('unlock_calls', 2)):
             changed = copy.deepcopy(registry)
