@@ -10,7 +10,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
+import time
 
 import phase26_toolchain_compatibility
 
@@ -32,16 +34,56 @@ def verify(pins):
     print("PRODUCTION_BUILD_TOOLCHAIN_VERIFIED", flush=True)
 
 
+def partial_size(path):
+    if path.is_symlink() or (path.exists() and not path.is_file()):
+        raise SystemExit("production dependency partial is not a regular file")
+    return path.stat().st_size if path.exists() else 0
+
+
+def fetch_package(package, path):
+    partial = path.with_suffix(path.suffix + ".partial")
+    retryable_http = {"408", "429", "500", "502", "503", "504", "522", "524"}
+    for attempt in range(3):
+        offset = partial_size(partial)
+        command = ["curl", "--proto", "=https", "--tlsv1.2", "--fail", "--location",
+                   "--silent", "--show-error", "--max-time", "60",
+                   "--write-out", "%{http_code}\\t%header{content-range}\\n",
+                   "-o", str(partial)]
+        if offset:
+            command.extend(("--continue-at", str(offset)))
+        completed = subprocess.run([*command, package["url"]], stdout=subprocess.PIPE, text=True)
+        response, content_range = completed.stdout.strip("\n").split("\t", 1)
+        size = partial_size(partial)
+        if offset and (response in ("200", "206") or size != offset or completed.returncode == 0):
+            match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", content_range.strip())
+            if response != "206" or match is None:
+                raise SystemExit("production dependency resume did not return a byte range")
+            start, end, total = map(int, match.groups())
+            if start != offset or not offset <= size <= total or end != total - 1 or offset > end:
+                raise SystemExit("production dependency resume returned an inconsistent byte range")
+            if completed.returncode == 0 and size != total:
+                raise SystemExit("production dependency resume ended with an incomplete byte range")
+        elif not offset and (size or completed.returncode == 0) and response != "200":
+            raise SystemExit("production dependency initial response was not a full transfer")
+
+        if completed.returncode == 0:
+            if not partial.is_file() or digest(partial) != package["sha256"]:
+                raise SystemExit(f"production dependency digest mismatch: {package['package']}")
+            partial.rename(path)
+            return
+
+        retryable = completed.returncode == 28 or (completed.returncode == 22 and response in retryable_http)
+        if not retryable or attempt == 2:
+            completed.check_returncode()
+        time.sleep(2 ** attempt)
+
+
 def fetch(pins, directory):
     directory.mkdir(parents=True, exist_ok=False)
     packages = []
     for package in pins["packages"]:
         path = directory / Path(package["filename"]).name
-        subprocess.run(["curl", "--proto", "=https", "--tlsv1.2", "--fail", "--location",
-                        "--silent", "--show-error", "--retry", "2", "--max-time", "60",
-                        package["url"], "-o", str(path)], check=True)
-        if digest(path) != package["sha256"]:
-            raise SystemExit(f"production dependency digest mismatch: {package['package']}")
+        fetch_package(package, path)
         packages.append(str(path))
     return packages
 

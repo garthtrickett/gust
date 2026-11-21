@@ -48222,12 +48222,12 @@
         {
           "path": "compiler/phase26-release/release-epoch2.json",
           "previous_digest": "585786e37c3e7fcecce3d359601ecd7cd3da07145502a4232a759f3664cedacc",
-          "current_digest": "b5575bac5adf653bfa849c03177a44b7a121ee028f85a436a25dd244602905a4"
+          "current_digest": "c92e92b6cacc3a33436573f7ee7abfa0fbb6ce5a5ddc85afcb609f9c4e9d0d41"
         },
         {
           "path": "compiler/phase26-release/reachable-audit-epoch2.json",
           "previous_digest": "64da96ab696439d83de81e84d37622491e1839a6101755030e3b335bffb94ca2",
-          "current_digest": "26a3228ffffe208c871522c8df8454910f8aef7cad1b6cbd6d691706c5ba6f29"
+          "current_digest": "36563e7f02cb20bc208f4c267e8a6ddd7739b17f9ba92aa36cee9abef571c607"
         },
         {
           "path": ".github/workflows/phase26-2-allocator-liveness.yml",
@@ -48252,7 +48252,7 @@
         {
           "path": "scripts/phase26_production_toolchain.py",
           "previous_digest": "9078c812536450808d1ab85fd84fcd2728e5fa62b44678c1320e5571480f9dd6",
-          "current_digest": "272148c432ba23e5e2ba536b58ac8a6936db59346b64ff8d20104632d8dc3473"
+          "current_digest": "f0fd32efa2f9ce154d3adf828cb43373df12addadb23fba945ce70de10b9433d"
         },
         {
           "path": "scripts/phase26_r3_zlib_adapter_guard.sh",
@@ -48495,7 +48495,7 @@
         },
         {
           "path": "scripts/phase26_production_toolchain_controls.py",
-          "digest": "e1c6be561f0af0f3ea7b4e407d81044c7b4d43e50b4af968619e089fe261ddfa"
+          "digest": "20e79df6009279a3c17ebc2c810dfcdd9bf16efa6ca0fbea6d24f07e9bd500f8"
         },
         {
           "path": "compiler/experiments/cranelift/production/ci-toolchain-compatibility.json",
@@ -48503,7 +48503,7 @@
         }
       ],
       "owned_text": {
-        "text": "c4b42405a29f60698d66e22dfe913779f6b54f36fd0b57f4db644c52825381f0",
+        "text": "770ddbc5bb0d8f41bf5d45b2da5f527ee9d6d2b0b8848de64f93cad335c885ff",
         "r4_text": "b5b5a5da354d3b6eb748ef3826fb40bb39c4f227b28ebb712603e7e9638af9f6"
       },
       "projections": {
@@ -48514,7 +48514,7 @@
         "production": "f5c7eb977d1d3db4e50629d7d11c0ebde74dbb8708766966d0c33d103dab2c73",
         "workflow": "273b9ddcc9a7a9469c25ea36a0bb1d4172d322ebd261e87021e9ef3a00125d24",
         "r4_record": "98be0ebadc648b5b4717d14ac55c56c1c01d416bebf9e136351e6a5655004b97",
-        "text": "fbb509178fbc41a503abd9244ccf23d25d1bff14035f6f2b4b5a24c370e2c326"
+        "text": "71ae3f7d042f910d0d41e51f87db0bf305f77f3c72d9b220454d5e554a900190"
       },
       "spelling_render_current_digest": "a8076c7620ceaeb69ba818fa1576317ff992be95e046b95d8b886009e97680b0"
     },
