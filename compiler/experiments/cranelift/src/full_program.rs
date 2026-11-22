@@ -6267,14 +6267,16 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 "compiler hashmap Keys requires its existing string-key authority",
             ));
         }
+        let [_, destination_index] = node.children.as_slice() else {
+            return Err(invalid("hashmap Keys requires one destination arena operand"));
+        };
+        let destination_type = self.program.nodes[*destination_index].ty.clone();
+        if destination_type != "Arena" && pointer_inner_type(&destination_type) != Some("Arena") {
+            return Err(invalid("hashmap Keys destination operand is not an arena"));
+        }
+        let destination = self.lower_expression(builder, *destination_index, None)?;
+        let arena = self.arena_address(builder, destination, &destination_type)?;
         let result = self.place_for_type(builder, &node.ty)?;
-        let (map_arena_field, _) = self.field_place(builder, map, map_type, "arena")?;
-        let arena = builder.ins().load(
-            self.pointer_type(),
-            MemFlags::trusted(),
-            map_arena_field.address,
-            0,
-        );
         let (result_arena, _) = self.field_place(builder, result, &node.ty, "arena")?;
         builder
             .ins()

@@ -37,6 +37,13 @@ DEFER_WORKER = 'compiler/experiments/cranelift/src/full_program.rs'
 DEFER_INVOCATION_ADAPTER = 'scripts/phase22_opening.py'
 DEFER_RUNNER = 'scripts/phase26_2_defer_lexical.py'
 DEFER_ORDER_RUNNER = 'scripts/phase26_2_deferred_allocator_order.py'
+KEYS_RUNNER = 'scripts/phase26_2_hashmap_keys_destination.py'
+ROADMAP_RECONCILIATION = {
+    'path': 'docs/PHASES_26_AND_27.md',
+    'merge': 'efaebae52ad2076dc03b16293665d65e98ea14fb',
+    'previous_digest': '51bde8bae06f1e142c8ccf6f44561c956d93aafa135556ed7492e4601d9055e7',
+    'current_digest': '19f7765a40187799e5562d0727f0c8265b427c58a80f164deed68182a39fa83f',
+}
 DEFER_BASELINE = 'compiler/phase26-2-defer-lexical/predecessor-worker-and-global-census-v3.json.gz'
 DEFER_BASELINE_SHA256 = '7212c97768f2e6716279a374a4e127ecbb1ab3e59647156285ee838ca2e4a4ee'
 DISK_SCAN_CHANGED = ('scripts/phase26_release_paging.py',
@@ -104,7 +111,7 @@ ADDED = ('compiler/phase26-2-defer-lexical/predecessor-worker.json.gz',
     DISK_SCAN_BASELINE, 'scripts/phase26_2_defer_lexical.py',
     'compiler/phase26-2-defer-lexical/cases.json',
     'compiler/CRANELIFT_PHASE26_2_DEFER_LEXICAL.md',
-    DEFER_ORDER_RUNNER, 'compiler/phase26-2-deferred-allocator-order/cases.json',
+    DEFER_ORDER_RUNNER, KEYS_RUNNER, 'compiler/phase26-2-deferred-allocator-order/cases.json',
     'compiler/phase26-2-deferred-allocator-order/observation_facts.gst',
     'compiler/CRANELIFT_PHASE26_2_DEFERRED_ALLOCATOR_ORDER.md',
     *HISTORICAL_BASELINES, BASELINE, PROFILE_BASELINE, LIFECYCLE_BASELINE, CONTROL_BASELINE,
@@ -142,6 +149,7 @@ RECIPE = ('\n# Lexical allocator proof identities and immutable actual-origin de
     '    python3 scripts/phase26_2_deferred_allocator_order.py validate\n'
     '    python3 scripts/phase26_2_deferred_allocator_order.py inversions\n'
     '    python3 scripts/phase26_2_deferred_allocator_order.py native\n'
+    '    python3 scripts/phase26_2_hashmap_keys_destination.py\n'
     '    python3 scripts/phase26_2_cleanup_witnesses.py validate\n'
     '    python3 scripts/phase26_2_cleanup_witnesses.py inversions\n'
     '    python3 scripts/phase26_2_cr16_cleanup_fixture.py validate\n'
@@ -513,6 +521,20 @@ def physical_files(registry, row):
                 'historical allocator baseline bytes drifted: '+path)
     for p in row['changed_files']:
         prior_digest(registry, p['path'], sha((ROOT / p['path']).read_bytes()))
+    prior_roadmap_digest(registry, ROADMAP_RECONCILIATION['current_digest'])
+
+
+def prior_roadmap_digest(registry, live):
+    row = record(registry)
+    if not row:
+        return live
+    previous = ROADMAP_RECONCILIATION['previous_digest']
+    current = ROADMAP_RECONCILIATION['current_digest']
+    path = ROADMAP_RECONCILIATION['path']
+    require(row.get('roadmap_reconciliation') == ROADMAP_RECONCILIATION and
+            (ROOT / path).is_file() and sha((ROOT / path).read_bytes()) == current,
+            'R4 changed file drifted: ' + path + ' (merged roadmap reconciliation)')
+    return previous if live == current else live
 
 
 def ancestor_record_images(kind):
@@ -609,6 +631,22 @@ def defer_invocation_rows():
     from phase22_opening import classify, selection
     return [classify(ROOT/DEFER_RUNNER, line, command, '', token, selection(command))
             for line, command, token in live_invocation_lists(ROOT/DEFER_RUNNER)]
+
+
+def keys_invocation_rows():
+    from phase22_opening import classify, python_compiler_lists, selection
+    return [classify(ROOT / KEYS_RUNNER, line, command, '', token, selection(command))
+            for line, command, token in python_compiler_lists(ROOT / KEYS_RUNNER)]
+
+
+def normalize_keys_invocations(registry, rows):
+    expected = identity(registry).get('keys_destination_native_invocations')
+    current = [row for row in rows if row['path'] == KEYS_RUNNER]
+    require(len(current) == 1 and current == expected and
+            current[0]['selection'] == 'explicit_cranelift' and
+            current[0]['command'] == "[str(ROOT / 'gust'), '--backend', 'cranelift', '-o', str(binary), str(source)]",
+            'Keys destination compiler invocation missing, extra or substituted')
+    return [row for row in rows if row['path'] != KEYS_RUNNER]
 
 
 def normalize_defer_invocations(registry, rows):
@@ -777,6 +815,8 @@ def build_record():
         phase26_2_status='OPEN', od23='OPEN; no slot ownership or admission selected',
         operational_state_excluded=STATE, defer_native_invocations=defer_invocation_rows(),
         defer_order_native_invocations=defer_order_invocation_rows(),
+        keys_destination_native_invocations=keys_invocation_rows(),
+        roadmap_reconciliation=ROADMAP_RECONCILIATION.copy(),
         cr16_scoped_fixture=copy.deepcopy(cr16_fixture.CONTRACT),
         changed_files=[dict(path=p, previous_digest=sha(base_bytes(p)),
             current_digest=sha((ROOT / p).read_bytes())) for p in CHANGED],
@@ -956,6 +996,34 @@ def inversions():
             print(label+': REJECTED (expected assertion): '+str(error),flush=True)
         else:
             raise SystemExit(label+': ACCEPTED')
+    from phase26_release_registration import prior_digest as release_prior_digest
+    roadmap = ROADMAP_RECONCILIATION
+    path = roadmap['path']
+    require(release_prior_digest(registry, path, roadmap['current_digest']) !=
+            roadmap['current_digest'], 'merged roadmap did not project to its release predecessor')
+    omitted = copy.deepcopy(registry)
+    record(omitted).pop('roadmap_reconciliation')
+    rejected('omitted merged roadmap authority',
+             lambda: release_prior_digest(omitted, path, roadmap['current_digest']),
+             'merged roadmap reconciliation')
+    original_read = Path.read_bytes
+    with patch.object(Path, 'read_bytes', lambda target: original_read(target) + b'\n'
+                      if target == ROOT / path else original_read(target)):
+        rejected('changed merged roadmap bytes',
+                 lambda: release_prior_digest(registry, path, roadmap['current_digest']),
+                 'merged roadmap reconciliation')
+    rejected('foreign merged roadmap digest',
+             lambda: release_prior_digest(registry, path, '0' * 64),
+             'R4 changed file drifted')
+    keys_calls = keys_invocation_rows()
+    foreign_call = dict(keys_calls[0], path='scripts/unregistered-foreign-call.py')
+    require(normalize_keys_invocations(registry, keys_calls + [foreign_call]) == [foreign_call],
+            'Keys destination normalization hid a foreign compiler invocation')
+    for label, changed in (('missing', []), ('extra', keys_calls * 2),
+                           ('substituted', [dict(keys_calls[0], selection='implicit_default')])):
+        rejected('Keys destination invocation ' + label,
+                 lambda changed=changed: normalize_keys_invocations(registry, changed),
+                 'Keys destination compiler invocation missing, extra or substituted')
     cr15_predecessor_controls(rejected)
     for result in cleanup_witnesses.predecessor_controls():
         print(result['label'] + ': ' + result['outcome'] + ': ' + result['assertion'], flush=True)

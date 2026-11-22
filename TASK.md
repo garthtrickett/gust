@@ -6388,3 +6388,13 @@ committed reviews, actual current guard/source/native/product/R5FP and exact-hea
 CI/artifact/review/rule/merge evidence. No Resource/defer/move/MIR/ABI/runtime or
 OD23 semantics change, C-backend revival, quota or test-budget waiver is selected.
 The prior CI failure and unqualified proposal remain preserved historical data.
+
+## Phase 26.5 compiler prerequisite — HashMap Keys result storage
+
+For the existing compiler-internal string-key lowering, evaluate the explicit
+destination arena operand once and use that arena for vector storage. Observe
+same-arena and distinct-live-arena calls before either arena is released, and
+check the returned key and length. This increment leaves public admission and
+the existing borrowed string payload behavior as separate obligations. Phase
+26.5 remains open for the Stdlib safety-surface audit. OD23 remains open and
+unselected.

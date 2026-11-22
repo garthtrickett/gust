@@ -83,6 +83,11 @@ def identity(registry):
 
 def prior_digest(registry, path, live):
     live = successor.prior_digest(registry, path, live)
+    if path == 'docs/PHASES_26_AND_27.md':
+        # The active compiler patch reconciles the exact merged documentation
+        # update before the older release validator checks its predecessor pin.
+        from phase26_2_allocator_identity_registration import prior_roadmap_digest
+        live = prior_roadmap_digest(registry, live)
     if not record(registry) or path not in CHANGED:
         return live
     pin = next(p for p in identity(registry)['changed_files'] if p['path'] == path)
